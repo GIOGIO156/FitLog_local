@@ -108,35 +108,48 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
 
     setState(() => _saving = true);
     final services = context.read<AppServices>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    final record = FoodRecord(
-      date: _date,
-      mealName: _mealNameController.text.trim(),
-      totalWeightG: NumberUtils.toDouble(_weightController.text),
-      caloriesKcal: NumberUtils.toDouble(_caloriesController.text),
-      proteinG: NumberUtils.toDouble(_proteinController.text),
-      carbsG: NumberUtils.toDouble(_carbsController.text),
-      fatG: NumberUtils.toDouble(_fatController.text),
-      confidence: _confidenceController.text.trim().isEmpty
-          ? null
-          : NumberUtils.toDouble(_confidenceController.text),
-      estimationNotes: _notesController.text.trim(),
-      source: widget.initialRecord.source,
-      items: _items.map((item) => item.toFoodItem()).toList(),
-    );
+    try {
+      final record = FoodRecord(
+        date: _date,
+        mealName: _mealNameController.text.trim(),
+        totalWeightG: NumberUtils.toDouble(_weightController.text),
+        caloriesKcal: NumberUtils.toDouble(_caloriesController.text),
+        proteinG: NumberUtils.toDouble(_proteinController.text),
+        carbsG: NumberUtils.toDouble(_carbsController.text),
+        fatG: NumberUtils.toDouble(_fatController.text),
+        confidence: _confidenceController.text.trim().isEmpty
+            ? null
+            : NumberUtils.toDouble(_confidenceController.text),
+        estimationNotes: _notesController.text.trim(),
+        source: widget.initialRecord.source,
+        items: _items.map((item) => item.toFoodItem()).toList(),
+      );
 
-    await services.foodRepository.insertFoodRecord(record);
+      await services.foodRepository.insertFoodRecord(record);
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      context.read<RefreshNotifier>().markDataChanged();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Food record saved.')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to save food record: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
-
-    context.read<RefreshNotifier>().markDataChanged();
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Food record saved.')));
-    Navigator.of(context).pop(true);
   }
 
   Widget _buildMainFields() {

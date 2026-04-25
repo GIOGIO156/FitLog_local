@@ -36,11 +36,29 @@ class FoodRepository {
 
     final db = await _database.database;
     final now = DateTime.now().toIso8601String();
+    final existingRows = await db.query(
+      'food_records',
+      columns: <String>['created_at'],
+      where: 'id = ?',
+      whereArgs: <Object?>[record.id],
+      limit: 1,
+    );
+
+    if (existingRows.isEmpty) {
+      throw StateError('Food record not found: id=${record.id}');
+    }
+
+    final existingCreatedAt =
+        existingRows.first['created_at']?.toString() ?? now;
+    final payload = record.copyWith(
+      createdAt: existingCreatedAt,
+      updatedAt: now,
+    );
 
     await db.transaction((txn) async {
       await txn.update(
         'food_records',
-        record.copyWith(updatedAt: now).toMap()..remove('id'),
+        payload.toMap()..remove('id'),
         where: 'id = ?',
         whereArgs: <Object?>[record.id],
       );

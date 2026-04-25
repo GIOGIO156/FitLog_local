@@ -36,11 +36,29 @@ class WorkoutRepository {
 
     final db = await _database.database;
     final now = DateTime.now().toIso8601String();
+    final existingRows = await db.query(
+      'workout_sessions',
+      columns: <String>['created_at'],
+      where: 'id = ?',
+      whereArgs: <Object?>[session.id],
+      limit: 1,
+    );
+
+    if (existingRows.isEmpty) {
+      throw StateError('Workout session not found: id=${session.id}');
+    }
+
+    final existingCreatedAt =
+        existingRows.first['created_at']?.toString() ?? now;
+    final payload = session.copyWith(
+      createdAt: existingCreatedAt,
+      updatedAt: now,
+    );
 
     await db.transaction((txn) async {
       await txn.update(
         'workout_sessions',
-        session.copyWith(updatedAt: now).toMap()..remove('id'),
+        payload.toMap()..remove('id'),
         where: 'id = ?',
         whereArgs: <Object?>[session.id],
       );

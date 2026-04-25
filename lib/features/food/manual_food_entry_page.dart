@@ -62,33 +62,46 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
     }
 
     setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
 
-    final record = FoodRecord(
-      date: _date,
-      mealName: _mealNameController.text.trim(),
-      totalWeightG: NumberUtils.toDouble(_weightController.text),
-      caloriesKcal: NumberUtils.toDouble(_caloriesController.text),
-      proteinG: NumberUtils.toDouble(_proteinController.text),
-      carbsG: NumberUtils.toDouble(_carbsController.text),
-      fatG: NumberUtils.toDouble(_fatController.text),
-      confidence: null,
-      estimationNotes: _notesController.text.trim(),
-      source: AppConstants.sourceManual,
-      items: const <FoodItem>[],
-    );
+    try {
+      final record = FoodRecord(
+        date: _date,
+        mealName: _mealNameController.text.trim(),
+        totalWeightG: NumberUtils.toDouble(_weightController.text),
+        caloriesKcal: NumberUtils.toDouble(_caloriesController.text),
+        proteinG: NumberUtils.toDouble(_proteinController.text),
+        carbsG: NumberUtils.toDouble(_carbsController.text),
+        fatG: NumberUtils.toDouble(_fatController.text),
+        confidence: null,
+        estimationNotes: _notesController.text.trim(),
+        source: AppConstants.sourceManual,
+        items: const <FoodItem>[],
+      );
 
-    await context.read<AppServices>().foodRepository.insertFoodRecord(record);
+      await context.read<AppServices>().foodRepository.insertFoodRecord(record);
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      context.read<RefreshNotifier>().markDataChanged();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Manual food record saved.')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to save manual record: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
-
-    context.read<RefreshNotifier>().markDataChanged();
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Manual food record saved.')));
-    Navigator.of(context).pop(true);
   }
 
   @override
