@@ -8,7 +8,9 @@ import 'manual_food_entry_page.dart';
 import 'paste_ai_result_page.dart';
 
 class AddFoodPage extends StatelessWidget {
-  const AddFoodPage({super.key});
+  const AddFoodPage({super.key, this.initialDate});
+
+  final String? initialDate;
 
   Future<void> _copyPrompt(BuildContext context) async {
     final language = context.languageController.language;
@@ -27,7 +29,9 @@ class AddFoodPage extends StatelessWidget {
 
   Future<void> _openPasteAi(BuildContext context) async {
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => const PasteAiResultPage()),
+      MaterialPageRoute<bool>(
+        builder: (_) => PasteAiResultPage(initialDate: initialDate),
+      ),
     );
 
     if (saved == true && context.mounted) {
@@ -37,7 +41,9 @@ class AddFoodPage extends StatelessWidget {
 
   Future<void> _openManualEntry(BuildContext context) async {
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => const ManualFoodEntryPage()),
+      MaterialPageRoute<bool>(
+        builder: (_) => ManualFoodEntryPage(initialDate: initialDate),
+      ),
     );
 
     if (saved == true && context.mounted) {

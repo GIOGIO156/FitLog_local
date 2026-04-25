@@ -118,28 +118,17 @@ class AppStrings {
   String get activityLevelLabel => _t('Activity Level', '活动水平');
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
   String get dailyGoalKcalLabel => _t('Goal Delta (kcal)', '目标热量差 (kcal)');
-  String get macroRatioSettingsLabel => _t(
-    'Daily Macro Ratio (%)',
-    '每日三大营养比例 (%)',
-  );
-  String get proteinRatioPercentLabel => _t(
-    'Protein Ratio (%)',
-    '蛋白质比例 (%)',
-  );
+  String get macroRatioSettingsLabel =>
+      _t('Daily Macro Ratio (%)', '每日三大营养比例 (%)');
+  String get proteinRatioPercentLabel => _t('Protein Ratio (%)', '蛋白质比例 (%)');
   String get carbsRatioPercentLabel => _t('Carbs Ratio (%)', '碳水比例 (%)');
   String get fatRatioPercentLabel => _t('Fat Ratio (%)', '脂肪比例 (%)');
-  String get macroRatioHint => _t(
-    'Protein + Carbs + Fat should equal 100%.',
-    '蛋白质 + 碳水 + 脂肪 应等于 100%。',
-  );
-  String get macroRatioTotalInvalid => _t(
-    'Macro ratio total must be 100.',
-    '三大营养比例总和必须为 100。',
-  );
-  String get enterValidMacroRatio => _t(
-    'Enter a valid ratio between 0 and 100.',
-    '请输入 0 到 100 的有效比例。',
-  );
+  String get macroRatioHint =>
+      _t('Protein + Carbs + Fat should equal 100%.', '蛋白质 + 碳水 + 脂肪 应等于 100%。');
+  String get macroRatioTotalInvalid =>
+      _t('Macro ratio total must be 100.', '三大营养比例总和必须为 100。');
+  String get enterValidMacroRatio =>
+      _t('Enter a valid ratio between 0 and 100.', '请输入 0 到 100 的有效比例。');
   String get dateLabel => _t('Date', '日期');
   String get notesLabel => _t('Notes', '备注');
   String get durationMinutesLabel => _t('Duration (minutes)', '时长 (分钟)');
@@ -300,10 +289,7 @@ class AppStrings {
   String get proteinLabel => _t('Protein', '蛋白质');
   String get carbsLabel => _t('Carbs', '碳水');
   String get fatLabel => _t('Fat', '脂肪');
-  String get remainingProteinLabel => _t(
-    'Protein remaining (g)',
-    '蛋白质剩余 (g)',
-  );
+  String get remainingProteinLabel => _t('Protein remaining (g)', '蛋白质剩余 (g)');
   String get remainingCarbsLabel => _t('Carbs remaining (g)', '碳水剩余 (g)');
   String get remainingFatLabel => _t('Fat remaining (g)', '脂肪剩余 (g)');
   String get tdeeReferenceLabel => _t('TDEE reference', 'TDEE 参考');

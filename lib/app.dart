@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/localization/language_controller.dart';
 import 'core/localization/localization_extensions.dart';
+import 'core/utils/date_utils.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/food_repository.dart';
 import 'data/repositories/profile_repository.dart';
@@ -71,6 +72,9 @@ class _FitLogAppState extends State<FitLogApp> {
         Provider<AppServices>.value(value: _services),
         ChangeNotifierProvider<RefreshNotifier>(
           create: (_) => RefreshNotifier(),
+        ),
+        ChangeNotifierProvider<SelectedDateNotifier>(
+          create: (_) => SelectedDateNotifier(),
         ),
         ChangeNotifierProvider<LanguageController>.value(
           value: _languageController,
@@ -266,6 +270,20 @@ class RefreshNotifier extends ChangeNotifier {
 
   void markDataChanged() {
     _version++;
+    notifyListeners();
+  }
+}
+
+class SelectedDateNotifier extends ChangeNotifier {
+  String _selectedDate = DateUtilsX.todayKey();
+
+  String get selectedDate => _selectedDate;
+
+  void setDate(String date) {
+    if (_selectedDate == date) {
+      return;
+    }
+    _selectedDate = date;
     notifyListeners();
   }
 }

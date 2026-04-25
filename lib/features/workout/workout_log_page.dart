@@ -20,16 +20,18 @@ class WorkoutLogPage extends StatefulWidget {
 class _WorkoutLogPageState extends State<WorkoutLogPage> {
   static final DateFormat _timeFormat = DateFormat('HH:mm');
 
-  Future<List<WorkoutSession>> _loadSessions(BuildContext context) {
+  Future<List<WorkoutSession>> _loadSessions(BuildContext context, String day) {
     return context
         .read<AppServices>()
         .workoutRepository
-        .getAllWorkoutSessions();
+        .getWorkoutSessionsByDate(day);
   }
 
-  Future<void> _openAddWorkout(BuildContext context) async {
+  Future<void> _openAddWorkout(BuildContext context, String initialDate) async {
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => const AddWorkoutPage()),
+      MaterialPageRoute<bool>(
+        builder: (_) => AddWorkoutPage(initialDate: initialDate),
+      ),
     );
 
     if (saved == true && context.mounted) {
@@ -131,34 +133,87 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
 
   String _formatStartTime(DateTime startedAt) => _timeFormat.format(startedAt);
 
+  Future<void> _pickDate(
+    BuildContext context,
+    SelectedDateNotifier selectedDateNotifier,
+  ) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateUtilsX.parseDay(selectedDateNotifier.selectedDate),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (selected != null && context.mounted) {
+      selectedDateNotifier.setDate(DateUtilsX.formatDate(selected));
+    }
+  }
+
+  void _shiftDate(SelectedDateNotifier selectedDateNotifier, int deltaDays) {
+    final current = DateUtilsX.parseDay(selectedDateNotifier.selectedDate);
+    final next = current.add(Duration(days: deltaDays));
+    selectedDateNotifier.setDate(DateUtilsX.formatDate(next));
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
 
-    return Consumer<RefreshNotifier>(
-      builder: (context, refresh, _) {
+    return Consumer2<RefreshNotifier, SelectedDateNotifier>(
+      builder: (context, refresh, selectedDateNotifier, _) {
         refresh.version;
+        final selectedDate = selectedDateNotifier.selectedDate;
         return Column(
           children: <Widget>[
             GlassPanel(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.icon(
-                  onPressed: () => _openAddWorkout(context),
-                  icon: const Icon(Icons.add),
-                  label: Text(strings.addWorkout),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        onPressed: () => _shiftDate(selectedDateNotifier, -1),
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Expanded(
+                        child: Text(
+                          DateUtilsX.formatReadable(selectedDate),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _shiftDate(selectedDateNotifier, 1),
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            _pickDate(context, selectedDateNotifier),
+                        child: Text(strings.change),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: () => _openAddWorkout(context, selectedDate),
+                    icon: const Icon(Icons.add),
+                    label: Text(strings.addWorkout),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 54),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
             Expanded(
               child: FutureBuilder<List<WorkoutSession>>(
-                future: _loadSessions(context),
+                future: _loadSessions(context, selectedDate),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
                     return const Center(child: CircularProgressIndicator());
@@ -192,7 +247,12 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
 
                   return ListView.builder(
                     itemCount: plans.length,
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: EdgeInsets.only(
+                      bottom:
+                          MediaQuery.paddingOf(context).bottom +
+                          kBottomNavigationBarHeight +
+                          24,
+                    ),
                     itemBuilder: (context, index) {
                       final plan = plans[index];
                       return GlassPanel(

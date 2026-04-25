@@ -17,7 +17,9 @@ import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
 
 class AddWorkoutPage extends StatefulWidget {
-  const AddWorkoutPage({super.key});
+  const AddWorkoutPage({super.key, this.initialDate});
+
+  final String? initialDate;
 
   @override
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
@@ -34,7 +36,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
   late final List<_ExerciseOption> _exerciseOptions;
 
-  String _date = DateUtilsX.todayKey();
+  late String _date;
   String? _selectedBodyPartFilter;
   double _profileWeightKg = 65;
   bool _saving = false;
@@ -42,6 +44,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   @override
   void initState() {
     super.initState();
+    _date = widget.initialDate ?? DateUtilsX.todayKey();
     _exerciseOptions = AppConstants.bodyPartExercises.entries
         .expand(
           (entry) => entry.value.map(

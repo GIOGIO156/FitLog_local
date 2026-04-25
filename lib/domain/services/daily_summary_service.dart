@@ -75,7 +75,8 @@ class DailySummaryService {
     final macroRatio = _resolveMacroRatio(profile);
     final targetProteinG =
         targetIntake * macroRatio.protein / _proteinCaloriesPerGram;
-    final targetCarbsG = targetIntake * macroRatio.carbs / _carbsCaloriesPerGram;
+    final targetCarbsG =
+        targetIntake * macroRatio.carbs / _carbsCaloriesPerGram;
     final targetFatG = targetIntake * macroRatio.fat / _fatCaloriesPerGram;
     final remainingProteinG = targetProteinG - protein;
     final remainingCarbsG = targetCarbsG - carbs;
@@ -124,7 +125,9 @@ class DailySummaryService {
     final protein = profile.proteinRatioPercent <= 0
         ? 0
         : profile.proteinRatioPercent;
-    final carbs = profile.carbsRatioPercent <= 0 ? 0 : profile.carbsRatioPercent;
+    final carbs = profile.carbsRatioPercent <= 0
+        ? 0
+        : profile.carbsRatioPercent;
     final fat = profile.fatRatioPercent <= 0 ? 0 : profile.fatRatioPercent;
     final total = protein + carbs + fat;
 

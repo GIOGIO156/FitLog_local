@@ -17,14 +17,16 @@ class FoodLogPage extends StatefulWidget {
 }
 
 class _FoodLogPageState extends State<FoodLogPage> {
-  Future<List<FoodRecord>> _loadRecords(BuildContext context) {
-    return context.read<AppServices>().foodRepository.getAllFoodRecords();
+  Future<List<FoodRecord>> _loadRecords(BuildContext context, String day) {
+    return context.read<AppServices>().foodRepository.getFoodRecordsByDate(day);
   }
 
-  Future<void> _openAddFood(BuildContext context) async {
-    final saved = await Navigator.of(
-      context,
-    ).push<bool>(MaterialPageRoute<bool>(builder: (_) => const AddFoodPage()));
+  Future<void> _openAddFood(BuildContext context, String initialDate) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AddFoodPage(initialDate: initialDate),
+      ),
+    );
 
     if (saved == true && context.mounted) {
       context.read<RefreshNotifier>().markDataChanged();
@@ -87,13 +89,36 @@ class _FoodLogPageState extends State<FoodLogPage> {
     messenger.showSnackBar(SnackBar(content: Text(strings.foodDeleted)));
   }
 
+  Future<void> _pickDate(
+    BuildContext context,
+    SelectedDateNotifier selectedDateNotifier,
+  ) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateUtilsX.parseDay(selectedDateNotifier.selectedDate),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (selected != null && context.mounted) {
+      selectedDateNotifier.setDate(DateUtilsX.formatDate(selected));
+    }
+  }
+
+  void _shiftDate(SelectedDateNotifier selectedDateNotifier, int deltaDays) {
+    final current = DateUtilsX.parseDay(selectedDateNotifier.selectedDate);
+    final next = current.add(Duration(days: deltaDays));
+    selectedDateNotifier.setDate(DateUtilsX.formatDate(next));
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
 
-    return Consumer<RefreshNotifier>(
-      builder: (context, refresh, _) {
+    return Consumer2<RefreshNotifier, SelectedDateNotifier>(
+      builder: (context, refresh, selectedDateNotifier, _) {
         refresh.version;
+        final selectedDate = selectedDateNotifier.selectedDate;
 
         return Column(
           children: <Widget>[
@@ -101,6 +126,34 @@ class _FoodLogPageState extends State<FoodLogPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        onPressed: () => _shiftDate(selectedDateNotifier, -1),
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Expanded(
+                        child: Text(
+                          DateUtilsX.formatReadable(selectedDate),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _shiftDate(selectedDateNotifier, 1),
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            _pickDate(context, selectedDateNotifier),
+                        child: Text(strings.change),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     strings.quickActions,
                     style: const TextStyle(
@@ -110,7 +163,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
                   ),
                   const SizedBox(height: 14),
                   FilledButton.icon(
-                    onPressed: () => _openAddFood(context),
+                    onPressed: () => _openAddFood(context, selectedDate),
                     icon: const Icon(Icons.add),
                     label: Text(strings.addFood),
                     style: FilledButton.styleFrom(
@@ -130,7 +183,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
             ),
             Expanded(
               child: FutureBuilder<List<FoodRecord>>(
-                future: _loadRecords(context),
+                future: _loadRecords(context, selectedDate),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
                     return const Center(child: CircularProgressIndicator());
@@ -159,7 +212,12 @@ class _FoodLogPageState extends State<FoodLogPage> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: EdgeInsets.only(
+                      bottom:
+                          MediaQuery.paddingOf(context).bottom +
+                          kBottomNavigationBarHeight +
+                          24,
+                    ),
                     itemCount: records.length,
                     itemBuilder: (context, index) {
                       final record = records[index];

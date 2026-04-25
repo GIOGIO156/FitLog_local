@@ -81,9 +81,8 @@ class _ProfilePageState extends State<ProfilePage> {
       _heightController.text = profile.heightCm.toStringAsFixed(1);
       _weightController.text = profile.weightKg.toStringAsFixed(1);
       _goalKcalController.text = profile.dailyEnergyGoalKcal.toStringAsFixed(0);
-      _proteinRatioController.text = profile.proteinRatioPercent.toStringAsFixed(
-        0,
-      );
+      _proteinRatioController.text = profile.proteinRatioPercent
+          .toStringAsFixed(0);
       _carbsRatioController.text = profile.carbsRatioPercent.toStringAsFixed(0);
       _fatRatioController.text = profile.fatRatioPercent.toStringAsFixed(0);
       _sexForFormula = profile.sexForFormula;

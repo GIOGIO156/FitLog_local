@@ -10,10 +10,32 @@ import '../../domain/models/daily_summary.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Future<DailySummary> _loadSummary(BuildContext context) {
+  Future<DailySummary> _loadSummary(BuildContext context, String day) {
     return context.read<AppServices>().dailySummaryService.getSummaryForDate(
-      DateUtilsX.todayKey(),
+      day,
     );
+  }
+
+  Future<void> _pickDate(
+    BuildContext context,
+    SelectedDateNotifier selectedDateNotifier,
+  ) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateUtilsX.parseDay(selectedDateNotifier.selectedDate),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (selected != null && context.mounted) {
+      selectedDateNotifier.setDate(DateUtilsX.formatDate(selected));
+    }
+  }
+
+  void _shiftDate(SelectedDateNotifier selectedDateNotifier, int deltaDays) {
+    final current = DateUtilsX.parseDay(selectedDateNotifier.selectedDate);
+    final next = current.add(Duration(days: deltaDays));
+    selectedDateNotifier.setDate(DateUtilsX.formatDate(next));
   }
 
   String _remainingText(BuildContext context, double remainingCalories) {
@@ -34,11 +56,12 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = context.strings;
 
-    return Consumer<RefreshNotifier>(
-      builder: (context, refresh, _) {
+    return Consumer2<RefreshNotifier, SelectedDateNotifier>(
+      builder: (context, refresh, selectedDateNotifier, _) {
         refresh.version;
+        final selectedDate = selectedDateNotifier.selectedDate;
         return FutureBuilder<DailySummary>(
-          future: _loadSummary(context),
+          future: _loadSummary(context, selectedDate),
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const Center(child: CircularProgressIndicator());
@@ -65,12 +88,34 @@ class HomePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(
-                        DateUtilsX.formatReadable(summary.date),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      Row(
+                        children: <Widget>[
+                          IconButton(
+                            onPressed: () =>
+                                _shiftDate(selectedDateNotifier, -1),
+                            icon: const Icon(Icons.chevron_left),
+                          ),
+                          Expanded(
+                            child: Text(
+                              DateUtilsX.formatReadable(summary.date),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () =>
+                                _shiftDate(selectedDateNotifier, 1),
+                            icon: const Icon(Icons.chevron_right),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                _pickDate(context, selectedDateNotifier),
+                            child: Text(strings.change),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
                       _MetricLine(
@@ -141,7 +186,7 @@ class HomePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        strings.todayFoodList,
+                        strings.foodLogTitle,
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
@@ -168,7 +213,7 @@ class HomePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        strings.todayWorkoutList,
+                        strings.workoutLogTitle,
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,

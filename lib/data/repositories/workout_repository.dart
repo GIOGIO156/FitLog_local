@@ -51,7 +51,7 @@ class WorkoutRepository {
     final existingCreatedAt =
         existingRows.first['created_at']?.toString() ?? now;
     final payload = session.copyWith(
-      createdAt: existingCreatedAt,
+      createdAt: session.createdAt ?? existingCreatedAt,
       updatedAt: now,
     );
 

@@ -139,7 +139,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
         items: _items.map((item) => item.toFoodItem()).toList(),
       );
 
-      await context.read<AppServices>().foodRepository.updateFoodRecord(updated);
+      await context.read<AppServices>().foodRepository.updateFoodRecord(
+        updated,
+      );
 
       if (!mounted) {
         return;

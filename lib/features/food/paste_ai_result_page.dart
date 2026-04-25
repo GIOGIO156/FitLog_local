@@ -6,7 +6,9 @@ import '../../domain/services/nutrition_calculator.dart';
 import 'food_preview_page.dart';
 
 class PasteAiResultPage extends StatefulWidget {
-  const PasteAiResultPage({super.key});
+  const PasteAiResultPage({super.key, this.initialDate});
+
+  final String? initialDate;
 
   @override
   State<PasteAiResultPage> createState() => _PasteAiResultPageState();
@@ -36,13 +38,14 @@ class _PasteAiResultPageState extends State<PasteAiResultPage> {
     setState(() => _isParsing = true);
     try {
       final parsed = NutritionCalculator.parseAiFoodJson(input);
+      final prepared = parsed.copyWith(date: widget.initialDate ?? parsed.date);
       if (!mounted) {
         return;
       }
 
       final saved = await Navigator.of(context).push<bool>(
         MaterialPageRoute<bool>(
-          builder: (_) => FoodPreviewPage(initialRecord: parsed),
+          builder: (_) => FoodPreviewPage(initialRecord: prepared),
         ),
       );
 

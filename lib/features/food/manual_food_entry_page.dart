@@ -9,7 +9,9 @@ import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
 
 class ManualFoodEntryPage extends StatefulWidget {
-  const ManualFoodEntryPage({super.key});
+  const ManualFoodEntryPage({super.key, this.initialDate});
+
+  final String? initialDate;
 
   @override
   State<ManualFoodEntryPage> createState() => _ManualFoodEntryPageState();
@@ -26,8 +28,14 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
   final _fatController = TextEditingController();
   final _notesController = TextEditingController();
 
-  String _date = DateUtilsX.todayKey();
+  late String _date;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _date = widget.initialDate ?? DateUtilsX.todayKey();
+  }
 
   @override
   void dispose() {
