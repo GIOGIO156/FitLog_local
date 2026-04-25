@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/daily_summary.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _showDetailedMetrics = false;
 
   Future<DailySummary> _loadSummary(BuildContext context, String day) {
     return context.read<AppServices>().dailySummaryService.getSummaryForDate(
@@ -60,6 +68,7 @@ class HomePage extends StatelessWidget {
       builder: (context, refresh, selectedDateNotifier, _) {
         refresh.version;
         final selectedDate = selectedDateNotifier.selectedDate;
+
         return FutureBuilder<DailySummary>(
           future: _loadSummary(context, selectedDate),
           builder: (context, snapshot) {
@@ -106,8 +115,7 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                           IconButton(
-                            onPressed: () =>
-                                _shiftDate(selectedDateNotifier, 1),
+                            onPressed: () => _shiftDate(selectedDateNotifier, 1),
                             icon: const Icon(Icons.chevron_right),
                           ),
                           TextButton(
@@ -118,65 +126,39 @@ class HomePage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      _MetricLine(
-                        label: strings.caloriesInTodayLabel,
-                        value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
+                      Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            setState(() {
+                              _showDetailedMetrics = !_showDetailedMetrics;
+                            });
+                          },
+                          child: _OverviewHero(
+                            summary: summary,
+                            strings: strings,
+                            expanded: _showDetailedMetrics,
+                          ),
+                        ),
                       ),
-                      _MetricLine(
-                        label: strings.exerciseCaloriesTodayLabel,
-                        value:
-                            '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
-                      ),
-                      _MetricLine(
-                        label: 'BMR',
-                        value: summary.bmr.toStringAsFixed(0),
-                      ),
-                      _MetricLine(
-                        label: 'TDEE',
-                        value: summary.tdeeReference.toStringAsFixed(0),
-                      ),
-                      _MetricLine(
-                        label: strings.targetIntakeLabel,
-                        value: summary.targetIntake.toStringAsFixed(0),
-                      ),
-                      _MetricLine(
-                        label: strings.remainingCaloriesLabel,
-                        value: summary.remainingCalories.toStringAsFixed(0),
-                      ),
-                      _MetricLine(
-                        label: '${strings.proteinLabel} (g)',
-                        value: summary.proteinG.toStringAsFixed(1),
-                      ),
-                      _MetricLine(
-                        label: '${strings.carbsLabel} (g)',
-                        value: summary.carbsG.toStringAsFixed(1),
-                      ),
-                      _MetricLine(
-                        label: '${strings.fatLabel} (g)',
-                        value: summary.fatG.toStringAsFixed(1),
-                      ),
-                      const SizedBox(height: 6),
-                      _MetricLine(
-                        label: strings.remainingProteinLabel,
-                        value: summary.remainingProteinG.toStringAsFixed(1),
-                      ),
-                      _MetricLine(
-                        label: strings.remainingCarbsLabel,
-                        value: summary.remainingCarbsG.toStringAsFixed(1),
-                      ),
-                      _MetricLine(
-                        label: strings.remainingFatLabel,
-                        value: summary.remainingFatG.toStringAsFixed(1),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _remainingText(context, summary.remainingCalories),
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        strings.estimateNotice,
-                        style: Theme.of(context).textTheme.bodySmall,
+                      AnimatedCrossFade(
+                        firstChild: const SizedBox.shrink(),
+                        secondChild: Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: _DashboardDetails(
+                            summary: summary,
+                            strings: strings,
+                            remainingText: _remainingText(
+                              context,
+                              summary.remainingCalories,
+                            ),
+                          ),
+                        ),
+                        crossFadeState: _showDetailedMetrics
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                        duration: const Duration(milliseconds: 220),
                       ),
                     ],
                   ),
@@ -242,6 +224,271 @@ class HomePage extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _OverviewHero extends StatelessWidget {
+  const _OverviewHero({
+    required this.summary,
+    required this.strings,
+    required this.expanded,
+  });
+
+  final DailySummary summary;
+  final AppStrings strings;
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? <Color>[
+                  primary.withValues(alpha: 0.26),
+                  const Color(0xFF0F1D2C).withValues(alpha: 0.75),
+                ]
+              : <Color>[
+                  primary.withValues(alpha: 0.18),
+                  Colors.white.withValues(alpha: 0.72),
+                ],
+        ),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.65),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(
+                strings.caloriesInTodayLabel,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.black.withValues(alpha: 0.7),
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 4,
+            children: <Widget>[
+              Text(
+                summary.caloriesIn.toStringAsFixed(0),
+                style: const TextStyle(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w900,
+                  height: 0.95,
+                ),
+              ),
+              Text(
+                '/ ${summary.targetIntake.toStringAsFixed(0)} kcal',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.88)
+                      : Colors.black.withValues(alpha: 0.82),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _MacroSummaryCell(
+                  label: strings.proteinLabel,
+                  current: summary.proteinG,
+                  target: summary.targetProteinG,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MacroSummaryCell(
+                  label: strings.carbsLabel,
+                  current: summary.carbsG,
+                  target: summary.targetCarbsG,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MacroSummaryCell(
+                  label: strings.fatLabel,
+                  current: summary.fatG,
+                  target: summary.targetFatG,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacroSummaryCell extends StatelessWidget {
+  const _MacroSummaryCell({
+    required this.label,
+    required this.current,
+    required this.target,
+  });
+
+  final String label;
+  final double current;
+  final double target;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.80);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : Colors.black.withValues(alpha: 0.66),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            current.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.0,
+            ),
+          ),
+          Text(
+            '/ ${target.toStringAsFixed(1)} g',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.88)
+                  : Colors.black.withValues(alpha: 0.74),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardDetails extends StatelessWidget {
+  const _DashboardDetails({
+    required this.summary,
+    required this.strings,
+    required this.remainingText,
+  });
+
+  final DailySummary summary;
+  final AppStrings strings;
+  final String remainingText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        _MetricLine(
+          label: strings.caloriesInTodayLabel,
+          value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
+        ),
+        _MetricLine(
+          label: strings.exerciseCaloriesTodayLabel,
+          value: '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
+        ),
+        _MetricLine(
+          label: 'BMR',
+          value: summary.bmr.toStringAsFixed(0),
+        ),
+        _MetricLine(
+          label: 'TDEE',
+          value: summary.tdeeReference.toStringAsFixed(0),
+        ),
+        _MetricLine(
+          label: strings.targetIntakeLabel,
+          value: '${summary.targetIntake.toStringAsFixed(0)} kcal',
+        ),
+        _MetricLine(
+          label: strings.remainingCaloriesLabel,
+          value: '${summary.remainingCalories.toStringAsFixed(0)} kcal',
+        ),
+        _MetricLine(
+          label: '${strings.proteinLabel} (g)',
+          value: summary.proteinG.toStringAsFixed(1),
+        ),
+        _MetricLine(
+          label: '${strings.carbsLabel} (g)',
+          value: summary.carbsG.toStringAsFixed(1),
+        ),
+        _MetricLine(
+          label: '${strings.fatLabel} (g)',
+          value: summary.fatG.toStringAsFixed(1),
+        ),
+        const SizedBox(height: 6),
+        _MetricLine(
+          label: strings.remainingProteinLabel,
+          value: summary.remainingProteinG.toStringAsFixed(1),
+        ),
+        _MetricLine(
+          label: strings.remainingCarbsLabel,
+          value: summary.remainingCarbsG.toStringAsFixed(1),
+        ),
+        _MetricLine(
+          label: strings.remainingFatLabel,
+          value: summary.remainingFatG.toStringAsFixed(1),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            remainingText,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            strings.estimateNotice,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
     );
   }
 }
