@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
 
   Database? _database;
 
@@ -39,6 +39,17 @@ class AppDatabase {
             'ALTER TABLE workout_sessions ADD COLUMN plan_id TEXT',
           );
         }
+        if (oldVersion < 3) {
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN protein_ratio_percent REAL NOT NULL DEFAULT 30',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carbs_ratio_percent REAL NOT NULL DEFAULT 40',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN fat_ratio_percent REAL NOT NULL DEFAULT 30',
+          );
+        }
       },
     );
   }
@@ -54,6 +65,9 @@ class AppDatabase {
         activity_level TEXT NOT NULL,
         daily_energy_goal_type TEXT NOT NULL,
         daily_energy_goal_kcal REAL NOT NULL,
+        protein_ratio_percent REAL NOT NULL,
+        carbs_ratio_percent REAL NOT NULL,
+        fat_ratio_percent REAL NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )

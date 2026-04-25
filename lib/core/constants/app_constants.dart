@@ -43,6 +43,19 @@ class AppConstants {
     'Full Body': <String>['Deadlift', 'Kettlebell Swing', 'Burpee'],
   };
 
+  static const Set<String> bodyweightExercises = <String>{
+    'Pull-up',
+    'Push-up',
+    'Plank',
+    'Crunch',
+    'Hanging Leg Raise',
+    'Burpee',
+  };
+
+  static bool isBodyweightExercise(String exerciseName) {
+    return bodyweightExercises.contains(exerciseName);
+  }
+
   static const List<String> intensityLevels = <String>['low', 'medium', 'high'];
 
   static const List<String> sexOptions = <String>[
@@ -63,4 +76,8 @@ class AppConstants {
     'deficit',
     'surplus',
   ];
+
+  static const double defaultProteinRatioPercent = 30;
+  static const double defaultCarbsRatioPercent = 40;
+  static const double defaultFatRatioPercent = 30;
 }

@@ -25,6 +25,10 @@ class DailySummaryService {
     'very_active': 1.725,
   };
 
+  static const double _proteinCaloriesPerGram = 4;
+  static const double _carbsCaloriesPerGram = 4;
+  static const double _fatCaloriesPerGram = 9;
+
   Future<DailySummary> getSummaryForDate(String day) async {
     final profile =
         await _profileRepository.getProfile() ?? UserProfile.defaults;
@@ -68,6 +72,14 @@ class DailySummaryService {
     }
 
     final remaining = targetIntake - caloriesIn;
+    final macroRatio = _resolveMacroRatio(profile);
+    final targetProteinG =
+        targetIntake * macroRatio.protein / _proteinCaloriesPerGram;
+    final targetCarbsG = targetIntake * macroRatio.carbs / _carbsCaloriesPerGram;
+    final targetFatG = targetIntake * macroRatio.fat / _fatCaloriesPerGram;
+    final remainingProteinG = targetProteinG - protein;
+    final remainingCarbsG = targetCarbsG - carbs;
+    final remainingFatG = targetFatG - fat;
 
     return DailySummary(
       date: day,
@@ -80,6 +92,12 @@ class DailySummaryService {
       tdeeReference: tdee,
       targetIntake: targetIntake,
       remainingCalories: remaining,
+      targetProteinG: targetProteinG,
+      targetCarbsG: targetCarbsG,
+      targetFatG: targetFatG,
+      remainingProteinG: remainingProteinG,
+      remainingCarbsG: remainingCarbsG,
+      remainingFatG: remainingFatG,
       foodRecords: foodRecords,
       workoutSessions: workoutSessions,
     );
@@ -101,4 +119,35 @@ class DailySummaryService {
         return (male + female) / 2;
     }
   }
+
+  _MacroRatio _resolveMacroRatio(UserProfile profile) {
+    final protein = profile.proteinRatioPercent <= 0
+        ? 0
+        : profile.proteinRatioPercent;
+    final carbs = profile.carbsRatioPercent <= 0 ? 0 : profile.carbsRatioPercent;
+    final fat = profile.fatRatioPercent <= 0 ? 0 : profile.fatRatioPercent;
+    final total = protein + carbs + fat;
+
+    if (total <= 0) {
+      return const _MacroRatio(protein: 0.3, carbs: 0.4, fat: 0.3);
+    }
+
+    return _MacroRatio(
+      protein: protein / total,
+      carbs: carbs / total,
+      fat: fat / total,
+    );
+  }
+}
+
+class _MacroRatio {
+  const _MacroRatio({
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+
+  final double protein;
+  final double carbs;
+  final double fat;
 }

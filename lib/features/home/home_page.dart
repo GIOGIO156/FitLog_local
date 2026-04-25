@@ -110,6 +110,19 @@ class HomePage extends StatelessWidget {
                         label: '${strings.fatLabel} (g)',
                         value: summary.fatG.toStringAsFixed(1),
                       ),
+                      const SizedBox(height: 6),
+                      _MetricLine(
+                        label: strings.remainingProteinLabel,
+                        value: summary.remainingProteinG.toStringAsFixed(1),
+                      ),
+                      _MetricLine(
+                        label: strings.remainingCarbsLabel,
+                        value: summary.remainingCarbsG.toStringAsFixed(1),
+                      ),
+                      _MetricLine(
+                        label: strings.remainingFatLabel,
+                        value: summary.remainingFatG.toStringAsFixed(1),
+                      ),
                       const SizedBox(height: 10),
                       Text(
                         _remainingText(context, summary.remainingCalories),

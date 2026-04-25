@@ -158,6 +158,12 @@ class CsvExportService {
         'tdee_reference',
         'target_intake',
         'remaining_calories',
+        'target_protein_g',
+        'target_carbs_g',
+        'target_fat_g',
+        'remaining_protein_g',
+        'remaining_carbs_g',
+        'remaining_fat_g',
       ],
     ];
 
@@ -175,6 +181,12 @@ class CsvExportService {
         daily.tdeeReference,
         daily.targetIntake,
         daily.remainingCalories,
+        daily.targetProteinG,
+        daily.targetCarbsG,
+        daily.targetFatG,
+        daily.remainingProteinG,
+        daily.remainingCarbsG,
+        daily.remainingFatG,
       ]);
     }
 
@@ -187,6 +199,9 @@ class CsvExportService {
         'activity_level',
         'daily_energy_goal_type',
         'daily_energy_goal_kcal',
+        'protein_ratio_percent',
+        'carbs_ratio_percent',
+        'fat_ratio_percent',
       ],
       <dynamic>[
         profile.age,
@@ -196,6 +211,9 @@ class CsvExportService {
         profile.activityLevel,
         profile.dailyEnergyGoalType,
         profile.dailyEnergyGoalKcal,
+        profile.proteinRatioPercent,
+        profile.carbsRatioPercent,
+        profile.fatRatioPercent,
       ],
     ];
 

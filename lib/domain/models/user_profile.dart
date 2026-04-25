@@ -11,6 +11,9 @@ class UserProfile {
     required this.activityLevel,
     required this.dailyEnergyGoalType,
     required this.dailyEnergyGoalKcal,
+    required this.proteinRatioPercent,
+    required this.carbsRatioPercent,
+    required this.fatRatioPercent,
     this.createdAt,
     this.updatedAt,
   });
@@ -23,6 +26,9 @@ class UserProfile {
   final String activityLevel;
   final String dailyEnergyGoalType;
   final double dailyEnergyGoalKcal;
+  final double proteinRatioPercent;
+  final double carbsRatioPercent;
+  final double fatRatioPercent;
   final String? createdAt;
   final String? updatedAt;
 
@@ -35,9 +41,17 @@ class UserProfile {
     activityLevel: 'moderately_active',
     dailyEnergyGoalType: 'maintenance',
     dailyEnergyGoalKcal: 300,
+    proteinRatioPercent: AppConstants.defaultProteinRatioPercent,
+    carbsRatioPercent: AppConstants.defaultCarbsRatioPercent,
+    fatRatioPercent: AppConstants.defaultFatRatioPercent,
   );
 
   bool get isMinor => age < 18;
+
+  double get macroRatioTotal =>
+      proteinRatioPercent + carbsRatioPercent + fatRatioPercent;
+
+  bool get hasValidMacroRatio => macroRatioTotal > 0;
 
   UserProfile copyWith({
     int? id,
@@ -48,6 +62,9 @@ class UserProfile {
     String? activityLevel,
     String? dailyEnergyGoalType,
     double? dailyEnergyGoalKcal,
+    double? proteinRatioPercent,
+    double? carbsRatioPercent,
+    double? fatRatioPercent,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -66,6 +83,9 @@ class UserProfile {
           ? safeGoal
           : 'maintenance',
       dailyEnergyGoalKcal: dailyEnergyGoalKcal ?? this.dailyEnergyGoalKcal,
+      proteinRatioPercent: proteinRatioPercent ?? this.proteinRatioPercent,
+      carbsRatioPercent: carbsRatioPercent ?? this.carbsRatioPercent,
+      fatRatioPercent: fatRatioPercent ?? this.fatRatioPercent,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -81,6 +101,9 @@ class UserProfile {
       'activity_level': activityLevel,
       'daily_energy_goal_type': dailyEnergyGoalType,
       'daily_energy_goal_kcal': dailyEnergyGoalKcal,
+      'protein_ratio_percent': proteinRatioPercent,
+      'carbs_ratio_percent': carbsRatioPercent,
+      'fat_ratio_percent': fatRatioPercent,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -101,6 +124,18 @@ class UserProfile {
       dailyEnergyGoalKcal: NumberUtils.toDouble(
         map['daily_energy_goal_kcal'],
         fallback: 300,
+      ),
+      proteinRatioPercent: NumberUtils.toDouble(
+        map['protein_ratio_percent'],
+        fallback: AppConstants.defaultProteinRatioPercent,
+      ),
+      carbsRatioPercent: NumberUtils.toDouble(
+        map['carbs_ratio_percent'],
+        fallback: AppConstants.defaultCarbsRatioPercent,
+      ),
+      fatRatioPercent: NumberUtils.toDouble(
+        map['fat_ratio_percent'],
+        fallback: AppConstants.defaultFatRatioPercent,
       ),
       createdAt: map['created_at']?.toString(),
       updatedAt: map['updated_at']?.toString(),

@@ -13,6 +13,12 @@ class DailySummary {
     required this.tdeeReference,
     required this.targetIntake,
     required this.remainingCalories,
+    required this.targetProteinG,
+    required this.targetCarbsG,
+    required this.targetFatG,
+    required this.remainingProteinG,
+    required this.remainingCarbsG,
+    required this.remainingFatG,
     this.foodRecords = const <FoodRecord>[],
     this.workoutSessions = const <WorkoutSession>[],
   });
@@ -27,6 +33,12 @@ class DailySummary {
   final double tdeeReference;
   final double targetIntake;
   final double remainingCalories;
+  final double targetProteinG;
+  final double targetCarbsG;
+  final double targetFatG;
+  final double remainingProteinG;
+  final double remainingCarbsG;
+  final double remainingFatG;
   final List<FoodRecord> foodRecords;
   final List<WorkoutSession> workoutSessions;
 }

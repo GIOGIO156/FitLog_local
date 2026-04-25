@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/exercise_visuals.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -76,6 +77,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     }
 
     final completedSets = session.sets.where((set) => set.isCompleted).length;
+    final isBodyweightExercise = AppConstants.isBodyweightExercise(
+      session.exerciseName,
+    );
     final color = ExerciseVisuals.colorForBodyPart(session.bodyPart, context);
     return Scaffold(
       appBar: AppBar(title: Text(strings.workoutLogTitle)),
@@ -140,7 +144,11 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                       child: ListTile(
                         title: Text('Set ${set.setNumber}'),
                         subtitle: Text(
-                          'Weight ${set.weightKg.toStringAsFixed(1)} kg - Reps ${set.reps}',
+                          strings.setPerformanceLabel(
+                            weightKg: set.weightKg,
+                            reps: set.reps,
+                            isBodyweightExercise: isBodyweightExercise,
+                          ),
                         ),
                         trailing: set.id == null
                             ? null

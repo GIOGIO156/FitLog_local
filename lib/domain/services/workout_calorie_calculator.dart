@@ -28,8 +28,14 @@ class WorkoutCalorieCalculator {
     required double bodyWeightKg,
     required int durationMinutes,
     required String intensity,
+    double additionalLoadKg = 0,
+    bool isBodyweightExercise = false,
   }) {
     final double factor = _strengthIntensityFactor[intensity] ?? 0.06;
-    return durationMinutes * bodyWeightKg * factor;
+    final safeAdditionalLoad = additionalLoadKg < 0 ? 0 : additionalLoadKg;
+    final effectiveWeightKg = isBodyweightExercise
+        ? bodyWeightKg + safeAdditionalLoad
+        : bodyWeightKg;
+    return durationMinutes * effectiveWeightKg * factor;
   }
 }

@@ -82,7 +82,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       textAlign: TextAlign.center,
       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
       decoration: InputDecoration(
-        hintText: '0',
+        hintText: '--',
         hintStyle: TextStyle(
           color: isDark
               ? Colors.white.withValues(alpha: 0.34)
@@ -145,7 +145,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     }
   }
 
-  void _toggleExercise(_ExerciseOption option) {
+  Future<void> _toggleExercise(_ExerciseOption option) async {
     final key = _exerciseKey(option.bodyPart, option.name);
     final existing = _selectedPlans[key];
     if (existing != null) {
@@ -156,25 +156,41 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       return;
     }
 
+    final latestSession = await context
+        .read<AppServices>()
+        .workoutRepository
+        .getLatestSessionByExerciseName(option.name);
+
+    if (!mounted || _selectedPlans.containsKey(key)) {
+      return;
+    }
+
+    final draft = _ExercisePlanDraft.fromHistory(
+      bodyPart: option.bodyPart,
+      exerciseName: option.name,
+      latestSession: latestSession,
+    );
+
     setState(() {
-      _selectedPlans[key] = _ExercisePlanDraft.create(
-        bodyPart: option.bodyPart,
-        exerciseName: option.name,
-      );
+      _selectedPlans[key] = draft;
     });
   }
 
   void _addSet(_ExercisePlanDraft draft) {
+    var weight = '';
+    var reps = '';
+    if (draft.sets.isNotEmpty) {
+      final last = draft.sets.last;
+      weight = last.weightController.text;
+      reps = last.repsController.text;
+    }
+
     setState(() {
-      draft.sets.add(_SetDraft(weight: '20', reps: '10'));
+      draft.sets.add(_SetDraft(weight: weight, reps: reps));
     });
   }
 
   void _removeSet(_ExercisePlanDraft draft, int index) {
-    if (draft.sets.length <= 1) {
-      return;
-    }
-
     final target = draft.sets.removeAt(index);
     target.dispose();
     setState(() {});
@@ -204,6 +220,23 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     );
   }
 
+  double _averageAdditionalLoadKg(_ExercisePlanDraft draft) {
+    if (!draft.isBodyweight || draft.sets.isEmpty) {
+      return 0;
+    }
+
+    final normalizedLoads = draft.sets
+        .map(
+          (setDraft) =>
+              NumberUtils.toDouble(setDraft.weightController.text, fallback: 0),
+        )
+        .map((value) => value < 0 ? 0 : value)
+        .toList();
+
+    final total = normalizedLoads.fold<double>(0, (sum, value) => sum + value);
+    return total / normalizedLoads.length;
+  }
+
   double _estimateCaloriesForDraft(
     _ExercisePlanDraft draft,
     int durationPerExercise,
@@ -224,6 +257,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       bodyWeightKg: _profileWeightKg,
       durationMinutes: durationPerExercise,
       intensity: 'medium',
+      additionalLoadKg: _averageAdditionalLoadKg(draft),
+      isBodyweightExercise: draft.isBodyweight,
     );
   }
 
@@ -289,6 +324,20 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       for (final draft in drafts) {
         final sets = <WorkoutSet>[];
         if (!draft.isCardio) {
+          if (draft.sets.isEmpty) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  strings.noSetsForExercise(
+                    strings.exerciseDisplayName(draft.exerciseName),
+                  ),
+                ),
+              ),
+            );
+            setState(() => _saving = false);
+            return;
+          }
+
           for (var i = 0; i < draft.sets.length; i++) {
             final setDraft = draft.sets[i];
             final reps = NumberUtils.toInt(
@@ -631,6 +680,16 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                 )
                               else ...<Widget>[
                                 const SizedBox(height: 8),
+                                if (draft.isBodyweight)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Text(
+                                      strings.bodyweightAddedLoadHint,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ),
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Row(
@@ -639,7 +698,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          strings.weightKgShortLabel,
+                                          draft.isBodyweight
+                                              ? strings.addedWeightKgShortLabel
+                                              : strings.weightKgShortLabel,
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
@@ -855,21 +916,26 @@ class _ExercisePlanDraft {
     required this.sets,
   });
 
-  factory _ExercisePlanDraft.create({
+  factory _ExercisePlanDraft.fromHistory({
     required String bodyPart,
     required String exerciseName,
+    WorkoutSession? latestSession,
   }) {
     final isCardio = bodyPart == 'Cardio';
+    final historySets = latestSession?.sets ?? const <WorkoutSet>[];
     return _ExercisePlanDraft(
       bodyPart: bodyPart,
       exerciseName: exerciseName,
       sets: isCardio
           ? <_SetDraft>[]
-          : <_SetDraft>[
-              _SetDraft(weight: '20', reps: '10'),
-              _SetDraft(weight: '20', reps: '10'),
-              _SetDraft(weight: '20', reps: '10'),
-            ],
+          : historySets
+                .map(
+                  (set) => _SetDraft(
+                    weight: _formatWeight(set.weightKg),
+                    reps: set.reps <= 0 ? '' : set.reps.toString(),
+                  ),
+                )
+                .toList(),
     );
   }
 
@@ -878,6 +944,14 @@ class _ExercisePlanDraft {
   final List<_SetDraft> sets;
 
   bool get isCardio => bodyPart == 'Cardio';
+  bool get isBodyweight => AppConstants.isBodyweightExercise(exerciseName);
+
+  static String _formatWeight(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toStringAsFixed(1);
+  }
 
   void dispose() {
     for (final set in sets) {

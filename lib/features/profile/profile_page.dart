@@ -25,6 +25,9 @@ class _ProfilePageState extends State<ProfilePage> {
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
   final _goalKcalController = TextEditingController();
+  final _proteinRatioController = TextEditingController();
+  final _carbsRatioController = TextEditingController();
+  final _fatRatioController = TextEditingController();
 
   String _sexForFormula = AppConstants.sexOptions.last;
   String _activityLevel = AppConstants.activityLevels[2];
@@ -52,6 +55,9 @@ class _ProfilePageState extends State<ProfilePage> {
     _heightController.dispose();
     _weightController.dispose();
     _goalKcalController.dispose();
+    _proteinRatioController.dispose();
+    _carbsRatioController.dispose();
+    _fatRatioController.dispose();
     super.dispose();
   }
 
@@ -75,6 +81,11 @@ class _ProfilePageState extends State<ProfilePage> {
       _heightController.text = profile.heightCm.toStringAsFixed(1);
       _weightController.text = profile.weightKg.toStringAsFixed(1);
       _goalKcalController.text = profile.dailyEnergyGoalKcal.toStringAsFixed(0);
+      _proteinRatioController.text = profile.proteinRatioPercent.toStringAsFixed(
+        0,
+      );
+      _carbsRatioController.text = profile.carbsRatioPercent.toStringAsFixed(0);
+      _fatRatioController.text = profile.fatRatioPercent.toStringAsFixed(0);
       _sexForFormula = profile.sexForFormula;
       _activityLevel = profile.activityLevel;
       _dailyGoalType = profile.dailyEnergyGoalType;
@@ -95,6 +106,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   double get _goalKcal =>
       NumberUtils.toDouble(_goalKcalController.text, fallback: 0);
+
+  double get _proteinRatioPercent =>
+      NumberUtils.toDouble(_proteinRatioController.text, fallback: 0);
+
+  double get _carbsRatioPercent =>
+      NumberUtils.toDouble(_carbsRatioController.text, fallback: 0);
+
+  double get _fatRatioPercent =>
+      NumberUtils.toDouble(_fatRatioController.text, fallback: 0);
+
+  double get _macroRatioTotal =>
+      _proteinRatioPercent + _carbsRatioPercent + _fatRatioPercent;
 
   bool get _isMinor => _age > 0 && _age < 18;
 
@@ -124,6 +147,9 @@ class _ProfilePageState extends State<ProfilePage> {
       activityLevel: _activityLevel,
       dailyEnergyGoalType: _dailyGoalType,
       dailyEnergyGoalKcal: _goalKcal,
+      proteinRatioPercent: _proteinRatioPercent,
+      carbsRatioPercent: _carbsRatioPercent,
+      fatRatioPercent: _fatRatioPercent,
     );
 
     return context.read<AppServices>().dailySummaryService.calculateBmr(
@@ -170,6 +196,13 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
 
+    if ((_macroRatioTotal - 100).abs() > 0.01) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.macroRatioTotalInvalid)));
+      return;
+    }
+
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
     final messenger = ScaffoldMessenger.of(context);
@@ -185,6 +218,9 @@ class _ProfilePageState extends State<ProfilePage> {
       activityLevel: _activityLevel,
       dailyEnergyGoalType: _dailyGoalType,
       dailyEnergyGoalKcal: _goalKcal,
+      proteinRatioPercent: _proteinRatioPercent,
+      carbsRatioPercent: _carbsRatioPercent,
+      fatRatioPercent: _fatRatioPercent,
       createdAt: _loadedProfile?.createdAt,
       updatedAt: _loadedProfile?.updatedAt,
     );
@@ -475,6 +511,80 @@ class _ProfilePageState extends State<ProfilePage> {
                     decimal: true,
                   ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  strings.macroRatioSettingsLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _proteinRatioController,
+                  decoration: InputDecoration(
+                    labelText: strings.proteinRatioPercentLabel,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (value) {
+                    final ratio = NumberUtils.toDouble(value, fallback: -1);
+                    if (ratio < 0 || ratio > 100) {
+                      return strings.enterValidMacroRatio;
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _carbsRatioController,
+                  decoration: InputDecoration(
+                    labelText: strings.carbsRatioPercentLabel,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (value) {
+                    final ratio = NumberUtils.toDouble(value, fallback: -1);
+                    if (ratio < 0 || ratio > 100) {
+                      return strings.enterValidMacroRatio;
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _fatRatioController,
+                  decoration: InputDecoration(
+                    labelText: strings.fatRatioPercentLabel,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (value) {
+                    final ratio = NumberUtils.toDouble(value, fallback: -1);
+                    if (ratio < 0 || ratio > 100) {
+                      return strings.enterValidMacroRatio;
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${strings.macroRatioHint} (${_macroRatioTotal.toStringAsFixed(1)}%)',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if ((_macroRatioTotal - 100).abs() > 0.01)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      strings.macroRatioTotalInvalid,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
                 if (_dailyGoalType == 'deficit' && _goalKcal > 700)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),

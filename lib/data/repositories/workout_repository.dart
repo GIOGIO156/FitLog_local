@@ -129,6 +129,27 @@ class WorkoutRepository {
     return WorkoutSession.fromMap(rows.first, sets: sets);
   }
 
+  Future<WorkoutSession?> getLatestSessionByExerciseName(
+    String exerciseName,
+  ) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'workout_sessions',
+      where: 'exercise_name = ?',
+      whereArgs: <Object?>[exerciseName],
+      orderBy: 'created_at DESC, id DESC',
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    final int id = rows.first['id'] as int;
+    final sets = await getSetsBySessionId(id);
+    return WorkoutSession.fromMap(rows.first, sets: sets);
+  }
+
   Future<List<WorkoutSession>> getWorkoutSessionsByPlanId(String planId) async {
     final db = await _database.database;
     final rows = await db.query(

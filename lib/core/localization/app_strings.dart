@@ -118,6 +118,28 @@ class AppStrings {
   String get activityLevelLabel => _t('Activity Level', '活动水平');
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
   String get dailyGoalKcalLabel => _t('Goal Delta (kcal)', '目标热量差 (kcal)');
+  String get macroRatioSettingsLabel => _t(
+    'Daily Macro Ratio (%)',
+    '每日三大营养比例 (%)',
+  );
+  String get proteinRatioPercentLabel => _t(
+    'Protein Ratio (%)',
+    '蛋白质比例 (%)',
+  );
+  String get carbsRatioPercentLabel => _t('Carbs Ratio (%)', '碳水比例 (%)');
+  String get fatRatioPercentLabel => _t('Fat Ratio (%)', '脂肪比例 (%)');
+  String get macroRatioHint => _t(
+    'Protein + Carbs + Fat should equal 100%.',
+    '蛋白质 + 碳水 + 脂肪 应等于 100%。',
+  );
+  String get macroRatioTotalInvalid => _t(
+    'Macro ratio total must be 100.',
+    '三大营养比例总和必须为 100。',
+  );
+  String get enterValidMacroRatio => _t(
+    'Enter a valid ratio between 0 and 100.',
+    '请输入 0 到 100 的有效比例。',
+  );
   String get dateLabel => _t('Date', '日期');
   String get notesLabel => _t('Notes', '备注');
   String get durationMinutesLabel => _t('Duration (minutes)', '时长 (分钟)');
@@ -221,10 +243,15 @@ class AppStrings {
   String get setsPlan => _t('Sets Plan', '组数计划');
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
+  String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
   String get repsLabel => _t('Reps', '次数');
   String get addSet => _t('Add Set', '新增组');
   String get removeExercise => _t('Remove exercise', '移除动作');
   String get removeSet => _t('Remove set', '移除组');
+  String get bodyweightAddedLoadHint => _t(
+    'For bodyweight exercises, weight means added load. Enter 0 for bodyweight only.',
+    '自重动作中“重量”表示额外加重；填 0 表示仅自重。',
+  );
   String get completeBeforeSaveHint => _t(
     'You can mark completed sets before saving this plan.',
     '保存前可先勾选已完成组，便于训练中直接记录。',
@@ -254,6 +281,10 @@ class AppStrings {
     'Please check set values for $exerciseName.',
     '请检查“$exerciseName”的组数参数。',
   );
+  String noSetsForExercise(String exerciseName) => _t(
+    'Please add at least one set for $exerciseName.',
+    '请至少为“$exerciseName”添加一组。',
+  );
 
   String get completeSet => _t('Complete Set', '完成本组');
   String get completed => _t('Completed', '已完成');
@@ -269,6 +300,12 @@ class AppStrings {
   String get proteinLabel => _t('Protein', '蛋白质');
   String get carbsLabel => _t('Carbs', '碳水');
   String get fatLabel => _t('Fat', '脂肪');
+  String get remainingProteinLabel => _t(
+    'Protein remaining (g)',
+    '蛋白质剩余 (g)',
+  );
+  String get remainingCarbsLabel => _t('Carbs remaining (g)', '碳水剩余 (g)');
+  String get remainingFatLabel => _t('Fat remaining (g)', '脂肪剩余 (g)');
   String get tdeeReferenceLabel => _t('TDEE reference', 'TDEE 参考');
   String get todayExerciseCaloriesLabel =>
       _t('Today exercise calories', '今日运动消耗');
@@ -399,5 +436,26 @@ class AppStrings {
       default:
         return _t('Medium', '中');
     }
+  }
+
+  String setPerformanceLabel({
+    required double weightKg,
+    required int reps,
+    required bool isBodyweightExercise,
+  }) {
+    if (isBodyweightExercise) {
+      if (weightKg <= 0) {
+        return _t('Bodyweight - Reps $reps', '自重 - $reps 次');
+      }
+      return _t(
+        'Bodyweight +${weightKg.toStringAsFixed(1)} kg - Reps $reps',
+        '自重 +${weightKg.toStringAsFixed(1)} kg - $reps 次',
+      );
+    }
+
+    return _t(
+      'Weight ${weightKg.toStringAsFixed(1)} kg - Reps $reps',
+      '重量 ${weightKg.toStringAsFixed(1)} kg - $reps 次',
+    );
   }
 }
