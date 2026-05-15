@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -27,19 +25,18 @@ class AddWorkoutPage extends StatefulWidget {
 
 class _AddWorkoutPageState extends State<AddWorkoutPage> {
   final _formKey = GlobalKey<FormState>();
-  final _searchController = TextEditingController();
-  final _durationController = TextEditingController(text: '45');
   final _notesController = TextEditingController();
 
   final Map<String, _ExercisePlanDraft> _selectedPlans =
       <String, _ExercisePlanDraft>{};
 
   late final List<_ExerciseOption> _exerciseOptions;
+  late final Map<String, _ExerciseOption> _exerciseOptionsByKey;
 
   late String _date;
-  String? _selectedBodyPartFilter;
   double _profileWeightKg = 65;
   bool _saving = false;
+  bool _updatingExerciseSelection = false;
 
   @override
   void initState() {
@@ -52,13 +49,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           ),
         )
         .toList();
+    _exerciseOptionsByKey = <String, _ExerciseOption>{
+      for (final option in _exerciseOptions)
+        _exerciseKey(option.bodyPart, option.name): option,
+    };
     _loadProfileWeight();
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _durationController.dispose();
     _notesController.dispose();
     for (final draft in _selectedPlans.values) {
       draft.dispose();
@@ -66,60 +65,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     super.dispose();
   }
 
-  int get _durationMinutes =>
-      NumberUtils.toInt(_durationController.text, fallback: 0);
-
   List<_ExercisePlanDraft> get _selectedDrafts =>
       _selectedPlans.values.toList();
-
-  Widget _buildSetValueInput({
-    required BuildContext context,
-    required TextEditingController controller,
-    required TextInputType keyboardType,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-      decoration: InputDecoration(
-        hintText: '--',
-        hintStyle: TextStyle(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.34)
-              : Colors.black.withValues(alpha: 0.34),
-        ),
-        filled: true,
-        fillColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.72),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 12,
-        ),
-      ),
-    );
-  }
-
-  int get _perExerciseDuration {
-    final selectedCount = math.max(1, _selectedPlans.length);
-    final duration = _durationMinutes;
-    if (duration <= 0) {
-      return 0;
-    }
-    return math.max(1, (duration / selectedCount).round());
-  }
-
-  double get _estimatedTotalCalories {
-    final durationPerExercise = _perExerciseDuration;
-    return _selectedDrafts.fold<double>(
-      0,
-      (sum, draft) =>
-          sum + _estimateCaloriesForDraft(draft, durationPerExercise),
-    );
-  }
 
   Future<void> _loadProfileWeight() async {
     final profile = await context
@@ -148,48 +95,99 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     }
   }
 
-  Future<void> _toggleExercise(_ExerciseOption option) async {
-    final key = _exerciseKey(option.bodyPart, option.name);
-    final existing = _selectedPlans[key];
-    if (existing != null) {
-      existing.dispose();
-      setState(() {
-        _selectedPlans.remove(key);
-      });
-      return;
-    }
+  String _exerciseKey(String bodyPart, String exerciseName) =>
+      '$bodyPart::$exerciseName';
 
-    final latestSession = await context
-        .read<AppServices>()
-        .workoutRepository
-        .getLatestSessionByExerciseName(option.name);
+  String _createPlanId() => DateTime.now().microsecondsSinceEpoch.toString();
 
-    if (!mounted || _selectedPlans.containsKey(key)) {
-      return;
-    }
-
-    final draft = _ExercisePlanDraft.fromHistory(
-      bodyPart: option.bodyPart,
-      exerciseName: option.name,
-      latestSession: latestSession,
+  Future<void> _openExerciseLibraryPicker() async {
+    final selectedKeys = _selectedPlans.keys.toSet();
+    final pickedKeys = await Navigator.of(context).push<List<String>>(
+      MaterialPageRoute<List<String>>(
+        builder: (_) => _ExerciseLibraryPickerPage(
+          options: _exerciseOptions,
+          initiallySelectedKeys: selectedKeys,
+        ),
+      ),
     );
 
+    if (pickedKeys == null || !mounted) {
+      return;
+    }
+
+    await _applyExerciseSelection(pickedKeys);
+  }
+
+  Future<void> _applyExerciseSelection(List<String> pickedKeysInOrder) async {
+    setState(() => _updatingExerciseSelection = true);
+
+    final removedKeys = _selectedPlans.keys
+        .where((key) => !pickedKeysInOrder.contains(key))
+        .toList();
+    for (final key in removedKeys) {
+      _selectedPlans.remove(key)?.dispose();
+    }
+
+    final repository = context.read<AppServices>().workoutRepository;
+    final newDrafts = <String, _ExercisePlanDraft>{};
+    for (final key in pickedKeysInOrder) {
+      if (_selectedPlans.containsKey(key)) {
+        continue;
+      }
+      final option = _exerciseOptionsByKey[key];
+      if (option == null) {
+        continue;
+      }
+      final latestSession = await repository.getLatestSessionByExerciseName(
+        option.name,
+      );
+      if (!mounted) {
+        return;
+      }
+      newDrafts[key] = _ExercisePlanDraft.fromHistory(
+        bodyPart: option.bodyPart,
+        exerciseName: option.name,
+        latestSession: latestSession,
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
-      _selectedPlans[key] = draft;
+      final reordered = <String, _ExercisePlanDraft>{};
+      for (final key in pickedKeysInOrder) {
+        final existing = _selectedPlans[key] ?? newDrafts[key];
+        if (existing != null) {
+          reordered[key] = existing;
+        }
+      }
+
+      for (final entry in newDrafts.entries) {
+        reordered.putIfAbsent(entry.key, () => entry.value);
+      }
+
+      _selectedPlans
+        ..clear()
+        ..addAll(reordered);
+      _updatingExerciseSelection = false;
     });
   }
 
   void _addSet(_ExercisePlanDraft draft) {
-    var weight = '';
-    var reps = '';
+    var defaultWeight = '';
+    var defaultReps = '';
     if (draft.sets.isNotEmpty) {
       final last = draft.sets.last;
-      weight = last.weightController.text;
-      reps = last.repsController.text;
+      defaultWeight = last.effectiveWeightText;
+      defaultReps = last.effectiveRepsText;
     }
 
     setState(() {
-      draft.sets.add(_SetDraft(weight: weight, reps: reps));
+      draft.sets.add(
+        _SetDraft(defaultWeight: defaultWeight, defaultReps: defaultReps),
+      );
     });
   }
 
@@ -212,47 +210,17 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     });
   }
 
-  String _exerciseKey(String bodyPart, String exerciseName) =>
-      '$bodyPart::$exerciseName';
-
-  String _createPlanId() => DateTime.now().microsecondsSinceEpoch.toString();
-
-  bool _isExerciseSelected(_ExerciseOption option) {
-    return _selectedPlans.containsKey(
-      _exerciseKey(option.bodyPart, option.name),
-    );
-  }
-
-  double _estimateCaloriesForDraft(
-    _ExercisePlanDraft draft,
-    int durationPerExercise,
-  ) {
-    if (draft.isCardio) {
-      if (durationPerExercise <= 0) {
-        return 0;
-      }
-      return WorkoutCalorieCalculator.estimateCardioCalories(
-        exerciseName: draft.exerciseName,
-        bodyWeightKg: _profileWeightKg,
-        durationMinutes: durationPerExercise,
-      );
-    }
-
-    final sets = _buildSetsForPreview(draft);
-    return WorkoutCalorieCalculator.estimateStrengthCalories(
-      exerciseName: draft.exerciseName,
-      bodyWeightKg: _profileWeightKg,
-      sets: sets,
-    );
+  int _durationForDraft(_ExercisePlanDraft draft) {
+    return NumberUtils.toInt(draft.effectiveDurationText, fallback: 0);
   }
 
   List<WorkoutSet> _buildSetsForPreview(_ExercisePlanDraft draft) {
     final sets = <WorkoutSet>[];
     for (var i = 0; i < draft.sets.length; i++) {
       final setDraft = draft.sets[i];
-      final reps = NumberUtils.toInt(setDraft.repsController.text, fallback: 0);
+      final reps = NumberUtils.toInt(setDraft.effectiveRepsText, fallback: 0);
       final weight = NumberUtils.toDouble(
-        setDraft.weightController.text,
+        setDraft.effectiveWeightText,
         fallback: 0,
       );
       if (reps <= 0) {
@@ -270,30 +238,66 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     return sets;
   }
 
-  List<_ExerciseOption> _buildFilteredOptions(
-    String queryLower,
-    AppStrings strings,
-  ) {
-    return _exerciseOptions.where((option) {
-      final filterMatch =
-          _selectedBodyPartFilter == null ||
-          option.bodyPart == _selectedBodyPartFilter;
-      if (!filterMatch) {
-        return false;
+  double _estimateCaloriesForDraft(_ExercisePlanDraft draft) {
+    final durationMinutes = _durationForDraft(draft);
+    if (draft.isCardio) {
+      if (durationMinutes <= 0) {
+        return 0;
       }
+      return WorkoutCalorieCalculator.estimateCardioCalories(
+        exerciseName: draft.exerciseName,
+        bodyWeightKg: _profileWeightKg,
+        durationMinutes: durationMinutes,
+      );
+    }
 
-      if (queryLower.isEmpty) {
-        return true;
-      }
+    final sets = _buildSetsForPreview(draft);
+    return WorkoutCalorieCalculator.estimateStrengthCalories(
+      exerciseName: draft.exerciseName,
+      bodyWeightKg: _profileWeightKg,
+      sets: sets,
+    );
+  }
 
-      final candidates = <String>{
-        option.name.toLowerCase(),
-        strings.exerciseDisplayName(option.name).toLowerCase(),
-        option.bodyPart.toLowerCase(),
-        strings.bodyPartLabel(option.bodyPart).toLowerCase(),
-      };
-      return candidates.any((text) => text.contains(queryLower));
-    }).toList();
+  double get _estimatedTotalCalories {
+    return _selectedDrafts.fold<double>(
+      0,
+      (sum, draft) => sum + _estimateCaloriesForDraft(draft),
+    );
+  }
+
+  Widget _buildSetValueInput({
+    required BuildContext context,
+    required TextEditingController controller,
+    required TextInputType keyboardType,
+    required String hintText,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textAlign: TextAlign.center,
+      selectAllOnFocus: true,
+      onChanged: (_) => setState(() {}),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      decoration: InputDecoration(
+        hintText: hintText.isEmpty ? '--' : hintText,
+        hintStyle: TextStyle(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.34)
+              : Colors.black.withValues(alpha: 0.34),
+        ),
+        filled: true,
+        fillColor: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.72),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 12,
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -309,17 +313,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       return;
     }
 
-    final totalDuration = _durationMinutes;
-    if (totalDuration <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(strings.invalidDuration)));
-      return;
-    }
-
     final now = DateTime.now().toIso8601String();
     final planId = _createPlanId();
-    final durationPerExercise = _perExerciseDuration;
     final notes = _notesController.text.trim();
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
@@ -330,6 +325,21 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
     try {
       for (final draft in drafts) {
+        final durationMinutes = _durationForDraft(draft);
+        if (durationMinutes <= 0) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                strings.invalidDurationForExercise(
+                  strings.exerciseDisplayName(draft.exerciseName),
+                ),
+              ),
+            ),
+          );
+          setState(() => _saving = false);
+          return;
+        }
+
         final sets = <WorkoutSet>[];
         if (!draft.isCardio) {
           if (draft.sets.isEmpty) {
@@ -349,11 +359,11 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           for (var i = 0; i < draft.sets.length; i++) {
             final setDraft = draft.sets[i];
             final reps = NumberUtils.toInt(
-              setDraft.repsController.text,
+              setDraft.effectiveRepsText,
               fallback: -1,
             );
             final weight = NumberUtils.toDouble(
-              setDraft.weightController.text,
+              setDraft.effectiveWeightText,
               fallback: double.nan,
             );
             if (reps <= 0 || weight.isNaN || weight < 0) {
@@ -388,13 +398,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           bodyPart: draft.bodyPart,
           exerciseName: draft.exerciseName,
           exerciseType: draft.isCardio ? 'cardio' : 'strength',
-          durationMinutes: durationPerExercise,
+          durationMinutes: durationMinutes,
           intensity: 'medium',
           estimatedCalories: draft.isCardio
               ? WorkoutCalorieCalculator.estimateCardioCalories(
                   exerciseName: draft.exerciseName,
                   bodyWeightKg: _profileWeightKg,
-                  durationMinutes: durationPerExercise,
+                  durationMinutes: durationMinutes,
                 )
               : WorkoutCalorieCalculator.estimateStrengthCalories(
                   exerciseName: draft.exerciseName,
@@ -434,9 +444,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
-    final queryLower = _searchController.text.trim().toLowerCase();
-    final filtered = _buildFilteredOptions(queryLower, strings);
-    final durationPerExercise = _perExerciseDuration;
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.addWorkout)),
@@ -457,7 +464,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                   Row(
                     children: <Widget>[
                       Text(
-                        strings.exercisesLibrary,
+                        strings.selectedExercises,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -482,119 +489,26 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
-                      hintText: strings.searchExercise,
-                    ),
-                    onChanged: (_) => setState(() {}),
+                  const SizedBox(height: 10),
+                  Text(
+                    strings.exercisePickerCollapsedHint,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 44,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            selected: _selectedBodyPartFilter == null,
-                            label: Text(strings.allBodyParts),
-                            onSelected: (_) {
-                              setState(() => _selectedBodyPartFilter = null);
-                            },
-                          ),
-                        ),
-                        ...AppConstants.bodyParts.map((bodyPart) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              selected: _selectedBodyPartFilter == bodyPart,
-                              label: Text(strings.bodyPartLabel(bodyPart)),
-                              onSelected: (_) {
-                                setState(
-                                  () => _selectedBodyPartFilter = bodyPart,
-                                );
-                              },
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 300,
-                    child: ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => Divider(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        height: 10,
-                      ),
-                      itemBuilder: (context, index) {
-                        final option = filtered[index];
-                        final selected = _isExerciseSelected(option);
-                        final color = ExerciseVisuals.colorForBodyPart(
-                          option.bodyPart,
-                          context,
-                        );
-                        return InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () => _toggleExercise(option),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: selected
-                                  ? color.withValues(alpha: 0.16)
-                                  : Colors.transparent,
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                ExerciseThumbnail(
-                                  bodyPart: option.bodyPart,
-                                  exerciseName: option.name,
-                                  color: color,
-                                  size: 58,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        strings.exerciseDisplayName(
-                                          option.name,
-                                        ),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        strings.bodyPartLabel(option.bodyPart),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  selected
-                                      ? Icons.check_circle
-                                      : Icons.arrow_outward_rounded,
-                                  color: selected ? color : null,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: (_saving || _updatingExerciseSelection)
+                          ? null
+                          : _openExerciseLibraryPicker,
+                      icon: _updatingExerciseSelection
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.fitness_center),
+                      label: Text(strings.addExercises),
                     ),
                   ),
                 ],
@@ -605,7 +519,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    strings.selectedExercises,
+                    strings.exercisePlanDetails,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -619,7 +533,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                         Text(strings.noExerciseSelectedYet),
                         const SizedBox(height: 4),
                         Text(
-                          strings.tapExerciseToBuildPlan,
+                          strings.tapAddExerciseToBuildPlan,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -635,6 +549,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                         draft.bodyPart,
                         context,
                       );
+                      final durationHint = draft.defaultDurationHint.isEmpty
+                          ? '--'
+                          : draft.defaultDurationHint;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Container(
@@ -688,13 +605,31 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: draft.durationController,
+                                keyboardType: TextInputType.number,
+                                selectAllOnFocus: true,
+                                enabled: !_saving,
+                                decoration: InputDecoration(
+                                  labelText: strings.durationMinutesLabel,
+                                  hintText: durationHint,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                              const SizedBox(height: 6),
                               if (draft.isCardio)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(strings.cardioNoSetPlan),
+                                Text(
+                                  strings.cardioDurationHint,
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 )
-                              else ...<Widget>[
-                                const SizedBox(height: 8),
+                              else
+                                Text(
+                                  strings.strengthDurationNotice,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (!draft.isCardio) ...<Widget>[
+                                const SizedBox(height: 10),
                                 if (draft.isBodyweight)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 6),
@@ -763,6 +698,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                                 const TextInputType.numberWithOptions(
                                                   decimal: true,
                                                 ),
+                                            hintText:
+                                                setDraft.defaultWeightHint,
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -771,6 +708,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                             context: context,
                                             controller: setDraft.repsController,
                                             keyboardType: TextInputType.number,
+                                            hintText: setDraft.defaultRepsHint,
                                           ),
                                         ),
                                         IconButton(
@@ -839,21 +777,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                     ),
                   ),
                   TextFormField(
-                    controller: _durationController,
-                    decoration: InputDecoration(
-                      labelText: strings.durationMinutesLabel,
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (NumberUtils.toInt(value, fallback: 0) <= 0) {
-                        return strings.invalidDuration;
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
                     controller: _notesController,
                     decoration: InputDecoration(labelText: strings.notesLabel),
                     maxLines: 1,
@@ -863,20 +786,11 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                     strings.usingProfileWeight(_profileWeightKg),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  Text(
-                    strings.durationSplitHint,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     '${strings.estimatedTotalCaloriesLabel}: ${_estimatedTotalCalories.toStringAsFixed(0)} kcal',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  if (_selectedPlans.isNotEmpty)
-                    Text(
-                      '${strings.durationMinutesLabel}: $durationPerExercise',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
                 ],
               ),
             ),
@@ -910,13 +824,31 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 }
 
 class _SetDraft {
-  _SetDraft({required String weight, required String reps})
-    : weightController = TextEditingController(text: weight),
-      repsController = TextEditingController(text: reps);
+  _SetDraft({required String defaultWeight, required String defaultReps})
+    : _defaultWeight = defaultWeight.trim(),
+      _defaultReps = defaultReps.trim(),
+      weightController = TextEditingController(),
+      repsController = TextEditingController();
+
+  final String _defaultWeight;
+  final String _defaultReps;
 
   final TextEditingController weightController;
   final TextEditingController repsController;
   bool isCompleted = false;
+
+  String get defaultWeightHint => _defaultWeight;
+  String get defaultRepsHint => _defaultReps;
+
+  String get effectiveWeightText {
+    final typed = weightController.text.trim();
+    return typed.isNotEmpty ? typed : _defaultWeight;
+  }
+
+  String get effectiveRepsText {
+    final typed = repsController.text.trim();
+    return typed.isNotEmpty ? typed : _defaultReps;
+  }
 
   void dispose() {
     weightController.dispose();
@@ -929,7 +861,9 @@ class _ExercisePlanDraft {
     required this.bodyPart,
     required this.exerciseName,
     required this.sets,
-  });
+    required String defaultDuration,
+  }) : _defaultDuration = defaultDuration.trim(),
+       durationController = TextEditingController();
 
   factory _ExercisePlanDraft.fromHistory({
     required String bodyPart,
@@ -938,6 +872,11 @@ class _ExercisePlanDraft {
   }) {
     final isCardio = bodyPart == 'Cardio';
     final historySets = latestSession?.sets ?? const <WorkoutSet>[];
+    final defaultDuration =
+        latestSession == null || latestSession.durationMinutes <= 0
+        ? ''
+        : latestSession.durationMinutes.toString();
+
     return _ExercisePlanDraft(
       bodyPart: bodyPart,
       exerciseName: exerciseName,
@@ -946,20 +885,29 @@ class _ExercisePlanDraft {
           : historySets
                 .map(
                   (set) => _SetDraft(
-                    weight: _formatWeight(set.weightKg),
-                    reps: set.reps <= 0 ? '' : set.reps.toString(),
+                    defaultWeight: _formatWeight(set.weightKg),
+                    defaultReps: set.reps <= 0 ? '' : set.reps.toString(),
                   ),
                 )
                 .toList(),
+      defaultDuration: defaultDuration,
     );
   }
 
   final String bodyPart;
   final String exerciseName;
   final List<_SetDraft> sets;
+  final String _defaultDuration;
+  final TextEditingController durationController;
 
   bool get isCardio => bodyPart == 'Cardio';
   bool get isBodyweight => AppConstants.isBodyweightExercise(exerciseName);
+
+  String get defaultDurationHint => _defaultDuration;
+  String get effectiveDurationText {
+    final typed = durationController.text.trim();
+    return typed.isNotEmpty ? typed : _defaultDuration;
+  }
 
   static String _formatWeight(double value) {
     if (value == value.roundToDouble()) {
@@ -969,6 +917,7 @@ class _ExercisePlanDraft {
   }
 
   void dispose() {
+    durationController.dispose();
     for (final set in sets) {
       set.dispose();
     }
@@ -980,4 +929,218 @@ class _ExerciseOption {
 
   final String bodyPart;
   final String name;
+
+  String key() => '$bodyPart::$name';
+}
+
+class _ExerciseLibraryPickerPage extends StatefulWidget {
+  const _ExerciseLibraryPickerPage({
+    required this.options,
+    required this.initiallySelectedKeys,
+  });
+
+  final List<_ExerciseOption> options;
+  final Set<String> initiallySelectedKeys;
+
+  @override
+  State<_ExerciseLibraryPickerPage> createState() =>
+      _ExerciseLibraryPickerPageState();
+}
+
+class _ExerciseLibraryPickerPageState
+    extends State<_ExerciseLibraryPickerPage> {
+  final _searchController = TextEditingController();
+  String? _selectedBodyPartFilter;
+  late final Set<String> _selectedKeys;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedKeys = Set<String>.from(widget.initiallySelectedKeys);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<_ExerciseOption> _filteredOptions(AppStrings strings) {
+    final queryLower = _searchController.text.trim().toLowerCase();
+    return widget.options.where((option) {
+      final bodyPartMatch =
+          _selectedBodyPartFilter == null ||
+          option.bodyPart == _selectedBodyPartFilter;
+      if (!bodyPartMatch) {
+        return false;
+      }
+      if (queryLower.isEmpty) {
+        return true;
+      }
+      final candidates = <String>{
+        option.name.toLowerCase(),
+        strings.exerciseDisplayName(option.name).toLowerCase(),
+        option.bodyPart.toLowerCase(),
+        strings.bodyPartLabel(option.bodyPart).toLowerCase(),
+      };
+      return candidates.any((value) => value.contains(queryLower));
+    }).toList();
+  }
+
+  void _toggleOption(_ExerciseOption option) {
+    final key = option.key();
+    setState(() {
+      if (_selectedKeys.contains(key)) {
+        _selectedKeys.remove(key);
+      } else {
+        _selectedKeys.add(key);
+      }
+    });
+  }
+
+  void _submitSelection() {
+    final orderedKeys = widget.options
+        .map((option) => option.key())
+        .where(_selectedKeys.contains)
+        .toList();
+    Navigator.of(context).pop(orderedKeys);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    final filtered = _filteredOptions(strings);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(strings.exercisesLibrary)),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            child: Column(
+              children: <Widget>[
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: strings.searchExercise,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          selected: _selectedBodyPartFilter == null,
+                          label: Text(strings.allBodyParts),
+                          onSelected: (_) {
+                            setState(() => _selectedBodyPartFilter = null);
+                          },
+                        ),
+                      ),
+                      ...AppConstants.bodyParts.map((bodyPart) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            selected: _selectedBodyPartFilter == bodyPart,
+                            label: Text(strings.bodyPartLabel(bodyPart)),
+                            onSelected: (_) {
+                              setState(
+                                () => _selectedBodyPartFilter = bodyPart,
+                              );
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              itemCount: filtered.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final option = filtered[index];
+                final key = option.key();
+                final selected = _selectedKeys.contains(key);
+                final color = ExerciseVisuals.colorForBodyPart(
+                  option.bodyPart,
+                  context,
+                );
+                return InkWell(
+                  onTap: () => _toggleOption(option),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: selected
+                          ? color.withValues(alpha: 0.16)
+                          : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.36),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        ExerciseThumbnail(
+                          bodyPart: option.bodyPart,
+                          exerciseName: option.name,
+                          color: color,
+                          size: 54,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                strings.exerciseDisplayName(option.name),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(strings.bodyPartLabel(option.bodyPart)),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          selected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: selected ? color : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          child: FilledButton(
+            onPressed: _submitSelection,
+            child: Text(strings.addExercisesWithCount(_selectedKeys.length)),
+          ),
+        ),
+      ),
+    );
+  }
 }

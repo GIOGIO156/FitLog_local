@@ -30,6 +30,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
 
   List<WorkoutSession> _sessions = <WorkoutSession>[];
   bool _loading = true;
+  bool _savingPlanEdits = false;
   String? _lastSaveError;
 
   @override
@@ -210,173 +211,57 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
   }
 
   Future<void> _openPlanEditor() async {
-    if (_sessions.isEmpty) {
+    if (_sessions.isEmpty || _savingPlanEdits) {
       return;
     }
 
     final strings = context.stringsRead;
-    var draftDate = _sessions.first.date;
-    var draftTime = TimeOfDay.fromDateTime(_createdAt(_sessions.first));
+    final draftDate = _sessions.first.date;
+    final draftTime = TimeOfDay.fromDateTime(_createdAt(_sessions.first));
     final totalDuration = _sessions.fold<int>(
       0,
       (sum, session) => sum + session.durationMinutes,
     );
-    final durationController = TextEditingController(
-      text: totalDuration.toString(),
+    final draft = await Navigator.of(context).push<_PlanEditDraft>(
+      MaterialPageRoute<_PlanEditDraft>(
+        builder: (_) => _WorkoutPlanEditorPage(
+          initialDate: draftDate,
+          initialTime: draftTime,
+          initialTotalDuration: totalDuration,
+        ),
+      ),
     );
 
-    final changed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        var saving = false;
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-            return Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    strings.saveChanges,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(strings.dateLabel),
-                    subtitle: Text(DateUtilsX.formatReadable(draftDate)),
-                    trailing: TextButton(
-                      onPressed: saving
-                          ? null
-                          : () async {
-                              final selected = await showDatePicker(
-                                context: context,
-                                initialDate: DateUtilsX.parseDay(draftDate),
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime(2100),
-                              );
-                              if (selected != null) {
-                                setModalState(() {
-                                  draftDate = DateUtilsX.formatDate(selected);
-                                });
-                              }
-                            },
-                      child: Text(strings.change),
-                    ),
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(strings.startTimeLabel),
-                    subtitle: Text(draftTime.format(context)),
-                    trailing: TextButton(
-                      onPressed: saving
-                          ? null
-                          : () async {
-                              final selected = await showTimePicker(
-                                context: context,
-                                initialTime: draftTime,
-                              );
-                              if (selected != null) {
-                                setModalState(() {
-                                  draftTime = selected;
-                                });
-                              }
-                            },
-                      child: Text(strings.change),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: durationController,
-                    enabled: !saving,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: strings.totalDurationLabel,
-                      suffixText: 'min',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: saving
-                          ? null
-                          : () async {
-                              final newTotalDuration = NumberUtils.toInt(
-                                durationController.text,
-                                fallback: -1,
-                              );
-                              if (newTotalDuration <= 0) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(strings.invalidDuration),
-                                  ),
-                                );
-                                return;
-                              }
+    if (draft == null || !mounted) {
+      return;
+    }
 
-                              setModalState(() => saving = true);
-                              final navigator = Navigator.of(sheetContext);
-                              final saved = await _savePlanEdits(
-                                newDate: draftDate,
-                                newStartTime: draftTime,
-                                newTotalDurationMinutes: newTotalDuration,
-                              );
-                              if (!mounted || !sheetContext.mounted) {
-                                return;
-                              }
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _savingPlanEdits = true);
+    try {
+      final saved = await _savePlanEdits(
+        newDate: draft.date,
+        newStartTime: draft.startTime,
+        newTotalDurationMinutes: draft.totalDurationMinutes,
+      );
+      if (!mounted) {
+        return;
+      }
 
-                              if (saved) {
-                                if (navigator.canPop()) {
-                                  navigator.pop(true);
-                                }
-                              } else {
-                                final errorText =
-                                    _lastSaveError == null
-                                    ? strings.failedToLoadWorkout('unknown')
-                                    : strings.failedToLoadWorkout(
-                                        _lastSaveError!,
-                                      );
-                                ScaffoldMessenger.of(this.context).showSnackBar(
-                                  SnackBar(content: Text(errorText)),
-                                );
-                                setModalState(() => saving = false);
-                              }
-                            },
-                      icon: saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.save_outlined),
-                      label: Text(
-                        saving ? strings.saving : strings.saveChanges,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    durationController.dispose();
-
-    if (changed == true && mounted) {
-      context.read<RefreshNotifier>().markDataChanged();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(strings.workoutSaved)));
-      await _load();
+      if (saved) {
+        context.read<RefreshNotifier>().markDataChanged();
+        messenger.showSnackBar(SnackBar(content: Text(strings.workoutSaved)));
+        await _load();
+      } else {
+        final errorText = _lastSaveError == null
+            ? strings.failedToLoadWorkout('unknown')
+            : strings.failedToLoadWorkout(_lastSaveError!);
+        messenger.showSnackBar(SnackBar(content: Text(errorText)));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _savingPlanEdits = false);
+      }
     }
   }
 
@@ -411,7 +296,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
         title: Text(strings.workoutPlan),
         actions: <Widget>[
           IconButton(
-            onPressed: _openPlanEditor,
+            onPressed: _savingPlanEdits ? null : _openPlanEditor,
             icon: const Icon(Icons.edit_outlined),
             tooltip: strings.saveChanges,
           ),
@@ -523,6 +408,143 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                 }),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanEditDraft {
+  const _PlanEditDraft({
+    required this.date,
+    required this.startTime,
+    required this.totalDurationMinutes,
+  });
+
+  final String date;
+  final TimeOfDay startTime;
+  final int totalDurationMinutes;
+}
+
+class _WorkoutPlanEditorPage extends StatefulWidget {
+  const _WorkoutPlanEditorPage({
+    required this.initialDate,
+    required this.initialTime,
+    required this.initialTotalDuration,
+  });
+
+  final String initialDate;
+  final TimeOfDay initialTime;
+  final int initialTotalDuration;
+
+  @override
+  State<_WorkoutPlanEditorPage> createState() => _WorkoutPlanEditorPageState();
+}
+
+class _WorkoutPlanEditorPageState extends State<_WorkoutPlanEditorPage> {
+  late String _draftDate;
+  late TimeOfDay _draftTime;
+  late final TextEditingController _durationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftDate = widget.initialDate;
+    _draftTime = widget.initialTime;
+    _durationController = TextEditingController(
+      text: widget.initialTotalDuration.toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _durationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateUtilsX.parseDay(_draftDate),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (selected == null || !mounted) {
+      return;
+    }
+    setState(() => _draftDate = DateUtilsX.formatDate(selected));
+  }
+
+  Future<void> _pickTime() async {
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: _draftTime,
+    );
+    if (selected == null || !mounted) {
+      return;
+    }
+    setState(() => _draftTime = selected);
+  }
+
+  void _submit() {
+    final strings = context.stringsRead;
+    final duration = NumberUtils.toInt(_durationController.text, fallback: -1);
+    if (duration <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.invalidDuration)));
+      return;
+    }
+    Navigator.of(context).pop(
+      _PlanEditDraft(
+        date: _draftDate,
+        startTime: _draftTime,
+        totalDurationMinutes: duration,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return Scaffold(
+      appBar: AppBar(title: Text(strings.saveChanges)),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        children: <Widget>[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.dateLabel),
+            subtitle: Text(DateUtilsX.formatReadable(_draftDate)),
+            trailing: TextButton(
+              onPressed: _pickDate,
+              child: Text(strings.change),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(strings.startTimeLabel),
+            subtitle: Text(_draftTime.format(context)),
+            trailing: TextButton(
+              onPressed: _pickTime,
+              child: Text(strings.change),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _durationController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: strings.totalDurationLabel,
+              suffixText: 'min',
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: _submit,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(strings.saveChanges),
           ),
         ],
       ),

@@ -222,8 +222,20 @@ class AppStrings {
   String get selectedExercises => _t('Selected Exercises', '已选动作计划');
   String selectedExercisesCount(int count) =>
       _t('$count selected', '已选 $count 个');
+  String addExercisesWithCount(int count) =>
+      _t('Add selected exercises ($count)', '添加已选动作（$count）');
+  String get addExercises => _t('Add Exercises', '添加运动');
+  String get exercisePlanDetails => _t('Exercise Plan Details', '动作计划详情');
+  String get exercisePickerCollapsedHint => _t(
+    'Exercise library is hidden by default. Tap the button to select multiple exercises.',
+    '动作库默认折叠，点击按钮后可进入动作库一次多选。',
+  );
   String get noExerciseSelectedYet =>
       _t('No exercise selected yet.', '还没有选择动作。');
+  String get tapAddExerciseToBuildPlan => _t(
+    'Tap Add Exercises to build your workout plan first.',
+    '先点击“添加运动”，再填写每个动作的详细信息。',
+  );
   String get tapExerciseToBuildPlan => _t(
     'Tap exercises above to build a multi-exercise workout plan.',
     '在上方点选动作，即可建立一个包含多个动作的训练计划。',
@@ -247,6 +259,14 @@ class AppStrings {
   );
   String get cardioNoSetPlan =>
       _t('Cardio does not require set planning.', '有氧训练不需要设置组数。');
+  String get cardioDurationHint => _t(
+    'Cardio calories are calculated from duration and body weight. Set this movement duration separately.',
+    '有氧消耗按时长和体重计算，请为每个有氧动作单独填写时长。',
+  );
+  String get strengthDurationNotice => _t(
+    'Note: Strength calories here are net exercise calories. Inter-set rest baseline is not added. Long rest does not linearly increase calories.',
+    '注意：力量训练这里按净额外消耗估算，不叠加组间静息基础消耗。长时间休息不会线性增加消耗。',
+  );
   String usingProfileWeight(double weightKg) => _t(
     'Using profile weight: ${weightKg.toStringAsFixed(1)} kg',
     '使用资料体重：${weightKg.toStringAsFixed(1)} kg',
@@ -266,6 +286,10 @@ class AppStrings {
       _t('Please select at least one exercise.', '请至少选择一个动作。');
   String get invalidDuration =>
       _t('Duration must be greater than 0.', '训练时长必须大于 0。');
+  String invalidDurationForExercise(String exerciseName) => _t(
+    'Please set duration > 0 for $exerciseName.',
+    '请为“$exerciseName”填写大于 0 的时长。',
+  );
   String invalidSetValue(String exerciseName) => _t(
     'Please check set values for $exerciseName.',
     '请检查“$exerciseName”的组数参数。',

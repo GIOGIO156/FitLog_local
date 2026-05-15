@@ -25,9 +25,24 @@ class WorkoutCalorieCalculator {
     'Burpee': 1.00,
   };
 
-  // Strength estimate in kcal per lifted kg:
-  // ~20.8 kcal per metric ton of total lifted load.
-  static const double _strengthKcalPerLiftedKg = 0.0208;
+  // Strength estimate:
+  // net strength kcal = active lifting kcal + small capped recovery extra kcal.
+  // Active part uses net-MET ((MET - 1)...) and active lifting time from reps.
+  static const double _defaultRepTempoSeconds = 4.0;
+  static const double _recoveryKcalPerLiftedKg = 0.0105;
+  static const double _maxRecoveryExtraKcal = 40.0;
+  static const double _maxRecoveryToActiveRatio = 1.6;
+
+  static const Set<String> _highDemandStrengthExercises = <String>{
+    'Squat',
+    'Deadlift',
+    'Romanian Deadlift',
+    'Leg Press',
+    'Overhead Press',
+    'Bench Press',
+    'Pull-up',
+    'Burpee',
+  };
 
   static double estimateCardioCalories({
     required String exerciseName,
@@ -50,15 +65,17 @@ class WorkoutCalorieCalculator {
     }
 
     final isBodyweight = AppConstants.isBodyweightExercise(exerciseName);
-    final bodyweightShare = _bodyweightLoadShare[exerciseName] ??
-        (isBodyweight ? 1.0 : 0.0);
+    final bodyweightShare =
+        _bodyweightLoadShare[exerciseName] ?? (isBodyweight ? 1.0 : 0.0);
 
     double totalLiftedKg = 0;
+    int totalReps = 0;
     for (final set in sets) {
       final reps = math.max(0, set.reps);
       if (reps == 0) {
         continue;
       }
+      totalReps += reps;
 
       final externalLoadKg = math.max(0, set.weightKg);
       final effectiveLoadKg = isBodyweight
@@ -67,10 +84,72 @@ class WorkoutCalorieCalculator {
       totalLiftedKg += effectiveLoadKg * reps;
     }
 
-    final calories = totalLiftedKg * _strengthKcalPerLiftedKg;
-    if (!calories.isFinite) {
+    if (totalReps <= 0 || totalLiftedKg <= 0 || bodyWeightKg <= 0) {
       return 0;
     }
-    return math.max(0, calories);
+
+    final activeMinutes = totalReps * _defaultRepTempoSeconds / 60;
+    final averageLoadKg = totalLiftedKg / totalReps;
+    final loadRatio = averageLoadKg / bodyWeightKg;
+    final repsPerSet = totalReps / math.max(1, sets.length);
+
+    final grossMet = _estimateStrengthGrossMet(
+      exerciseName: exerciseName,
+      loadRatio: loadRatio,
+      repsPerSet: repsPerSet,
+    );
+    final activeNetKcal = _netMetCalories(
+      bodyWeightKg: bodyWeightKg,
+      met: grossMet,
+      durationMinutes: activeMinutes,
+    );
+
+    final recoveryExtraRaw = totalLiftedKg * _recoveryKcalPerLiftedKg;
+    final recoveryExtraCapFromActive =
+        activeNetKcal * _maxRecoveryToActiveRatio;
+    final recoveryExtraKcal = math.min(
+      _maxRecoveryExtraKcal,
+      math.min(recoveryExtraRaw, recoveryExtraCapFromActive),
+    );
+
+    final total = activeNetKcal + math.max(0, recoveryExtraKcal);
+    if (!total.isFinite) {
+      return 0;
+    }
+    return math.max(0, total);
+  }
+
+  static double _estimateStrengthGrossMet({
+    required String exerciseName,
+    required double loadRatio,
+    required double repsPerSet,
+  }) {
+    var met = 5.0;
+
+    if (_highDemandStrengthExercises.contains(exerciseName)) {
+      met += 0.8;
+    }
+
+    met += loadRatio.clamp(0.0, 1.5) * 1.2;
+
+    if (repsPerSet <= 6) {
+      met += 0.4;
+    } else if (repsPerSet >= 12) {
+      met -= 0.2;
+    }
+
+    return met.clamp(3.5, 8.0);
+  }
+
+  static double _netMetCalories({
+    required double bodyWeightKg,
+    required double met,
+    required double durationMinutes,
+  }) {
+    final netMet = math.max(0, met - 1);
+    if (netMet <= 0 || bodyWeightKg <= 0 || durationMinutes <= 0) {
+      return 0;
+    }
+    return netMet * 3.5 * bodyWeightKg / 200 * durationMinutes;
   }
 }

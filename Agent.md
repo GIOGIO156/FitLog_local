@@ -68,3 +68,51 @@
   - Add movement-specific displacement/ROM and mechanical work approximations.
   - Add user-level coefficients by sex/training status.
   - Add optional effort inputs (RPE/RIR) for calibration.
+
+## 8) Follow-up Changes (2026-05-15, evening)
+
+### A. Add-workout flow redesigned for multi-cardio duration inputs
+- File: `lib/features/workout/add_workout_page.dart`
+- Removed always-open inline exercise library from main add page.
+- Added a dedicated exercise picker page (multi-select) opened by an "Add Exercises" action.
+- Main add page now stays compact and focuses on selected exercises + parameter entry.
+- Each selected exercise has its own duration input.
+  - This is especially important for cardio because cardio calories depend on per-exercise duration.
+  - Mixed plans (e.g. running + walking, running + strength) are now calculated with separate durations.
+
+### B. Strength calorie model switched to net-active logic
+- File: `lib/domain/services/workout_calorie_calculator.dart`
+- Updated strength estimation to align with "net additional calories" intent:
+  - `net_strength_kcal = active_lifting_kcal + capped_recovery_extra_kcal`
+  - Active lifting time estimated from `total_reps * default_rep_tempo_seconds`.
+  - Active lifting calories use net MET logic (`MET - 1`) to avoid adding resting baseline.
+  - Added a small capped recovery component tied to lifting volume (not wall-clock rest time).
+- Cardio remains duration-based MET estimation per selected cardio exercise.
+
+### C. Strength duration notice added in UI
+- File: `lib/features/workout/add_workout_page.dart`
+- Added an explicit note near strength duration input:
+  - Strength calories are net exercise calories.
+  - Inter-set rest baseline is not linearly added.
+
+### D. Workout-plan edit crash hardening
+- File: `lib/features/workout/workout_plan_page.dart`
+- Replaced bottom-sheet editor with a dedicated full-page editor for date/time/total duration.
+- Save is now performed after returning from the editor page, reducing route/context disposal conflicts.
+- This change is intended to resolve persistent red-screen assertion (`_dependents.isEmpty`) when editing duration/time after plan creation.
+
+### E. Set default-input UX improved (no forced deletion)
+- File: `lib/features/workout/add_workout_page.dart`
+- Historical set values are now shown as gray hints instead of prefilled text.
+- If user does not type, save uses historical defaults.
+- If user types, they can directly enter new values without deleting old text first.
+- Added `selectAllOnFocus` for faster edits when a field has typed text.
+
+### F. Localization support for new workout flow copy
+- File: `lib/core/localization/app_strings.dart`
+- Added strings for:
+  - collapsed exercise picker flow
+  - add-selected-exercises button text
+  - per-exercise duration guidance
+  - strength net-calorie notice
+  - per-exercise duration validation message
