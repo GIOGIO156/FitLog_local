@@ -39,7 +39,13 @@ class AppConstants {
     'Shoulders': <String>['Overhead Press', 'Lateral Raise', 'Rear Delt Fly'],
     'Arms': <String>['Biceps Curl', 'Triceps Pushdown', 'Hammer Curl'],
     'Core': <String>['Plank', 'Crunch', 'Hanging Leg Raise'],
-    'Cardio': <String>['Running', 'Cycling', 'Rowing Machine', 'Stair Climber'],
+    'Cardio': <String>[
+      'Walking',
+      'Running',
+      'Cycling',
+      'Rowing Machine',
+      'Stair Climber',
+    ],
     'Full Body': <String>['Deadlift', 'Kettlebell Swing', 'Burpee'],
   };
 

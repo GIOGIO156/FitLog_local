@@ -12,6 +12,7 @@ import '../../core/utils/number_utils.dart';
 import '../../core/widgets/exercise_thumbnail.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/workout_session.dart';
+import '../../domain/services/workout_calorie_calculator.dart';
 import 'workout_session_page.dart';
 
 class WorkoutPlanPage extends StatefulWidget {
@@ -29,6 +30,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
 
   List<WorkoutSession> _sessions = <WorkoutSession>[];
   bool _loading = true;
+  String? _lastSaveError;
 
   @override
   void initState() {
@@ -146,9 +148,11 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
       return false;
     }
 
-    final strings = context.stringsRead;
-    final repository = context.read<AppServices>().workoutRepository;
-    final messenger = ScaffoldMessenger.of(context);
+    _lastSaveError = null;
+    final services = context.read<AppServices>();
+    final repository = services.workoutRepository;
+    final profile = await services.profileRepository.getProfile();
+    final bodyWeightKg = profile?.weightKg ?? 65;
 
     try {
       final ordered = List<WorkoutSession>.from(_sessions)
@@ -175,11 +179,18 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
         final offset = previousCreatedAt.difference(oldStart);
         final shiftedCreatedAt = newStart.add(offset);
 
-        final previousDuration = session.durationMinutes;
         final updatedDuration = newDurations[i];
-        final updatedCalories = previousDuration <= 0
-            ? session.estimatedCalories
-            : session.estimatedCalories * updatedDuration / previousDuration;
+        final updatedCalories = session.exerciseType == 'cardio'
+            ? WorkoutCalorieCalculator.estimateCardioCalories(
+                exerciseName: session.exerciseName,
+                bodyWeightKg: bodyWeightKg,
+                durationMinutes: updatedDuration,
+              )
+            : WorkoutCalorieCalculator.estimateStrengthCalories(
+                exerciseName: session.exerciseName,
+                bodyWeightKg: bodyWeightKg,
+                sets: session.sets,
+              );
 
         await repository.updateWorkoutSession(
           session.copyWith(
@@ -191,20 +202,9 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
         );
       }
 
-      if (!mounted) {
-        return false;
-      }
-
-      context.read<RefreshNotifier>().markDataChanged();
-      messenger.showSnackBar(SnackBar(content: Text(strings.workoutSaved)));
       return true;
     } catch (error) {
-      if (!mounted) {
-        return false;
-      }
-      messenger.showSnackBar(
-        SnackBar(content: Text(strings.failedToLoadWorkout(error))),
-      );
+      _lastSaveError = error.toString();
       return false;
     }
   }
@@ -322,18 +322,30 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                               }
 
                               setModalState(() => saving = true);
+                              final navigator = Navigator.of(sheetContext);
                               final saved = await _savePlanEdits(
                                 newDate: draftDate,
                                 newStartTime: draftTime,
                                 newTotalDurationMinutes: newTotalDuration,
                               );
-                              if (!context.mounted) {
+                              if (!mounted || !sheetContext.mounted) {
                                 return;
                               }
 
                               if (saved) {
-                                Navigator.of(sheetContext).pop(true);
+                                if (navigator.canPop()) {
+                                  navigator.pop(true);
+                                }
                               } else {
+                                final errorText =
+                                    _lastSaveError == null
+                                    ? strings.failedToLoadWorkout('unknown')
+                                    : strings.failedToLoadWorkout(
+                                        _lastSaveError!,
+                                      );
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                  SnackBar(content: Text(errorText)),
+                                );
                                 setModalState(() => saving = false);
                               }
                             },
@@ -360,6 +372,10 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
     durationController.dispose();
 
     if (changed == true && mounted) {
+      context.read<RefreshNotifier>().markDataChanged();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.workoutSaved)));
       await _load();
     }
   }

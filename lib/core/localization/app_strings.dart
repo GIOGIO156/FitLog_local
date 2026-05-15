@@ -360,6 +360,7 @@ class AppStrings {
       'Crunch': '卷腹',
       'Hanging Leg Raise': '悬垂举腿',
       'Running': '跑步',
+      'Walking': '步行',
       'Cycling': '骑行',
       'Rowing Machine': '划船机',
       'Stair Climber': '登阶机',

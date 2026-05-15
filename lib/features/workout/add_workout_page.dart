@@ -223,32 +223,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     );
   }
 
-  double _averageAdditionalLoadKg(_ExercisePlanDraft draft) {
-    if (!draft.isBodyweight || draft.sets.isEmpty) {
-      return 0;
-    }
-
-    final normalizedLoads = draft.sets
-        .map(
-          (setDraft) =>
-              NumberUtils.toDouble(setDraft.weightController.text, fallback: 0),
-        )
-        .map((value) => value < 0 ? 0 : value)
-        .toList();
-
-    final total = normalizedLoads.fold<double>(0, (sum, value) => sum + value);
-    return total / normalizedLoads.length;
-  }
-
   double _estimateCaloriesForDraft(
     _ExercisePlanDraft draft,
     int durationPerExercise,
   ) {
-    if (durationPerExercise <= 0) {
-      return 0;
-    }
-
     if (draft.isCardio) {
+      if (durationPerExercise <= 0) {
+        return 0;
+      }
       return WorkoutCalorieCalculator.estimateCardioCalories(
         exerciseName: draft.exerciseName,
         bodyWeightKg: _profileWeightKg,
@@ -256,13 +238,36 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       );
     }
 
+    final sets = _buildSetsForPreview(draft);
     return WorkoutCalorieCalculator.estimateStrengthCalories(
+      exerciseName: draft.exerciseName,
       bodyWeightKg: _profileWeightKg,
-      durationMinutes: durationPerExercise,
-      intensity: 'medium',
-      additionalLoadKg: _averageAdditionalLoadKg(draft),
-      isBodyweightExercise: draft.isBodyweight,
+      sets: sets,
     );
+  }
+
+  List<WorkoutSet> _buildSetsForPreview(_ExercisePlanDraft draft) {
+    final sets = <WorkoutSet>[];
+    for (var i = 0; i < draft.sets.length; i++) {
+      final setDraft = draft.sets[i];
+      final reps = NumberUtils.toInt(setDraft.repsController.text, fallback: 0);
+      final weight = NumberUtils.toDouble(
+        setDraft.weightController.text,
+        fallback: 0,
+      );
+      if (reps <= 0) {
+        continue;
+      }
+      sets.add(
+        WorkoutSet(
+          setNumber: i + 1,
+          weightKg: weight < 0 ? 0 : weight,
+          reps: reps,
+          isCompleted: setDraft.isCompleted,
+        ),
+      );
+    }
+    return sets;
   }
 
   List<_ExerciseOption> _buildFilteredOptions(
@@ -385,10 +390,17 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           exerciseType: draft.isCardio ? 'cardio' : 'strength',
           durationMinutes: durationPerExercise,
           intensity: 'medium',
-          estimatedCalories: _estimateCaloriesForDraft(
-            draft,
-            durationPerExercise,
-          ),
+          estimatedCalories: draft.isCardio
+              ? WorkoutCalorieCalculator.estimateCardioCalories(
+                  exerciseName: draft.exerciseName,
+                  bodyWeightKg: _profileWeightKg,
+                  durationMinutes: durationPerExercise,
+                )
+              : WorkoutCalorieCalculator.estimateStrengthCalories(
+                  exerciseName: draft.exerciseName,
+                  bodyWeightKg: _profileWeightKg,
+                  sets: sets,
+                ),
           notes: notes,
           sets: sets,
         );
