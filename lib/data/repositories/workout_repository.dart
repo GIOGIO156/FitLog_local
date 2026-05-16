@@ -130,6 +130,27 @@ class WorkoutRepository {
     return sessions;
   }
 
+  Future<List<WorkoutSession>> getWorkoutSessionsBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'workout_sessions',
+      where: 'date >= ? AND date <= ?',
+      whereArgs: <Object?>[startDate, endDate],
+      orderBy: 'date ASC, created_at ASC',
+    );
+
+    final sessions = <WorkoutSession>[];
+    for (final row in rows) {
+      final int id = row['id'] as int;
+      final sets = await getSetsBySessionId(id);
+      sessions.add(WorkoutSession.fromMap(row, sets: sets));
+    }
+    return sessions;
+  }
+
   Future<WorkoutSession?> getWorkoutSessionById(int id) async {
     final db = await _database.database;
     final rows = await db.query(
@@ -221,6 +242,33 @@ class WorkoutRepository {
       0,
       (sum, item) => sum + item.estimatedCalories,
     );
+  }
+
+  Future<Map<String, double>> getDailyExerciseCaloriesBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    final db = await _database.database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT date, SUM(estimated_calories) AS total
+      FROM workout_sessions
+      WHERE date >= ? AND date <= ?
+      GROUP BY date
+      ORDER BY date ASC
+      ''',
+      <Object?>[startDate, endDate],
+    );
+
+    final result = <String, double>{};
+    for (final row in rows) {
+      final key = row['date']?.toString() ?? '';
+      if (key.isEmpty) {
+        continue;
+      }
+      result[key] = (row['total'] as num?)?.toDouble() ?? 0;
+    }
+    return result;
   }
 
   Future<List<String>> getDistinctDates() async {

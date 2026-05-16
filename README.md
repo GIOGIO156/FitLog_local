@@ -164,17 +164,22 @@ lib/
 - very_active: `1.725`
 - `tdee = bmr * multiplier`
 
-### 今日消耗与目标
-- `actual_daily_expenditure = bmr + exercise_calories_today`
-- maintenance: `target_intake = actual_daily_expenditure`
-- deficit: `target_intake = actual_daily_expenditure - daily_energy_goal_kcal`
-- surplus: `target_intake = actual_daily_expenditure + daily_energy_goal_kcal`
-- `remaining_calories = target_intake - calories_in_today`
+### 今日消耗与目标（新版）
+- `baseline_no_exercise_tdee = bmr * lifestyle_factor_non_exercise`
+- `no_exercise_target = baseline_no_exercise_tdee ± daily_energy_goal_kcal`
+- `final_food_target = no_exercise_target + logged_net_exercise_kcal`
+- `remaining_calories = final_food_target - calories_in_today`
+- `lifestyle_factor_non_exercise` 只代表非专项训练活动（通勤、站立、家务、体力工作等）。
 
-### 运动消耗估算
-- Cardio（MET）：`calories = MET * body_weight_kg * duration_hours`
-- Strength（简化）：`calories = duration_minutes * body_weight_kg * intensity_factor`
-- 当前 MVP 中，训练计划保存时强度固定为 `medium`。
+### 运动消耗估算（净额外消耗）
+- Cardio（净 MET）：
+  - `net_cardio_kcal = (MET - 1) * 3.5 * body_weight_kg / 200 * duration_minutes`
+- Strength（训练量主导）：
+  - `total_volume_kg = Σ(weight_kg * reps)`
+  - `active_lifting_kcal = total_volume_kg * strength_coefficient * body_factor * intensity_factor`
+  - `net_strength_kcal = active_lifting_kcal + post_training_recovery_kcal + muscle_repair_adaptation_kcal`
+- 力量训练总时长只用于恢复部分的小幅封顶修正，不做线性累加。
+- 原因：每日基线已包含静息代谢，运动模块只加“额外净消耗”，避免重复计入。
 
 ---
 
@@ -251,3 +256,183 @@ flutter build apk --debug
 ## 当前阶段
 当前版本是可用的 MVP，目标是把“AI 食物估算结果落地记录”这件事做顺手：  
 低摩擦录入、按天汇总、训练联动、本地可导出。
+
+---
+
+## 2026-05 动态热量目标校准（新版）
+
+### 核心原则
+- 先算“不运动时的一天基线消耗”，再把“当天已记录的净运动消耗”加上去。
+- 不再用“每周计划训练几天”去抬高默认活动系数，避免计划未执行时目标偏高。
+- 所有运动都只计“净额外消耗”，不重复计入静息代谢。
+
+### 1) 每日基线与目标
+- `BMR/RMR` 由年龄、身高、体重、性别估算。
+- `baseline_no_exercise_tdee = BMR * lifestyle_factor_non_exercise`
+- `no_exercise_target = baseline_no_exercise_tdee ± goal_delta`
+- `final_food_target = no_exercise_target + logged_net_exercise_kcal`
+
+说明：这里的 `lifestyle_factor` 只代表非专项训练的日常活动（通勤、站立、家务、工作体力等）。
+
+### 2) 有氧与力量的净消耗口径
+- 有氧（步行/跑步/骑行/楼梯机等）按净 MET：
+  - `net_cardio_kcal = (MET - 1) * 3.5 * weight_kg / 200 * duration_min`
+- 力量训练按训练量主导：
+  - `net_strength_kcal = active_lifting_kcal + post_training_recovery_kcal + muscle_repair_adaptation_kcal`
+  - 总时长仅作为“训练密度”的小幅封顶修正，不能线性累加热量。
+  - 示例（当前实现）：`recovery_density_modifier = clamp(1 + (density_ratio - 1) * 0.28, 0.85, 1.35)`
+  - 其中 `density_ratio = (completed_sets / total_session_minutes) / baseline_density`，仅影响恢复项，不直接按时长加热量。
+
+### 3) 动态校准（每 7 天最多一次）
+- 采用 7–28 天滚动窗口（优先更长窗口）。
+- 使用 7 日均重的“窗口起点 vs 终点”差值，降低水分波动噪声。
+- 估算观测 TDEE：
+  - `observed_total_tdee = avg_intake - weight_change_kg * 7700 / days`
+  - `observed_no_exercise_tdee = observed_total_tdee - avg_logged_net_exercise`
+  - `observed_lifestyle_factor = observed_no_exercise_tdee / avg_bmr`
+- 系数平滑更新：
+  - `new_factor = old_factor * 0.8 + observed_factor * 0.2`
+  - 单次更新限幅 `±0.03`
+  - 全局约束 `1.10–1.70`
+
+### 4) 稳定性与安全策略
+- 数据不足（饮食日志或体重日志覆盖不足）则跳过校准。
+- 遇到异常日不会单日直接改目标；更新使用区间平均与平滑。
+- 校准结果带置信度，窗口越长、日志覆盖越好，置信度越高。
+
+---
+
+## 2026-05 Diet Dual-Mode Update (Cut MVP)
+
+This release adds two parallel local diet calculation modes:
+
+1. `energy_ratio`
+2. `gram_per_kg`
+
+All logic remains local-only (Flutter + SQLite), no backend and no AI API integration.
+
+### Concept Split
+
+- `activity_level`: non-exercise daily activity level for baseline energy calculations.
+- `training_frequency_per_week`: dedicated training frequency (2/3/4/5) for g/kg macro table lookup.
+
+These are different concepts and must not be merged.
+
+### Mode A: `energy_ratio` (kept)
+
+- `baseline_no_exercise_tdee = BMR * lifestyle_factor_non_exercise`
+- `no_exercise_target = baseline_no_exercise_tdee +/- goal_delta`
+- `final_food_target = no_exercise_target + logged_net_exercise_kcal`
+- Macro targets are converted from kcal target using macro percentages.
+
+### Mode B: `gram_per_kg` (new)
+
+Directly compute macro targets from bodyweight and coefficients:
+
+- `protein_target_g = weight_kg * protein_coeff`
+- `carbs_target_g = weight_kg * carbs_coeff`
+- `fat_target_g = weight_kg * fat_coeff`
+
+Coefficients come from `(sex, training_frequency_per_week)` table.
+For `prefer_not_to_say`, use male/female average in the same frequency tier.
+
+Auxiliary field:
+
+- `macro_energy_equivalent_kcal = protein*4 + carbs*4 + fat*9`
+
+This is for analysis/export only, not the kcal target counter in g/kg mode.
+
+### Home Display Behavior
+
+- `energy_ratio`: kcal target/intake/remaining + macros.
+- `gram_per_kg`: macros are the primary counters; kcal can appear only as auxiliary intake info.
+
+### g/kg Training-Frequency Self-check (new)
+
+Profile fields:
+
+- `macro_self_check_enabled`
+- `macro_self_check_period_days` (7/14/21/28)
+- `last_macro_self_check_at`
+
+Self-check works only in `gram_per_kg` mode and is intentionally isolated from dynamic calorie calibration.
+
+`activeTrainingDays` counts distinct valid training dates (not session count):
+
+A day is valid if any condition is true:
+
+1. has at least one strength session
+2. cardio total duration >= 20 minutes
+3. daily total estimated exercise kcal >= 80
+
+Frequency recommendation:
+
+- `averageWeeklyTrainingFrequency = activeTrainingDays / periodDays * 7`
+- `recommended = clamp(round(averageWeeklyTrainingFrequency), 2, 5)`
+
+### Boundary with dynamic calorie calibration
+
+The new g/kg self-check:
+
+- does **not** update `lifestyle_factor_non_exercise`
+- does **not** use weight-change 7700 kcal/kg equations
+- does **not** use observed TDEE EWMA updates
+
+Dynamic calorie calibration and g/kg self-check are independent systems.
+
+## 2026-05 饮食算法双模式（中文精简版）
+
+本版新增两套并列算法：
+
+1. `energy_ratio`（能量百分比）
+2. `gram_per_kg`（按体重 g/kg）
+
+### 核心区别
+
+- `activity_level`：日常非专项活动水平，用于基础能量计算。
+- `training_frequency_per_week`：每周训练次数（2/3/4/5），只用于 g/kg 查表。
+
+### energy_ratio
+
+- 先算不运动日基线：`BMR * lifestyle_factor_non_exercise`
+- 再加当天已记录净运动消耗
+- 最后用宏量营养素百分比换算每日蛋白/碳水/脂肪目标克数
+
+### gram_per_kg
+
+直接按体重算三大营养素目标：
+
+- 蛋白质 = 体重 * 蛋白系数
+- 碳水 = 体重 * 碳水系数
+- 脂肪 = 体重 * 脂肪系数
+
+系数由“性别 + 每周训练次数”查表得到。
+`prefer_not_to_say` 使用男女同档位平均值。
+
+### 首页展示规则
+
+- energy_ratio：显示 kcal 目标/已摄入/剩余。
+- gram_per_kg：以三大营养素克数为主，不显示“剩余 kcal 目标计数器”。
+  可显示“今日已摄入 kcal”作为辅助信息。
+
+### g/kg 训练频率自检
+
+- 只在 g/kg 模式运行。
+- activeTrainingDays 按“有效训练日期去重”统计，不按 session 条数统计。
+- 有效训练日判定（满足其一）：
+  1. 当天有力量训练
+  2. 当天有氧总时长 >= 20 分钟
+  3. 当天估算消耗总和 >= 80 kcal
+- 推荐频率：
+  - `averageWeekly = activeDays / periodDays * 7`
+  - `recommended = clamp(round(averageWeekly), 2, 5)`
+
+### 与动态热量校准的边界
+
+g/kg 自检不会参与原有动态热量校准：
+
+- 不改 lifestyle_factor_non_exercise
+- 不用 7700 kcal/kg 体重变化公式
+- 不用 observed TDEE / EWMA 校准流程
+
+两套机制相互独立。

@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int _dbVersion = 3;
+  static const int _dbVersion = 5;
 
   Database? _database;
 
@@ -50,6 +50,26 @@ class AppDatabase {
             'ALTER TABLE user_profile ADD COLUMN fat_ratio_percent REAL NOT NULL DEFAULT 30',
           );
         }
+        if (oldVersion < 4) {
+          await _createWeightAndCalibrationTables(db);
+        }
+        if (oldVersion < 5) {
+          await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN diet_calculation_mode TEXT NOT NULL DEFAULT 'energy_ratio'",
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN training_frequency_per_week INTEGER NOT NULL DEFAULT 3',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN macro_self_check_period_days INTEGER NOT NULL DEFAULT 14',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN macro_self_check_enabled INTEGER NOT NULL DEFAULT 1',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN last_macro_self_check_at TEXT',
+          );
+        }
       },
     );
   }
@@ -68,6 +88,11 @@ class AppDatabase {
         protein_ratio_percent REAL NOT NULL,
         carbs_ratio_percent REAL NOT NULL,
         fat_ratio_percent REAL NOT NULL,
+        diet_calculation_mode TEXT NOT NULL DEFAULT 'energy_ratio',
+        training_frequency_per_week INTEGER NOT NULL DEFAULT 3,
+        macro_self_check_period_days INTEGER NOT NULL DEFAULT 14,
+        macro_self_check_enabled INTEGER NOT NULL DEFAULT 1,
+        last_macro_self_check_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -135,6 +160,34 @@ class AppDatabase {
         FOREIGN KEY (workout_session_id) REFERENCES workout_sessions (id) ON DELETE CASCADE
       )
     ''');
+
+    await _createWeightAndCalibrationTables(db);
+  }
+
+  Future<void> _createWeightAndCalibrationTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS user_weight_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL UNIQUE,
+        weight_kg REAL NOT NULL,
+        source TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS calorie_calibration_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        lifestyle_factor REAL NOT NULL,
+        confidence REAL NOT NULL,
+        window_days INTEGER NOT NULL,
+        valid_days INTEGER NOT NULL,
+        last_calibrated_date TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> clearAllLocalData() async {
@@ -144,6 +197,8 @@ class AppDatabase {
       await txn.delete('food_records');
       await txn.delete('workout_sets');
       await txn.delete('workout_sessions');
+      await txn.delete('user_weight_logs');
+      await txn.delete('calorie_calibration_state');
       await txn.delete('user_profile');
     });
   }

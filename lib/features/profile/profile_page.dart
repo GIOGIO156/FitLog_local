@@ -9,7 +9,10 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../domain/models/calorie_calibration_state.dart';
+import '../../domain/models/training_frequency_self_check_result.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/services/macro_target_calculator.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -32,14 +35,24 @@ class _ProfilePageState extends State<ProfilePage> {
   String _sexForFormula = AppConstants.sexOptions.last;
   String _activityLevel = AppConstants.activityLevels[2];
   String _dailyGoalType = 'maintenance';
+  String _dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio;
+  int _trainingFrequencyPerWeek = AppConstants.defaultTrainingFrequencyPerWeek;
+  int _macroSelfCheckPeriodDays = AppConstants.defaultMacroSelfCheckPeriodDays;
+  bool _macroSelfCheckEnabled = true;
+  String? _lastMacroSelfCheckAt;
 
   UserProfile? _loadedProfile;
   bool _loading = true;
   bool _saving = false;
   bool _exportingXlsx = false;
   bool _exportingCsv = false;
+  CalorieCalibrationState? _calibrationState;
   double _todayExerciseCalories = 0;
   double _todayCaloriesIn = 0;
+  TrainingFrequencySelfCheckResult? _trainingSelfCheckResult;
+  bool _handlingSelfCheckAction = false;
+  final MacroTargetCalculator _macroTargetCalculator =
+      const MacroTargetCalculator();
 
   @override
   void initState() {
@@ -65,11 +78,20 @@ class _ProfilePageState extends State<ProfilePage> {
     final services = context.read<AppServices>();
     final profile =
         await services.profileRepository.getProfile() ?? UserProfile.defaults;
+    final calibrationState = await services.profileRepository
+        .getCalorieCalibrationState();
     final exerciseCalories = await services.workoutRepository
         .getExerciseCaloriesByDate(DateUtilsX.todayKey());
     final caloriesIn = await services.foodRepository.getCaloriesInByDate(
       DateUtilsX.todayKey(),
     );
+    final trainingSelfCheckResult = await services
+        .trainingFrequencySelfCheckService
+        .evaluate(
+          profile: profile,
+          referenceDay: DateUtilsX.todayKey(),
+          respectReminderCooldown: true,
+        );
 
     if (!mounted) {
       return;
@@ -88,8 +110,15 @@ class _ProfilePageState extends State<ProfilePage> {
       _sexForFormula = profile.sexForFormula;
       _activityLevel = profile.activityLevel;
       _dailyGoalType = profile.dailyEnergyGoalType;
+      _dietCalculationMode = profile.dietCalculationMode;
+      _trainingFrequencyPerWeek = profile.trainingFrequencyPerWeek;
+      _macroSelfCheckPeriodDays = profile.macroSelfCheckPeriodDays;
+      _macroSelfCheckEnabled = profile.macroSelfCheckEnabled;
+      _lastMacroSelfCheckAt = profile.lastMacroSelfCheckAt;
+      _calibrationState = calibrationState;
       _todayExerciseCalories = exerciseCalories;
       _todayCaloriesIn = caloriesIn;
+      _trainingSelfCheckResult = trainingSelfCheckResult;
       _normalizeGoalByAge();
       _loading = false;
     });
@@ -118,6 +147,9 @@ class _ProfilePageState extends State<ProfilePage> {
   double get _macroRatioTotal =>
       _proteinRatioPercent + _carbsRatioPercent + _fatRatioPercent;
 
+  bool get _isGramPerKgMode =>
+      _dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
+
   bool get _isMinor => _age > 0 && _age < 18;
 
   void _onAgeChanged() {
@@ -137,8 +169,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return AppConstants.dailyEnergyGoalTypes;
   }
 
-  double _calculateBmr() {
-    final profile = UserProfile(
+  UserProfile _buildDraftProfile() {
+    return UserProfile(
       age: _age,
       heightCm: _heightCm,
       weightKg: _weightKg,
@@ -149,34 +181,47 @@ class _ProfilePageState extends State<ProfilePage> {
       proteinRatioPercent: _proteinRatioPercent,
       carbsRatioPercent: _carbsRatioPercent,
       fatRatioPercent: _fatRatioPercent,
+      dietCalculationMode: _dietCalculationMode,
+      trainingFrequencyPerWeek: _trainingFrequencyPerWeek,
+      macroSelfCheckPeriodDays: _macroSelfCheckPeriodDays,
+      macroSelfCheckEnabled: _macroSelfCheckEnabled,
+      lastMacroSelfCheckAt: _lastMacroSelfCheckAt,
     );
+  }
 
+  double _calculateBmr() {
+    final profile = _buildDraftProfile();
     return context.read<AppServices>().dailySummaryService.calculateBmr(
       profile,
     );
   }
 
-  double _calculateTdeeReference(double bmr) {
-    const multipliers = <String, double>{
-      'sedentary': 1.2,
-      'lightly_active': 1.375,
-      'moderately_active': 1.55,
-      'very_active': 1.725,
-    };
-    return bmr * (multipliers[_activityLevel] ?? 1.55);
+  double _calculateNoExerciseBaseline(double bmr) {
+    return bmr * _currentLifestyleFactor();
+  }
+
+  double _currentLifestyleFactor() {
+    final calibrated = _calibrationState?.lifestyleFactor;
+    if (calibrated != null && calibrated > 0) {
+      return calibrated;
+    }
+    return context
+        .read<AppServices>()
+        .dailySummaryService
+        .defaultLifestyleFactorForActivity(_activityLevel);
   }
 
   double _calculateTargetIntake(double bmr) {
-    final actualExpenditure = bmr + _todayExerciseCalories;
-    switch (_dailyGoalType) {
-      case 'deficit':
-        return actualExpenditure - _goalKcal;
-      case 'surplus':
-        return actualExpenditure + _goalKcal;
-      case 'maintenance':
-      default:
-        return actualExpenditure;
+    if (_isGramPerKgMode) {
+      return 0;
     }
+    final baselineNoExerciseTdee = _calculateNoExerciseBaseline(bmr);
+    final noExerciseTarget = switch (_dailyGoalType) {
+      'deficit' => baselineNoExerciseTdee - _goalKcal,
+      'surplus' => baselineNoExerciseTdee + _goalKcal,
+      _ => baselineNoExerciseTdee,
+    };
+    return noExerciseTarget + _todayExerciseCalories;
   }
 
   Future<void> _save() async {
@@ -186,7 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    if (_isMinor && _dailyGoalType == 'deficit') {
+    if (!_isGramPerKgMode && _isMinor && _dailyGoalType == 'deficit') {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(strings.ageMinorNoDeficit)));
@@ -195,7 +240,7 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
 
-    if ((_macroRatioTotal - 100).abs() > 0.01) {
+    if (!_isGramPerKgMode && (_macroRatioTotal - 100).abs() > 0.01) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(strings.macroRatioTotalInvalid)));
@@ -208,23 +253,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() => _saving = true);
 
-    final profile = UserProfile(
+    final profile = _buildDraftProfile().copyWith(
       id: _loadedProfile?.id ?? 1,
-      age: _age,
-      heightCm: _heightCm,
-      weightKg: _weightKg,
-      sexForFormula: _sexForFormula,
-      activityLevel: _activityLevel,
-      dailyEnergyGoalType: _dailyGoalType,
-      dailyEnergyGoalKcal: _goalKcal,
-      proteinRatioPercent: _proteinRatioPercent,
-      carbsRatioPercent: _carbsRatioPercent,
-      fatRatioPercent: _fatRatioPercent,
       createdAt: _loadedProfile?.createdAt,
       updatedAt: _loadedProfile?.updatedAt,
     );
 
     await services.profileRepository.saveProfile(profile);
+    final trainingSelfCheckResult = await services
+        .trainingFrequencySelfCheckService
+        .evaluate(
+          profile: profile,
+          referenceDay: DateUtilsX.todayKey(),
+          respectReminderCooldown: true,
+        );
 
     if (!mounted) {
       return;
@@ -234,6 +276,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _saving = false;
       _loadedProfile = profile;
+      _trainingSelfCheckResult = trainingSelfCheckResult;
     });
     messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
   }
@@ -332,6 +375,65 @@ class _ProfilePageState extends State<ProfilePage> {
     messenger.showSnackBar(SnackBar(content: Text(strings.allDataCleared)));
   }
 
+  Future<void> _applySelfCheckSuggestion() async {
+    final result = _trainingSelfCheckResult;
+    if (result == null) {
+      return;
+    }
+    final now = DateTime.now().toIso8601String();
+    final services = context.read<AppServices>();
+    final messenger = ScaffoldMessenger.of(context);
+    final strings = context.stringsRead;
+
+    setState(() => _handlingSelfCheckAction = true);
+    try {
+      await services.profileRepository.saveMacroSelfCheckFeedback(
+        trainingFrequencyPerWeek: result.recommendedTrainingFrequency,
+        lastMacroSelfCheckAt: now,
+      );
+      if (!mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
+    } finally {
+      if (mounted) {
+        setState(() => _handlingSelfCheckAction = false);
+      }
+    }
+  }
+
+  Future<void> _keepCurrentSelfCheckSetting() async {
+    final now = DateTime.now().toIso8601String();
+    final services = context.read<AppServices>();
+    final messenger = ScaffoldMessenger.of(context);
+    final strings = context.stringsRead;
+
+    setState(() => _handlingSelfCheckAction = true);
+    try {
+      await services.profileRepository.saveMacroSelfCheckFeedback(
+        lastMacroSelfCheckAt: now,
+      );
+      if (!mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
+    } finally {
+      if (mounted) {
+        setState(() => _handlingSelfCheckAction = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -342,9 +444,15 @@ class _ProfilePageState extends State<ProfilePage> {
     final languageController = context.watch<LanguageController>();
 
     final bmr = _calculateBmr();
-    final tdeeReference = _calculateTdeeReference(bmr);
+    final lifestyleFactor = _currentLifestyleFactor();
+    final tdeeReference = _calculateNoExerciseBaseline(bmr);
     final targetIntake = _calculateTargetIntake(bmr);
     final remaining = targetIntake - _todayCaloriesIn;
+    final macroTargets = _isGramPerKgMode
+        ? _macroTargetCalculator.calculateByGramPerKg(
+            profile: _buildDraftProfile(),
+          )
+        : null;
 
     return ListView(
       padding: EdgeInsets.only(
@@ -460,140 +568,218 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  initialValue: _activityLevel,
+                  initialValue: _dietCalculationMode,
                   decoration: InputDecoration(
-                    labelText: strings.activityLevelLabel,
+                    labelText: strings.dietCalculationModeLabel,
                   ),
-                  items: AppConstants.activityLevels
+                  items: AppConstants.dietCalculationModes
                       .map(
-                        (value) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(strings.activityOptionLabel(value)),
+                        (mode) => DropdownMenuItem<String>(
+                          value: mode,
+                          child: Text(
+                            mode == AppConstants.dietCalculationModeGramPerKg
+                                ? strings.gramPerKgModeLabel
+                                : strings.energyRatioModeLabel,
+                          ),
                         ),
                       )
                       .toList(),
                   onChanged: (value) {
                     if (value != null) {
-                      setState(() => _activityLevel = value);
+                      setState(() => _dietCalculationMode = value);
                     }
                   },
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _goalTypeOptions.contains(_dailyGoalType)
-                      ? _dailyGoalType
-                      : _goalTypeOptions.first,
-                  decoration: InputDecoration(
-                    labelText: strings.dailyGoalTypeLabel,
+                if (!_isGramPerKgMode) ...<Widget>[
+                  DropdownButtonFormField<String>(
+                    initialValue: _activityLevel,
+                    decoration: InputDecoration(
+                      labelText: strings.activityLevelLabel,
+                    ),
+                    items: AppConstants.activityLevels
+                        .map(
+                          (value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(strings.activityOptionLabel(value)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _activityLevel = value);
+                      }
+                    },
                   ),
-                  items: _goalTypeOptions
-                      .map(
-                        (value) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(strings.goalTypeLabel(value)),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: _goalTypeOptions.contains(_dailyGoalType)
+                        ? _dailyGoalType
+                        : _goalTypeOptions.first,
+                    decoration: InputDecoration(
+                      labelText: strings.dailyGoalTypeLabel,
+                    ),
+                    items: _goalTypeOptions
+                        .map(
+                          (value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(strings.goalTypeLabel(value)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _dailyGoalType = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _goalKcalController,
+                    decoration: InputDecoration(
+                      labelText: strings.dailyGoalKcalLabel,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.macroRatioSettingsLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _proteinRatioController,
+                    decoration: InputDecoration(
+                      labelText: strings.proteinRatioPercentLabel,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      final ratio = NumberUtils.toDouble(value, fallback: -1);
+                      if (ratio < 0 || ratio > 100) {
+                        return strings.enterValidMacroRatio;
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _carbsRatioController,
+                    decoration: InputDecoration(
+                      labelText: strings.carbsRatioPercentLabel,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      final ratio = NumberUtils.toDouble(value, fallback: -1);
+                      if (ratio < 0 || ratio > 100) {
+                        return strings.enterValidMacroRatio;
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _fatRatioController,
+                    decoration: InputDecoration(
+                      labelText: strings.fatRatioPercentLabel,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      final ratio = NumberUtils.toDouble(value, fallback: -1);
+                      if (ratio < 0 || ratio > 100) {
+                        return strings.enterValidMacroRatio;
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${strings.macroRatioHint} (${_macroRatioTotal.toStringAsFixed(1)}%)',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if ((_macroRatioTotal - 100).abs() > 0.01)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        strings.macroRatioTotalInvalid,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _dailyGoalType = value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _goalKcalController,
-                  decoration: InputDecoration(
-                    labelText: strings.dailyGoalKcalLabel,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  strings.macroRatioSettingsLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _proteinRatioController,
-                  decoration: InputDecoration(
-                    labelText: strings.proteinRatioPercentLabel,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  validator: (value) {
-                    final ratio = NumberUtils.toDouble(value, fallback: -1);
-                    if (ratio < 0 || ratio > 100) {
-                      return strings.enterValidMacroRatio;
-                    }
-                    return null;
-                  },
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _carbsRatioController,
-                  decoration: InputDecoration(
-                    labelText: strings.carbsRatioPercentLabel,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  validator: (value) {
-                    final ratio = NumberUtils.toDouble(value, fallback: -1);
-                    if (ratio < 0 || ratio > 100) {
-                      return strings.enterValidMacroRatio;
-                    }
-                    return null;
-                  },
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _fatRatioController,
-                  decoration: InputDecoration(
-                    labelText: strings.fatRatioPercentLabel,
-                  ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  validator: (value) {
-                    final ratio = NumberUtils.toDouble(value, fallback: -1);
-                    if (ratio < 0 || ratio > 100) {
-                      return strings.enterValidMacroRatio;
-                    }
-                    return null;
-                  },
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${strings.macroRatioHint} (${_macroRatioTotal.toStringAsFixed(1)}%)',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if ((_macroRatioTotal - 100).abs() > 0.01)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      strings.macroRatioTotalInvalid,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                  ),
-                if (_dailyGoalType == 'deficit' && _goalKcal > 700)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      strings.aggressiveGoalWarning,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                  if (_dailyGoalType == 'deficit' && _goalKcal > 700)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text(
+                        strings.aggressiveGoalWarning,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
+                ],
+                if (_isGramPerKgMode) ...<Widget>[
+                  DropdownButtonFormField<int>(
+                    initialValue: _trainingFrequencyPerWeek,
+                    decoration: InputDecoration(
+                      labelText: strings.trainingFrequencyPerWeekLabel,
+                    ),
+                    items: AppConstants.trainingFrequencyPerWeekOptions
+                        .map(
+                          (value) => DropdownMenuItem<int>(
+                            value: value,
+                            child: Text(strings.trainingFrequencyOptionLabel(value)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _trainingFrequencyPerWeek = value);
+                      }
+                    },
                   ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<int>(
+                    initialValue: _macroSelfCheckPeriodDays,
+                    decoration: InputDecoration(
+                      labelText: strings.macroSelfCheckPeriodLabel,
+                    ),
+                    items: AppConstants.macroSelfCheckPeriodDayOptions
+                        .map(
+                          (value) => DropdownMenuItem<int>(
+                            value: value,
+                            child: Text(
+                              strings.macroSelfCheckPeriodOptionLabel(value),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _macroSelfCheckPeriodDays = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _macroSelfCheckEnabled,
+                    title: Text(strings.macroSelfCheckEnabledLabel),
+                    onChanged: (value) {
+                      setState(() => _macroSelfCheckEnabled = value);
+                    },
+                  ),
+                ],
                 if (_isMinor)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -615,6 +801,87 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
+        if (_isGramPerKgMode && _trainingSelfCheckResult != null)
+          GlassPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  strings.macroSelfCheckTitle,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (!_trainingSelfCheckResult!.isEnabled)
+                  Text(strings.macroSelfCheckEnabledLabel)
+                else if (!_trainingSelfCheckResult!.hasValidTrainingData)
+                  Text(strings.macroSelfCheckNoData)
+                else ...<Widget>[
+                  Text(
+                    strings.macroSelfCheckCurrentFrequencyText(
+                      _trainingSelfCheckResult!.currentTrainingFrequency,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.macroSelfCheckActiveDaysText(
+                      _trainingSelfCheckResult!.periodDays,
+                      _trainingSelfCheckResult!.activeTrainingDays,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.macroSelfCheckAverageFrequencyText(
+                      _trainingSelfCheckResult!.averageWeeklyTrainingFrequency,
+                    ),
+                  ),
+                  if (_trainingSelfCheckResult!.belowRecommendedRange) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Text(strings.macroSelfCheckBelowRangeNotice),
+                  ],
+                  const SizedBox(height: 8),
+                  if (!_trainingSelfCheckResult!.isConsistent) ...<Widget>[
+                    Text(
+                      strings.macroSelfCheckRecommendedText(
+                        _trainingSelfCheckResult!.recommendedTrainingFrequency,
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    if (_trainingSelfCheckResult!.shouldSuggestAdjustment) ...<Widget>[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _handlingSelfCheckAction
+                                  ? null
+                                  : _applySelfCheckSuggestion,
+                              child: Text(strings.applySuggestion),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: FilledButton.tonal(
+                              onPressed: _handlingSelfCheckAction
+                                  ? null
+                                  : _keepCurrentSelfCheckSetting,
+                              child: Text(strings.keepCurrentSetting),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...<Widget>[
+                      const SizedBox(height: 6),
+                      Text(strings.macroSelfCheckReminderCooldownHint),
+                    ],
+                  ] else
+                    Text(strings.macroSelfCheckConsistent),
+                ],
+              ],
+            ),
+          ),
         GlassPanel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -629,21 +896,66 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               _Line(label: 'BMR', value: bmr.toStringAsFixed(0)),
               _Line(
+                label: strings.lifestyleFactorLabel,
+                value: lifestyleFactor.toStringAsFixed(3),
+              ),
+              _Line(
                 label: strings.tdeeReferenceLabel,
                 value: tdeeReference.toStringAsFixed(0),
               ),
+              if (_calibrationState != null)
+                _Line(
+                  label: strings.calibrationConfidenceLabel,
+                  value:
+                      '${(_calibrationState!.confidence * 100).toStringAsFixed(0)}%',
+                ),
+              if (_calibrationState != null &&
+                  _calibrationState!.windowDays > 0)
+                _Line(
+                  label: strings.calibrationWindowLabel,
+                  value:
+                      '${_calibrationState!.windowDays} d (${_calibrationState!.validDays} valid)',
+                ),
               _Line(
                 label: strings.todayExerciseCaloriesLabel,
                 value: _todayExerciseCalories.toStringAsFixed(0),
               ),
-              _Line(
-                label: strings.targetIntakeTodayLabel,
-                value: targetIntake.toStringAsFixed(0),
-              ),
-              _Line(
-                label: strings.remainingTodayLabel,
-                value: remaining.toStringAsFixed(0),
-              ),
+              if (!_isGramPerKgMode) ...<Widget>[
+                _Line(
+                  label: strings.targetIntakeTodayLabel,
+                  value: targetIntake.toStringAsFixed(0),
+                ),
+                _Line(
+                  label: strings.remainingTodayLabel,
+                  value: remaining.toStringAsFixed(0),
+                ),
+              ],
+              if (_isGramPerKgMode && macroTargets != null) ...<Widget>[
+                const SizedBox(height: 8),
+                _Line(
+                  label: strings.trainingFrequencyPerWeekLabel,
+                  value: strings.trainingFrequencyOptionLabel(
+                    _trainingFrequencyPerWeek,
+                  ),
+                ),
+                _Line(
+                  label: '${strings.proteinLabel} (g)',
+                  value: macroTargets.proteinTargetG.toStringAsFixed(1),
+                ),
+                _Line(
+                  label: '${strings.carbsLabel} (g)',
+                  value: macroTargets.carbsTargetG.toStringAsFixed(1),
+                ),
+                _Line(
+                  label: '${strings.fatLabel} (g)',
+                  value: macroTargets.fatTargetG.toStringAsFixed(1),
+                ),
+                _Line(
+                  label: strings.macroEquivalentEnergyLabel,
+                  value:
+                      '${macroTargets.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal',
+                ),
+              ],
             ],
           ),
         ),

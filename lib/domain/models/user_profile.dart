@@ -14,6 +14,11 @@ class UserProfile {
     required this.proteinRatioPercent,
     required this.carbsRatioPercent,
     required this.fatRatioPercent,
+    required this.dietCalculationMode,
+    required this.trainingFrequencyPerWeek,
+    required this.macroSelfCheckPeriodDays,
+    required this.macroSelfCheckEnabled,
+    this.lastMacroSelfCheckAt,
     this.createdAt,
     this.updatedAt,
   });
@@ -29,6 +34,11 @@ class UserProfile {
   final double proteinRatioPercent;
   final double carbsRatioPercent;
   final double fatRatioPercent;
+  final String dietCalculationMode;
+  final int trainingFrequencyPerWeek;
+  final int macroSelfCheckPeriodDays;
+  final bool macroSelfCheckEnabled;
+  final String? lastMacroSelfCheckAt;
   final String? createdAt;
   final String? updatedAt;
 
@@ -44,6 +54,10 @@ class UserProfile {
     proteinRatioPercent: AppConstants.defaultProteinRatioPercent,
     carbsRatioPercent: AppConstants.defaultCarbsRatioPercent,
     fatRatioPercent: AppConstants.defaultFatRatioPercent,
+    dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+    trainingFrequencyPerWeek: AppConstants.defaultTrainingFrequencyPerWeek,
+    macroSelfCheckPeriodDays: AppConstants.defaultMacroSelfCheckPeriodDays,
+    macroSelfCheckEnabled: true,
   );
 
   bool get isMinor => age < 18;
@@ -65,6 +79,11 @@ class UserProfile {
     double? proteinRatioPercent,
     double? carbsRatioPercent,
     double? fatRatioPercent,
+    String? dietCalculationMode,
+    int? trainingFrequencyPerWeek,
+    int? macroSelfCheckPeriodDays,
+    bool? macroSelfCheckEnabled,
+    String? lastMacroSelfCheckAt,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -86,6 +105,22 @@ class UserProfile {
       proteinRatioPercent: proteinRatioPercent ?? this.proteinRatioPercent,
       carbsRatioPercent: carbsRatioPercent ?? this.carbsRatioPercent,
       fatRatioPercent: fatRatioPercent ?? this.fatRatioPercent,
+      dietCalculationMode:
+          AppConstants.dietCalculationModes.contains(
+            dietCalculationMode ?? this.dietCalculationMode,
+          )
+          ? (dietCalculationMode ?? this.dietCalculationMode)
+          : AppConstants.dietCalculationModeEnergyRatio,
+      trainingFrequencyPerWeek: AppConstants.trainingFrequencyPerWeekOptions
+              .contains(trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek)
+          ? (trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek)
+          : AppConstants.defaultTrainingFrequencyPerWeek,
+      macroSelfCheckPeriodDays: AppConstants.macroSelfCheckPeriodDayOptions
+              .contains(macroSelfCheckPeriodDays ?? this.macroSelfCheckPeriodDays)
+          ? (macroSelfCheckPeriodDays ?? this.macroSelfCheckPeriodDays)
+          : AppConstants.defaultMacroSelfCheckPeriodDays,
+      macroSelfCheckEnabled: macroSelfCheckEnabled ?? this.macroSelfCheckEnabled,
+      lastMacroSelfCheckAt: lastMacroSelfCheckAt ?? this.lastMacroSelfCheckAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -104,6 +139,11 @@ class UserProfile {
       'protein_ratio_percent': proteinRatioPercent,
       'carbs_ratio_percent': carbsRatioPercent,
       'fat_ratio_percent': fatRatioPercent,
+      'diet_calculation_mode': dietCalculationMode,
+      'training_frequency_per_week': trainingFrequencyPerWeek,
+      'macro_self_check_period_days': macroSelfCheckPeriodDays,
+      'macro_self_check_enabled': macroSelfCheckEnabled ? 1 : 0,
+      'last_macro_self_check_at': lastMacroSelfCheckAt,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -137,8 +177,46 @@ class UserProfile {
         map['fat_ratio_percent'],
         fallback: AppConstants.defaultFatRatioPercent,
       ),
+      dietCalculationMode: AppConstants.dietCalculationModes.contains(
+            (map['diet_calculation_mode'] ??
+                    AppConstants.dietCalculationModeEnergyRatio)
+                .toString(),
+          )
+          ? (map['diet_calculation_mode'] ??
+                AppConstants.dietCalculationModeEnergyRatio)
+                .toString()
+          : AppConstants.dietCalculationModeEnergyRatio,
+      trainingFrequencyPerWeek: _resolveTrainingFrequency(
+        NumberUtils.toInt(
+          map['training_frequency_per_week'],
+          fallback: AppConstants.defaultTrainingFrequencyPerWeek,
+        ),
+      ),
+      macroSelfCheckPeriodDays: _resolveMacroSelfCheckPeriod(
+        NumberUtils.toInt(
+          map['macro_self_check_period_days'],
+          fallback: AppConstants.defaultMacroSelfCheckPeriodDays,
+        ),
+      ),
+      macroSelfCheckEnabled:
+          NumberUtils.toInt(map['macro_self_check_enabled'], fallback: 1) == 1,
+      lastMacroSelfCheckAt: map['last_macro_self_check_at']?.toString(),
       createdAt: map['created_at']?.toString(),
       updatedAt: map['updated_at']?.toString(),
     );
+  }
+
+  static int _resolveTrainingFrequency(int raw) {
+    if (AppConstants.trainingFrequencyPerWeekOptions.contains(raw)) {
+      return raw;
+    }
+    return AppConstants.defaultTrainingFrequencyPerWeek;
+  }
+
+  static int _resolveMacroSelfCheckPeriod(int raw) {
+    if (AppConstants.macroSelfCheckPeriodDayOptions.contains(raw)) {
+      return raw;
+    }
+    return AppConstants.defaultMacroSelfCheckPeriodDays;
   }
 }

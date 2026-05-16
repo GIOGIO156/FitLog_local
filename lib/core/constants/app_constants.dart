@@ -83,6 +83,26 @@ class AppConstants {
     'surplus',
   ];
 
+  static const String dietCalculationModeEnergyRatio = 'energy_ratio';
+  static const String dietCalculationModeGramPerKg = 'gram_per_kg';
+  static const List<String> dietCalculationModes = <String>[
+    dietCalculationModeEnergyRatio,
+    dietCalculationModeGramPerKg,
+  ];
+
+  static const int defaultTrainingFrequencyPerWeek = 3;
+  static const List<int> trainingFrequencyPerWeekOptions = <int>[2, 3, 4, 5];
+  static const int defaultMacroSelfCheckPeriodDays = 14;
+  static const List<int> macroSelfCheckPeriodDayOptions = <int>[
+    7,
+    14,
+    21,
+    28,
+  ];
+  static const int macroSelfCheckReminderCooldownDays = 7;
+  static const int validWorkoutCardioMinutesThreshold = 20;
+  static const double validWorkoutCaloriesThreshold = 80;
+
   static const double defaultProteinRatioPercent = 30;
   static const double defaultCarbsRatioPercent = 40;
   static const double defaultFatRatioPercent = 30;

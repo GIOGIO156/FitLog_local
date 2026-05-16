@@ -191,6 +191,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                 exerciseName: session.exerciseName,
                 bodyWeightKg: bodyWeightKg,
                 sets: session.sets,
+                totalSessionDurationMinutes: updatedDuration,
               );
 
         await repository.updateWorkoutSession(

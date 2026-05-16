@@ -85,6 +85,8 @@ class XlsxExportService {
 
     _appendHeader(summarySheet, const <String>[
       'date',
+      'diet_calculation_mode',
+      'is_energy_target_mode',
       'calories_in',
       'protein_g',
       'carbs_g',
@@ -92,14 +94,28 @@ class XlsxExportService {
       'exercise_calories',
       'bmr',
       'tdee_reference',
+      'lifestyle_factor_used',
+      'no_exercise_target_intake',
       'target_intake',
       'remaining_calories',
+      'calibration_confidence',
+      'calibration_window_days',
+      'calibration_valid_days',
       'target_protein_g',
       'target_carbs_g',
       'target_fat_g',
       'remaining_protein_g',
       'remaining_carbs_g',
       'remaining_fat_g',
+      'macro_energy_equivalent_kcal',
+      'macro_self_check_current_frequency',
+      'macro_self_check_recommended_frequency',
+      'macro_self_check_active_training_days',
+      'macro_self_check_period_days',
+      'macro_self_check_average_weekly_frequency',
+      'macro_self_check_should_suggest',
+      'macro_self_check_has_valid_training_data',
+      'macro_self_check_below_recommended_range',
     ]);
 
     _appendHeader(profileSheet, const <String>[
@@ -113,6 +129,11 @@ class XlsxExportService {
       'protein_ratio_percent',
       'carbs_ratio_percent',
       'fat_ratio_percent',
+      'diet_calculation_mode',
+      'training_frequency_per_week',
+      'macro_self_check_period_days',
+      'macro_self_check_enabled',
+      'last_macro_self_check_at',
     ]);
 
     final foodRecords = await _foodRepository.getAllFoodRecords();
@@ -179,6 +200,8 @@ class XlsxExportService {
       final daily = await _dailySummaryService.getSummaryForDate(date);
       _appendRow(summarySheet, <dynamic>[
         date,
+        daily.dietCalculationMode,
+        daily.isEnergyTargetMode ? 1 : 0,
         daily.caloriesIn,
         daily.proteinG,
         daily.carbsG,
@@ -186,14 +209,28 @@ class XlsxExportService {
         daily.exerciseCalories,
         daily.bmr,
         daily.tdeeReference,
+        daily.lifestyleFactorUsed,
+        daily.noExerciseTargetIntake,
         daily.targetIntake,
         daily.remainingCalories,
+        daily.calibrationConfidence,
+        daily.calibrationWindowDays,
+        daily.calibrationValidDays,
         daily.targetProteinG,
         daily.targetCarbsG,
         daily.targetFatG,
         daily.remainingProteinG,
         daily.remainingCarbsG,
         daily.remainingFatG,
+        daily.macroEnergyEquivalentKcal,
+        daily.macroSelfCheckCurrentFrequency,
+        daily.macroSelfCheckRecommendedFrequency,
+        daily.macroSelfCheckActiveTrainingDays,
+        daily.macroSelfCheckPeriodDays,
+        daily.macroSelfCheckAverageWeeklyFrequency,
+        daily.macroSelfCheckShouldSuggest ? 1 : 0,
+        daily.macroSelfCheckHasValidTrainingData ? 1 : 0,
+        daily.macroSelfCheckBelowRecommendedRange ? 1 : 0,
       ]);
     }
 
@@ -210,6 +247,11 @@ class XlsxExportService {
       profile.proteinRatioPercent,
       profile.carbsRatioPercent,
       profile.fatRatioPercent,
+      profile.dietCalculationMode,
+      profile.trainingFrequencyPerWeek,
+      profile.macroSelfCheckPeriodDays,
+      profile.macroSelfCheckEnabled ? 1 : 0,
+      profile.lastMacroSelfCheckAt ?? '',
     ]);
 
     final List<int>? bytes = excel.encode();

@@ -256,6 +256,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       exerciseName: draft.exerciseName,
       bodyWeightKg: _profileWeightKg,
       sets: sets,
+      totalSessionDurationMinutes: durationMinutes,
     );
   }
 
@@ -271,16 +272,30 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     required TextEditingController controller,
     required TextInputType keyboardType,
     required String hintText,
+    required bool showAsDefaultValue,
+    void Function(String value)? onValueChanged,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final activeTextColor = isDark ? Colors.white : Colors.black87;
+    final defaultTextColor = isDark
+        ? Colors.white.withValues(alpha: 0.42)
+        : Colors.black.withValues(alpha: 0.42);
+
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       textAlign: TextAlign.center,
       selectAllOnFocus: true,
-      onChanged: (_) => setState(() {}),
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      onChanged: (value) {
+        onValueChanged?.call(value);
+        setState(() {});
+      },
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: showAsDefaultValue ? defaultTextColor : activeTextColor,
+      ),
       decoration: InputDecoration(
         hintText: hintText.isEmpty ? '--' : hintText,
         hintStyle: TextStyle(
@@ -410,6 +425,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                   exerciseName: draft.exerciseName,
                   bodyWeightKg: _profileWeightKg,
                   sets: sets,
+                  totalSessionDurationMinutes: durationMinutes,
                 ),
           notes: notes,
           sets: sets,
@@ -700,6 +716,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                                 ),
                                             hintText:
                                                 setDraft.defaultWeightHint,
+                                            showAsDefaultValue:
+                                                setDraft.showWeightAsDefault,
+                                            onValueChanged:
+                                                setDraft.markWeightInput,
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -709,6 +729,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                             controller: setDraft.repsController,
                                             keyboardType: TextInputType.number,
                                             hintText: setDraft.defaultRepsHint,
+                                            showAsDefaultValue:
+                                                setDraft.showRepsAsDefault,
+                                            onValueChanged:
+                                                setDraft.markRepsInput,
                                           ),
                                         ),
                                         IconButton(
@@ -827,8 +851,10 @@ class _SetDraft {
   _SetDraft({required String defaultWeight, required String defaultReps})
     : _defaultWeight = defaultWeight.trim(),
       _defaultReps = defaultReps.trim(),
-      weightController = TextEditingController(),
-      repsController = TextEditingController();
+      weightController = TextEditingController(text: defaultWeight.trim()),
+      repsController = TextEditingController(text: defaultReps.trim()),
+      _showWeightAsDefault = defaultWeight.trim().isNotEmpty,
+      _showRepsAsDefault = defaultReps.trim().isNotEmpty;
 
   final String _defaultWeight;
   final String _defaultReps;
@@ -836,18 +862,30 @@ class _SetDraft {
   final TextEditingController weightController;
   final TextEditingController repsController;
   bool isCompleted = false;
+  bool _showWeightAsDefault;
+  bool _showRepsAsDefault;
 
-  String get defaultWeightHint => _defaultWeight;
-  String get defaultRepsHint => _defaultReps;
+  String get defaultWeightHint => _defaultWeight.isEmpty ? '--' : '';
+  String get defaultRepsHint => _defaultReps.isEmpty ? '--' : '';
+  bool get showWeightAsDefault => _showWeightAsDefault;
+  bool get showRepsAsDefault => _showRepsAsDefault;
+
+  void markWeightInput(String value) {
+    final typed = value.trim();
+    _showWeightAsDefault = _defaultWeight.isNotEmpty && typed == _defaultWeight;
+  }
+
+  void markRepsInput(String value) {
+    final typed = value.trim();
+    _showRepsAsDefault = _defaultReps.isNotEmpty && typed == _defaultReps;
+  }
 
   String get effectiveWeightText {
-    final typed = weightController.text.trim();
-    return typed.isNotEmpty ? typed : _defaultWeight;
+    return weightController.text.trim();
   }
 
   String get effectiveRepsText {
-    final typed = repsController.text.trim();
-    return typed.isNotEmpty ? typed : _defaultReps;
+    return repsController.text.trim();
   }
 
   void dispose() {

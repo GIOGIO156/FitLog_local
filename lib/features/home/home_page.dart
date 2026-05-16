@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -115,7 +116,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           IconButton(
-                            onPressed: () => _shiftDate(selectedDateNotifier, 1),
+                            onPressed: () =>
+                                _shiftDate(selectedDateNotifier, 1),
                             icon: const Icon(Icons.chevron_right),
                           ),
                           TextButton(
@@ -243,6 +245,8 @@ class _OverviewHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
+    final isGramPerKgMode =
+        summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
 
     return Container(
       width: double.infinity,
@@ -274,7 +278,9 @@ class _OverviewHero extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                strings.caloriesInTodayLabel,
+                isGramPerKgMode
+                    ? strings.macroTargetModeGramPerKg
+                    : strings.caloriesInTodayLabel,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: isDark
@@ -289,30 +295,42 @@ class _OverviewHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.end,
-            spacing: 4,
-            children: <Widget>[
-              Text(
-                summary.caloriesIn.toStringAsFixed(0),
-                style: const TextStyle(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w900,
-                  height: 0.95,
+          if (!isGramPerKgMode)
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.end,
+              spacing: 4,
+              children: <Widget>[
+                Text(
+                  summary.caloriesIn.toStringAsFixed(0),
+                  style: const TextStyle(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w900,
+                    height: 0.95,
+                  ),
                 ),
-              ),
-              Text(
-                '/ ${summary.targetIntake.toStringAsFixed(0)} kcal',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.88)
-                      : Colors.black.withValues(alpha: 0.82),
+                Text(
+                  '/ ${summary.targetIntake.toStringAsFixed(0)} kcal',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.88)
+                        : Colors.black.withValues(alpha: 0.82),
+                  ),
                 ),
+              ],
+            ),
+          if (isGramPerKgMode)
+            Text(
+              strings.todayCaloriesAux(summary.caloriesIn),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.88)
+                    : Colors.black.withValues(alpha: 0.82),
               ),
-            ],
-          ),
+            ),
           const SizedBox(height: 12),
           Row(
             children: <Widget>[
@@ -421,6 +439,59 @@ class _DashboardDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGramPerKgMode =
+        summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
+
+    if (isGramPerKgMode) {
+      return Column(
+        children: <Widget>[
+          _MetricLine(
+            label: strings.caloriesInTodayLabel,
+            value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
+          ),
+          _MetricLine(
+            label: strings.exerciseCaloriesTodayLabel,
+            value: '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
+          ),
+          _MetricLine(
+            label: '${strings.proteinLabel} (g)',
+            value:
+                '${summary.proteinG.toStringAsFixed(1)} / ${summary.targetProteinG.toStringAsFixed(1)}',
+          ),
+          _MetricLine(
+            label: '${strings.carbsLabel} (g)',
+            value:
+                '${summary.carbsG.toStringAsFixed(1)} / ${summary.targetCarbsG.toStringAsFixed(1)}',
+          ),
+          _MetricLine(
+            label: '${strings.fatLabel} (g)',
+            value:
+                '${summary.fatG.toStringAsFixed(1)} / ${summary.targetFatG.toStringAsFixed(1)}',
+          ),
+          _MetricLine(
+            label: strings.macroEquivalentEnergyLabel,
+            value: '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal',
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              strings.gramPerKgModeNotice,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              strings.estimateNotice,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: <Widget>[
         _MetricLine(
@@ -431,14 +502,27 @@ class _DashboardDetails extends StatelessWidget {
           label: strings.exerciseCaloriesTodayLabel,
           value: '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
         ),
+        _MetricLine(label: 'BMR', value: summary.bmr.toStringAsFixed(0)),
         _MetricLine(
-          label: 'BMR',
-          value: summary.bmr.toStringAsFixed(0),
-        ),
-        _MetricLine(
-          label: 'TDEE',
+          label: strings.tdeeReferenceLabel,
           value: summary.tdeeReference.toStringAsFixed(0),
         ),
+        _MetricLine(
+          label: strings.lifestyleFactorLabel,
+          value: summary.lifestyleFactorUsed.toStringAsFixed(3),
+        ),
+        if (summary.calibrationWindowDays > 0)
+          _MetricLine(
+            label: strings.calibrationWindowLabel,
+            value:
+                '${summary.calibrationWindowDays} d (${summary.calibrationValidDays} valid)',
+          ),
+        if (summary.calibrationWindowDays > 0)
+          _MetricLine(
+            label: strings.calibrationConfidenceLabel,
+            value:
+                '${(summary.calibrationConfidence * 100).toStringAsFixed(0)}%',
+          ),
         _MetricLine(
           label: strings.targetIntakeLabel,
           value: '${summary.targetIntake.toStringAsFixed(0)} kcal',

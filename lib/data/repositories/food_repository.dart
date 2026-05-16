@@ -151,6 +151,33 @@ class FoodRepository {
     return records.fold<double>(0, (sum, item) => sum + item.caloriesKcal);
   }
 
+  Future<Map<String, double>> getDailyCaloriesBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    final db = await _database.database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT date, SUM(calories_kcal) AS total
+      FROM food_records
+      WHERE date >= ? AND date <= ?
+      GROUP BY date
+      ORDER BY date ASC
+      ''',
+      <Object?>[startDate, endDate],
+    );
+
+    final result = <String, double>{};
+    for (final row in rows) {
+      final key = row['date']?.toString() ?? '';
+      if (key.isEmpty) {
+        continue;
+      }
+      result[key] = (row['total'] as num?)?.toDouble() ?? 0;
+    }
+    return result;
+  }
+
   Future<List<String>> getDistinctDates() async {
     final db = await _database.database;
     final rows = await db.rawQuery(

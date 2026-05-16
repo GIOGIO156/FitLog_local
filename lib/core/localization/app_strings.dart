@@ -34,8 +34,8 @@ class AppStrings {
   );
 
   String get estimateNotice => _t(
-    'All nutrition values are estimates for personal logging only.',
-    '所有营养数据均为估算值，仅用于个人记录。',
+    'All values are estimates for personal logging. Daily target = no-exercise baseline ± goal + logged net exercise.',
+    '所有数值仅用于个人记录估算：每日目标 = 不运动基线 ± 目标热量差 + 已记录净运动消耗。',
   );
 
   String get noFoodRecords => _t(
@@ -118,6 +118,61 @@ class AppStrings {
   String get activityLevelLabel => _t('Activity Level', '活动水平');
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
   String get dailyGoalKcalLabel => _t('Goal Delta (kcal)', '目标热量差 (kcal)');
+  String get dietCalculationModeLabel => _t('Diet Calculation Mode', '饮食计算方式');
+  String get energyRatioModeLabel => _t(
+    'Energy Ratio Method',
+    '能量百分比计算法',
+  );
+  String get gramPerKgModeLabel => _t('g/kg Bodyweight Method', 'g/kg 体重计算法');
+  String get trainingFrequencyPerWeekLabel =>
+      _t('Training Frequency / Week', '每周训练次数');
+  String trainingFrequencyOptionLabel(int value) =>
+      _t('$value sessions / week', '每周 $value 次');
+  String get macroSelfCheckPeriodLabel => _t('Self-check Period', '自检周期');
+  String macroSelfCheckPeriodOptionLabel(int value) =>
+      _t('$value days', '$value 天');
+  String get macroSelfCheckEnabledLabel => _t(
+    'Enable training history self-check suggestions',
+    '启用历史训练记录自检建议',
+  );
+  String get macroSelfCheckTitle => _t(
+    'Training Frequency Self-check',
+    '训练频率自检',
+  );
+  String get applySuggestion => _t('Apply Suggestion', '应用建议');
+  String get keepCurrentSetting => _t('Keep Current Setting', '保持当前设置');
+  String get macroSelfCheckNoData => _t(
+    'No valid training days in selected period yet.',
+    '所选周期内暂无有效训练日。',
+  );
+  String get macroSelfCheckConsistent => _t(
+    'Current setting is consistent with recent training history.',
+    '当前设置与历史训练记录基本一致。',
+  );
+  String get macroSelfCheckReminderCooldownHint => _t(
+    'A recommendation exists but reminder cooldown is active. You can adjust it manually below.',
+    '当前存在推荐档位，但提醒冷却中。你可以在下方手动调整。',
+  );
+  String macroSelfCheckCurrentFrequencyText(int value) => _t(
+    'Current setting: $value sessions/week',
+    '当前设置：每周训练 $value 次',
+  );
+  String macroSelfCheckActiveDaysText(int periodDays, int activeDays) => _t(
+    'Past $periodDays days: trained on $activeDays days',
+    '过去 $periodDays 天：实际训练 $activeDays 天',
+  );
+  String macroSelfCheckAverageFrequencyText(double weeklyFrequency) => _t(
+    'Equivalent frequency: about ${weeklyFrequency.toStringAsFixed(1)} sessions/week',
+    '折算频率：约每周 ${weeklyFrequency.toStringAsFixed(1)} 次',
+  );
+  String macroSelfCheckRecommendedText(int value) => _t(
+    'Suggested g/kg tier: $value sessions/week',
+    '建议将 g/kg 档位调整为：每周训练 $value 次',
+  );
+  String get macroSelfCheckBelowRangeNotice => _t(
+    'Recent training frequency is below g/kg range. Suggest using 2 sessions/week tier or switch back to Energy Ratio mode.',
+    '历史训练频率低于 g/kg 算法推荐范围，当前建议使用每周训练 2 次档位，或切换回能量百分比计算法。',
+  );
   String get macroRatioSettingsLabel =>
       _t('Daily Macro Ratio (%)', '每日三大营养比例 (%)');
   String get proteinRatioPercentLabel => _t('Protein Ratio (%)', '蛋白质比例 (%)');
@@ -306,17 +361,37 @@ class AppStrings {
   String get todayWorkoutList => _t('Today Workout Records', '今日训练记录');
 
   String get caloriesInTodayLabel => _t('Calories in today', '今日摄入热量');
+  String todayCaloriesAux(double caloriesIn) =>
+      _t('Today intake: ${caloriesIn.toStringAsFixed(0)} kcal', '今日已摄入：${caloriesIn.toStringAsFixed(0)} kcal');
   String get exerciseCaloriesTodayLabel =>
       _t('Exercise calories today', '今日运动消耗');
   String get targetIntakeLabel => _t('Target intake', '今日目标摄入');
   String get remainingCaloriesLabel => _t('Remaining calories', '剩余热量');
+  String get macroTargetModeGramPerKg => _t(
+    'Macro Targets (g/kg mode)',
+    '三大营养目标（g/kg 模式）',
+  );
+  String get gramPerKgModeNotice => _t(
+    'In g/kg mode, macros are primary targets. kcal is shown only as auxiliary intake info.',
+    'g/kg 模式下以三大营养克数为主目标，kcal 仅作辅助信息，不显示剩余热量目标。',
+  );
+  String get macroEquivalentEnergyLabel => _t(
+    'Macro equivalent energy',
+    '三大营养换算能量',
+  );
   String get proteinLabel => _t('Protein', '蛋白质');
   String get carbsLabel => _t('Carbs', '碳水');
   String get fatLabel => _t('Fat', '脂肪');
   String get remainingProteinLabel => _t('Protein remaining (g)', '蛋白质剩余 (g)');
   String get remainingCarbsLabel => _t('Carbs remaining (g)', '碳水剩余 (g)');
   String get remainingFatLabel => _t('Fat remaining (g)', '脂肪剩余 (g)');
-  String get tdeeReferenceLabel => _t('TDEE reference', 'TDEE 参考');
+  String get tdeeReferenceLabel =>
+      _t('No-exercise baseline TDEE', '不运动基线 TDEE');
+  String get lifestyleFactorLabel =>
+      _t('Lifestyle factor (non-exercise)', '日常活动系数（不含专项训练）');
+  String get calibrationConfidenceLabel =>
+      _t('Calibration confidence', '校准置信度');
+  String get calibrationWindowLabel => _t('Calibration window', '校准窗口');
   String get todayExerciseCaloriesLabel =>
       _t('Today exercise calories', '今日运动消耗');
   String get targetIntakeTodayLabel => _t('Target intake today', '今日目标摄入');

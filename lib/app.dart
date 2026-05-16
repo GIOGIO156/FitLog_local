@@ -9,6 +9,7 @@ import 'data/repositories/food_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/workout_repository.dart';
 import 'domain/services/daily_summary_service.dart';
+import 'domain/services/training_frequency_self_check_service.dart';
 import 'export/csv_export_service.dart';
 import 'export/xlsx_export_service.dart';
 import 'features/food/food_log_page.dart';
@@ -35,11 +36,15 @@ class _FitLogAppState extends State<FitLogApp> {
     final foodRepository = FoodRepository(database);
     final workoutRepository = WorkoutRepository(database);
     final profileRepository = ProfileRepository(database);
+    final trainingFrequencySelfCheckService = TrainingFrequencySelfCheckService(
+      workoutRepository: workoutRepository,
+    );
 
     final dailySummaryService = DailySummaryService(
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
       profileRepository: profileRepository,
+      trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,
     );
 
     _services = AppServices(
@@ -59,6 +64,7 @@ class _FitLogAppState extends State<FitLogApp> {
         profileRepository: profileRepository,
         dailySummaryService: dailySummaryService,
       ),
+      trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,
       database: database,
     );
 
@@ -296,6 +302,7 @@ class AppServices {
     required this.dailySummaryService,
     required this.xlsxExportService,
     required this.csvExportService,
+    required this.trainingFrequencySelfCheckService,
     required this.database,
   });
 
@@ -305,5 +312,6 @@ class AppServices {
   final DailySummaryService dailySummaryService;
   final XlsxExportService xlsxExportService;
   final CsvExportService csvExportService;
+  final TrainingFrequencySelfCheckService trainingFrequencySelfCheckService;
   final AppDatabase database;
 }
