@@ -48,6 +48,7 @@ class AppStrings {
 
   String get deleteRecord => _t('Delete Record', '删除记录');
   String get delete => _t('Delete', '删除');
+  String get copy => _t('Copy', '复制');
   String get cancel => _t('Cancel', '取消');
   String get date => _t('Date', '日期');
   String get change => _t('Change', '修改');
@@ -56,6 +57,12 @@ class AppStrings {
       _t('Delete "$mealName" on $date?', '确认删除 $date 的“$mealName”？');
 
   String get foodDeleted => _t('Food record deleted.', '食物记录已删除。');
+
+  String foodCopied(String mealName, String date) =>
+      _t('"$mealName" copied to $date.', '已将 "$mealName" 复制到 $date。');
+
+  String failedToCopyFood(Object error) =>
+      _t('Failed to copy food record: $error', '复制食物记录失败: $error');
 
   String sourceLabel(String source) {
     switch (source) {
@@ -298,6 +305,7 @@ class AppStrings {
   String get workoutDetails => _t('Workout Details', '训练参数');
   String get setsPlan => _t('Sets Plan', '组数计划');
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
+  String get previousLabel => _t('Previous', '上次');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
   String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
   String get repsLabel => _t('Reps', '次数');

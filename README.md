@@ -406,6 +406,51 @@ Dynamic calorie calibration and g/kg self-check are independent systems.
 - 碳水 = 体重 * 碳水系数
 - 脂肪 = 体重 * 脂肪系数
 
+---
+
+## 2026-05-31 Update
+
+### 1) Workout set input overwrite UX fix
+- Historical set values are still shown as muted defaults for quick reuse.
+- Tapping a default value now reliably selects the full value before editing.
+- Typing a new number replaces old value directly (no middle-cursor insertion issue such as `60 -> 6650`).
+
+### 2) Food record copy action
+- Added a copy button on each food record card in Food Log.
+- One tap duplicates a record into the currently selected date.
+- Copied fields include:
+  - meal name
+  - calories/weight/macros
+  - confidence/source/notes
+  - item rows (if any)
+- Copy creates a new local record (new ID), preserving original history.
+
+---
+
+## 2026-06-01 Update
+
+### 1) Workout logging UI compactness refresh
+- The strength set area was reworked to be denser and less bloated.
+- Main direction:
+  - reduce nested-card visual heaviness
+  - keep high information density for many sets
+  - improve decimal visibility (e.g. `42.5`)
+- Practical changes:
+  - compact table-like row layout for sets (`# / Previous / Weight / Reps / Actions`)
+  - denser input fields (smaller padding, tighter border radius, compact style)
+  - smaller action button footprint for check/remove
+  - previous-set summary shown inline (`weight x reps`)
+
+### 2) Food record copy now supports target-date selection
+- Copy action no longer forces same-day duplication.
+- Tapping copy opens a date picker first.
+- The selected date is used as the duplication target.
+- Copied data still includes:
+  - meal name
+  - calories/weight/macros
+  - confidence/source/notes
+  - item rows (if any)
+
 系数由“性别 + 每周训练次数”查表得到。
 `prefer_not_to_say` 使用男女同档位平均值。
 

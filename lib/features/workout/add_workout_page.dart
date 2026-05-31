@@ -273,6 +273,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     required TextInputType keyboardType,
     required String hintText,
     required bool showAsDefaultValue,
+    bool enabled = true,
+    VoidCallback? onInputTap,
     void Function(String value)? onValueChanged,
   }) {
     final theme = Theme.of(context);
@@ -281,35 +283,56 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     final defaultTextColor = isDark
         ? Colors.white.withValues(alpha: 0.42)
         : Colors.black.withValues(alpha: 0.42);
+    final backgroundColor = isDark
+        ? Colors.white.withValues(alpha: 0.07)
+        : Colors.white.withValues(alpha: 0.68);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.12);
 
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      enabled: enabled,
       textAlign: TextAlign.center,
       selectAllOnFocus: true,
+      onTap: onInputTap,
       onChanged: (value) {
         onValueChanged?.call(value);
         setState(() {});
       },
       style: TextStyle(
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: FontWeight.w700,
         color: showAsDefaultValue ? defaultTextColor : activeTextColor,
       ),
       decoration: InputDecoration(
+        isDense: true,
         hintText: hintText.isEmpty ? '--' : hintText,
         hintStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
           color: isDark
               ? Colors.white.withValues(alpha: 0.34)
               : Colors.black.withValues(alpha: 0.34),
         ),
         filled: true,
-        fillColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.72),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 12,
+        fillColor: backgroundColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: theme.colorScheme.primary.withValues(alpha: 0.7),
+            width: 1.2,
+          ),
         ),
       ),
     );
@@ -569,19 +592,19 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                           ? '--'
                           : draft.defaultDurationHint;
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 10),
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             color: Theme.of(context)
                                 .colorScheme
                                 .surfaceContainerHighest
-                                .withValues(alpha: 0.45),
+                                .withValues(alpha: 0.24),
                             border: Border.all(
-                              color: color.withValues(alpha: 0.28),
+                              color: color.withValues(alpha: 0.16),
                             ),
                           ),
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
@@ -592,6 +615,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                     bodyPart: draft.bodyPart,
                                     exerciseName: draft.exerciseName,
                                     color: color,
+                                    size: 48,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
@@ -628,8 +652,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                 selectAllOnFocus: true,
                                 enabled: !_saving,
                                 decoration: InputDecoration(
+                                  isDense: true,
                                   labelText: strings.durationMinutesLabel,
                                   hintText: durationHint,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                                 onChanged: (_) => setState(() {}),
                               ),
@@ -657,19 +686,48 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                     ),
                                   ),
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.only(bottom: 4),
                                   child: Row(
                                     children: <Widget>[
-                                      const SizedBox(width: 56),
+                                      SizedBox(
+                                        width: 26,
+                                        child: Text(
+                                          '#',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      SizedBox(
+                                        width: 72,
+                                        child: Text(
+                                          strings.previousLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
+                                        flex: 5,
                                         child: Text(
                                           draft.isBodyweight
                                               ? strings.addedWeightKgShortLabel
                                               : strings.weightKgShortLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall
+                                              .labelSmall
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w700,
                                               ),
@@ -677,17 +735,20 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
+                                        flex: 4,
                                         child: Text(
                                           strings.repsLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall
+                                              .labelSmall
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w700,
                                               ),
                                         ),
                                       ),
-                                      const SizedBox(width: 96),
+                                      const SizedBox(width: 68),
                                     ],
                                   ),
                                 ),
@@ -695,77 +756,153 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                   final index = entry.key;
                                   final setDraft = entry.value;
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: <Widget>[
-                                        SizedBox(
-                                          width: 56,
-                                          child: Text(
-                                            strings.setLabel(index + 1),
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.22),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 6,
+                                      ),
+                                      child: Row(
+                                        children: <Widget>[
+                                          SizedBox(
+                                            width: 26,
+                                            child: Text(
+                                              '${index + 1}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: _buildSetValueInput(
-                                            context: context,
-                                            controller:
-                                                setDraft.weightController,
-                                            keyboardType:
-                                                const TextInputType.numberWithOptions(
-                                                  decimal: true,
+                                          const SizedBox(width: 8),
+                                          SizedBox(
+                                            width: 72,
+                                            child: Text(
+                                              setDraft.previousSummary,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.color
+                                                        ?.withValues(
+                                                          alpha: 0.62,
+                                                        ),
+                                                  ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            flex: 5,
+                                            child: _buildSetValueInput(
+                                              context: context,
+                                              controller:
+                                                  setDraft.weightController,
+                                              keyboardType:
+                                                  const TextInputType.numberWithOptions(
+                                                    decimal: true,
+                                                  ),
+                                              hintText:
+                                                  setDraft.defaultWeightHint,
+                                              showAsDefaultValue:
+                                                  setDraft.showWeightAsDefault,
+                                              enabled: !_saving,
+                                              onInputTap: setDraft
+                                                  .prepareWeightForEditing,
+                                              onValueChanged:
+                                                  setDraft.markWeightInput,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            flex: 4,
+                                            child: _buildSetValueInput(
+                                              context: context,
+                                              controller:
+                                                  setDraft.repsController,
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              hintText:
+                                                  setDraft.defaultRepsHint,
+                                              showAsDefaultValue:
+                                                  setDraft.showRepsAsDefault,
+                                              enabled: !_saving,
+                                              onInputTap: setDraft
+                                                  .prepareRepsForEditing,
+                                              onValueChanged:
+                                                  setDraft.markRepsInput,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          IconButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () => _toggleSetCompleted(
+                                                    setDraft,
+                                                  ),
+                                            icon: Icon(
+                                              setDraft.isCompleted
+                                                  ? Icons.check_circle
+                                                  : Icons
+                                                        .radio_button_unchecked,
+                                            ),
+                                            color: setDraft.isCompleted
+                                                ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary
+                                                : null,
+                                            tooltip: setDraft.isCompleted
+                                                ? strings.completed
+                                                : strings.completeSet,
+                                            iconSize: 22,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            constraints:
+                                                const BoxConstraints.tightFor(
+                                                  width: 32,
+                                                  height: 32,
                                                 ),
-                                            hintText:
-                                                setDraft.defaultWeightHint,
-                                            showAsDefaultValue:
-                                                setDraft.showWeightAsDefault,
-                                            onValueChanged:
-                                                setDraft.markWeightInput,
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: _buildSetValueInput(
-                                            context: context,
-                                            controller: setDraft.repsController,
-                                            keyboardType: TextInputType.number,
-                                            hintText: setDraft.defaultRepsHint,
-                                            showAsDefaultValue:
-                                                setDraft.showRepsAsDefault,
-                                            onValueChanged:
-                                                setDraft.markRepsInput,
+                                          const SizedBox(width: 2),
+                                          IconButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () =>
+                                                      _removeSet(draft, index),
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            tooltip: strings.removeSet,
+                                            iconSize: 22,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            constraints:
+                                                const BoxConstraints.tightFor(
+                                                  width: 32,
+                                                  height: 32,
+                                                ),
                                           ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () =>
-                                              _toggleSetCompleted(setDraft),
-                                          icon: Icon(
-                                            setDraft.isCompleted
-                                                ? Icons.check_circle
-                                                : Icons.radio_button_unchecked,
-                                          ),
-                                          color: setDraft.isCompleted
-                                              ? Theme.of(
-                                                  context,
-                                                ).colorScheme.primary
-                                              : null,
-                                          tooltip: setDraft.isCompleted
-                                              ? strings.completed
-                                              : strings.completeSet,
-                                        ),
-                                        IconButton(
-                                          onPressed: () =>
-                                              _removeSet(draft, index),
-                                          icon: const Icon(
-                                            Icons.remove_circle_outline,
-                                          ),
-                                          tooltip: strings.removeSet,
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   );
                                 }),
                                 TextButton.icon(
-                                  onPressed: () => _addSet(draft),
+                                  onPressed: _saving
+                                      ? null
+                                      : () => _addSet(draft),
                                   icon: const Icon(Icons.add_circle_outline),
                                   label: Text(strings.addSet),
                                 ),
@@ -869,6 +1006,31 @@ class _SetDraft {
   String get defaultRepsHint => _defaultReps.isEmpty ? '--' : '';
   bool get showWeightAsDefault => _showWeightAsDefault;
   bool get showRepsAsDefault => _showRepsAsDefault;
+  String get previousSummary {
+    if (_defaultWeight.isEmpty && _defaultReps.isEmpty) {
+      return '--';
+    }
+    if (_defaultWeight.isNotEmpty && _defaultReps.isNotEmpty) {
+      return '${_defaultWeight}x$_defaultReps';
+    }
+    return _defaultWeight.isNotEmpty ? _defaultWeight : _defaultReps;
+  }
+
+  void prepareWeightForEditing() {
+    _selectDefaultValueIfNeeded(
+      controller: weightController,
+      defaultValue: _defaultWeight,
+      showAsDefaultValue: _showWeightAsDefault,
+    );
+  }
+
+  void prepareRepsForEditing() {
+    _selectDefaultValueIfNeeded(
+      controller: repsController,
+      defaultValue: _defaultReps,
+      showAsDefaultValue: _showRepsAsDefault,
+    );
+  }
 
   void markWeightInput(String value) {
     final typed = value.trim();
@@ -886,6 +1048,29 @@ class _SetDraft {
 
   String get effectiveRepsText {
     return repsController.text.trim();
+  }
+
+  void _selectDefaultValueIfNeeded({
+    required TextEditingController controller,
+    required String defaultValue,
+    required bool showAsDefaultValue,
+  }) {
+    if (!showAsDefaultValue || defaultValue.isEmpty) {
+      return;
+    }
+    if (controller.text.trim() != defaultValue) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.text.isEmpty) {
+        return;
+      }
+      controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+    });
   }
 
   void dispose() {

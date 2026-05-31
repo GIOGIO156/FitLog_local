@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
 import 'add_food_page.dart';
 import 'food_detail_page.dart';
@@ -87,6 +88,75 @@ class _FoodLogPageState extends State<FoodLogPage> {
 
     refreshNotifier.markDataChanged();
     messenger.showSnackBar(SnackBar(content: Text(strings.foodDeleted)));
+  }
+
+  Future<void> _copyRecord(
+    BuildContext context,
+    FoodRecord record,
+    String initialDate,
+  ) async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateUtilsX.parseDay(initialDate),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate == null || !context.mounted) {
+      return;
+    }
+
+    final targetDate = DateUtilsX.formatDate(pickedDate);
+    final services = context.read<AppServices>();
+    final refreshNotifier = context.read<RefreshNotifier>();
+    final messenger = ScaffoldMessenger.of(context);
+    final strings = context.stringsRead;
+
+    final copiedRecord = FoodRecord(
+      date: targetDate,
+      mealName: record.mealName,
+      totalWeightG: record.totalWeightG,
+      caloriesKcal: record.caloriesKcal,
+      proteinG: record.proteinG,
+      carbsG: record.carbsG,
+      fatG: record.fatG,
+      confidence: record.confidence,
+      estimationNotes: record.estimationNotes,
+      source: record.source,
+      items: record.items
+          .map(
+            (item) => FoodItem(
+              name: item.name,
+              estimatedWeightG: item.estimatedWeightG,
+              caloriesKcal: item.caloriesKcal,
+              proteinG: item.proteinG,
+              carbsG: item.carbsG,
+              fatG: item.fatG,
+              notes: item.notes,
+            ),
+          )
+          .toList(),
+    );
+
+    try {
+      await services.foodRepository.insertFoodRecord(copiedRecord);
+      if (!context.mounted) {
+        return;
+      }
+      refreshNotifier.markDataChanged();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(strings.foodCopied(record.mealName, targetDate)),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text(strings.failedToCopyFood(error))),
+      );
+    }
   }
 
   Future<void> _pickDate(
@@ -278,6 +348,16 @@ class _FoodLogPageState extends State<FoodLogPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 10),
+                                  IconButton(
+                                    onPressed: () => _copyRecord(
+                                      context,
+                                      record,
+                                      selectedDate,
+                                    ),
+                                    icon: const Icon(Icons.copy_all_outlined),
+                                    tooltip: strings.copy,
+                                  ),
+                                  const SizedBox(height: 2),
                                   IconButton(
                                     onPressed: () =>
                                         _deleteRecord(context, record),

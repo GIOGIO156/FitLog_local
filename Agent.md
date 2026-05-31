@@ -258,6 +258,76 @@
   - also computes `macro_energy_equivalent_kcal` for analysis/export only.
 
 ### C. Daily summary now switches by diet mode
+
+## 12) UX + Food Log Copy Update (2026-05-31)
+
+### A. Strength set input overwrite behavior fixed
+- File: `lib/features/workout/add_workout_page.dart`
+- Problem:
+  - Historical values are shown in muted gray, but on some devices tapping into the field placed the cursor in the middle.
+  - Typing could append/insert (e.g., `60` -> `6650`) instead of replacing.
+- Fix:
+  - Added per-field tap handler and default-aware selection logic.
+  - If current text equals historical default and still in "default display" state, tap now forces full-text selection.
+  - Next numeric input cleanly overwrites old value.
+- Result:
+  - Historical defaults stay convenient.
+  - Editing is predictable and fast without manual deletion.
+
+### B. Food record copy action added
+- Files:
+  - `lib/features/food/food_log_page.dart`
+  - `lib/core/localization/app_strings.dart`
+- Added a copy icon button on each food record card.
+- Copy behavior:
+  - Duplicates the selected record into the current selected date.
+  - Copies top-level nutrition fields and item rows.
+  - Keeps source/confidence/notes.
+  - Saves as a new local record (new id/new timestamps).
+- Added localized strings for:
+  - copy action label
+  - copy success message
+  - copy failure message
+
+### C. Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+
+## 13) Workout UI Compaction + Date-targeted Food Copy (2026-06-01)
+
+### A. Workout input area compacted toward table-style density
+- File: `lib/features/workout/add_workout_page.dart`
+- Goal:
+  - Reduce visual bloat from heavy nested-card feeling.
+  - Improve readability when many sets exist.
+  - Avoid truncation risk for decimal values like `42.5`.
+- Changes:
+  - Refined set input style:
+    - denser input decoration (`isDense`, reduced padding, compact rounded border)
+    - smaller icon button footprint for complete/remove actions
+  - Updated set section layout to a denser row structure:
+    - `# / Previous / Weight / Reps / Actions`
+    - row-level subtle background instead of large separated blocks
+  - Added previous-set summary text (`weight x reps`) per row.
+  - Reduced per-exercise card visual weight (smaller radius/padding and lower border/background alpha).
+- Result:
+  - More "stretched" and information-dense UI in the set area.
+  - Decimal entries get more practical visible space.
+
+### B. Food copy now supports user-picked target date
+- Files:
+  - `lib/features/food/food_log_page.dart`
+  - `lib/core/localization/app_strings.dart`
+- Previous behavior:
+  - copy always duplicated to the currently selected day.
+- New behavior:
+  - tapping copy first opens a date picker.
+  - selected date becomes the duplication target.
+  - still copies full nutrition fields + item rows as a new record.
+
+### C. Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
 - File: `lib/domain/services/daily_summary_service.dart`
 - `energy_ratio`:
   - unchanged flow: no-exercise target + logged net exercise, then macro-by-ratio.
