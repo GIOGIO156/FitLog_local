@@ -293,6 +293,36 @@
 - `flutter analyze`: no issues found.
 - `flutter test`: all tests passed.
 
+## 14) Workout Readability Rework (2026-06-01, late)
+
+### A. Remove "Previous" column and recover core data clarity
+- Files:
+  - `lib/features/workout/add_workout_page.dart`
+  - `lib/core/localization/app_strings.dart`
+- Reason:
+  - Extra "Previous" column compressed the actual weight/reps input area and reduced readability.
+- Changes:
+  - Removed the "Previous" header/column from set rows.
+  - Removed `previousLabel` string in localization.
+- Result:
+  - More horizontal space for current weight/reps values.
+  - Better legibility on narrow/mobile screens.
+
+### B. Reduce crowded "boxed" feeling in set rows
+- File: `lib/features/workout/add_workout_page.dart`
+- Changes:
+  - Removed per-cell rounded input borders and filled capsules in set rows.
+  - Switched to lighter, borderless numeric entry style for weight/reps.
+  - Kept row structure and action buttons, but simplified visual containers.
+  - Added subtle row separators to preserve scanning rhythm without heavy blocks.
+- Result:
+  - UI feels less cramped while keeping information density.
+  - Visual style aligns better with the "spacious but readable" direction.
+
+### C. Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+
 ## 13) Workout UI Compaction + Date-targeted Food Copy (2026-06-01)
 
 ### A. Workout input area compacted toward table-style density

@@ -451,6 +451,28 @@ Dynamic calorie calibration and g/kg self-check are independent systems.
   - confidence/source/notes
   - item rows (if any)
 
+---
+
+## 2026-06-01 UI Iteration (Readability-first)
+
+### 1) Workout set table simplified again
+- Removed the `Previous` column from set entry rows.
+- Purpose:
+  - return horizontal space to the actual editable fields (`Weight` / `Reps`)
+  - prevent the main training data from becoming visually compressed.
+
+### 2) Less boxed, less crowded set-entry visuals
+- Reworked set rows to reduce heavy nested/boxed input visuals:
+  - removed per-cell rounded capsule/border style
+  - used lighter borderless numeric entry for weight/reps
+  - retained row-level structure with subtle separators for scanning.
+
+### 3) UX direction
+- Goal is not "larger gaps", but:
+  - high information density
+  - clear numbers at first glance
+  - reduced visual clutter from repeated small rectangles.
+
 系数由“性别 + 每周训练次数”查表得到。
 `prefer_not_to_say` 使用男女同档位平均值。
 

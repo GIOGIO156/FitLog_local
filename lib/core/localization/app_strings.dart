@@ -305,7 +305,6 @@ class AppStrings {
   String get workoutDetails => _t('Workout Details', '训练参数');
   String get setsPlan => _t('Sets Plan', '组数计划');
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
-  String get previousLabel => _t('Previous', '上次');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
   String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
   String get repsLabel => _t('Reps', '次数');
