@@ -26,10 +26,10 @@
 | 饮食记录保存 | `FoodRecord` 与 item 行 | SQLite `food_records`、`food_items` | 否 | `FoodRepository.insertFoodRecord` |
 | 今日摄入汇总 | 指定日期食物记录 | kcal、protein、carbs、fat 合计 | 否 | `DailySummaryService.getSummaryForDate`、`NutritionCalculator` |
 | 运动消耗汇总 | 指定日期训练 session | 当日训练净消耗合计 | 否 | `WorkoutRepository.getWorkoutSessionsByDate`、`DailySummaryService` |
-| BMR 与目标摄入计算 | 用户资料、目标、校准系数、运动消耗 | BMR、TDEE 参考、目标摄入、剩余热量 | 否 | `DailySummaryService` |
-| 宏量目标计算 | 饮食模式、体重、比例或训练频率 | protein/carbs/fat 目标 | 否 | `MacroTargetCalculator` |
+| BMR 与目标摄入计算 | 用户资料、热量赤字、校准系数、运动消耗 | BMR、TDEE 参考、目标摄入、剩余热量 | 否 | `DailySummaryService` |
+| 宏量目标计算 | `energy_ratio` 热量赤字模式，或 `gram_per_kg` 减脂 g/kg 默认表 | protein/carbs/fat 目标 | 否 | `MacroTargetCalculator` |
 | 动态热量校准 | 饮食历史、体重日志、训练消耗 | 校准后的 lifestyle factor | 否 | `DailySummaryService._resolveCalibration` |
-| g/kg 训练频率自检 | 训练历史、周期、当前频率 | 推荐训练频率与提醒状态 | 否 | `TrainingFrequencySelfCheckService` |
+| g/kg 训练频率自检 | 训练历史、周期、当前粗略频率档位 | 推荐训练频率档位与提醒状态；不代表强度或运动表现需求 | 否 | `TrainingFrequencySelfCheckService` |
 | 日期筛选 | `SelectedDateNotifier.selectedDate` | 对应日期记录与汇总 | 否 | `SelectedDateNotifier`、各页面 Repository 查询 |
 | UI 刷新 | 数据写入完成 | 首页/列表 FutureBuilder 重新加载 | 否 | `RefreshNotifier.markDataChanged` |
 | 语言持久化 | 用户选择语言 | SharedPreferences `language_code` | 否 | `LanguageController` |

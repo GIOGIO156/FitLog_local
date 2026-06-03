@@ -43,12 +43,12 @@
 | `sex_for_formula` | TEXT | 性别公式选项 | 否 | 无 | `male/female/prefer_not_to_say` |
 | `activity_level` | TEXT | 非运动活动水平 | 否 | 无 | energy_ratio 模式使用 |
 | `daily_energy_goal_type` | TEXT | 目标类型 | 否 | 无 | `maintenance/deficit/surplus` |
-| `daily_energy_goal_kcal` | REAL | 目标热量差值 | 否 | 无 | kcal |
+| `daily_energy_goal_kcal` | REAL | 每日热量赤字 | 否 | 无 | kcal |
 | `protein_ratio_percent` | REAL | 蛋白质比例 | 否 | 无 | v3 字段 |
 | `carbs_ratio_percent` | REAL | 碳水比例 | 否 | 无 | v3 字段 |
 | `fat_ratio_percent` | REAL | 脂肪比例 | 否 | 无 | v3 字段 |
 | `diet_calculation_mode` | TEXT | 饮食算法模式 | 否 | `energy_ratio` | v5 字段 |
-| `training_frequency_per_week` | INTEGER | 每周训练频率档位 | 否 | `3` | v5 字段 |
+| `training_frequency_per_week` | INTEGER | 每周训练频率粗略档位 | 否 | `3` | v5 字段；仅用于减脂 g/kg MVP 默认表，不代表真实强度、训练容量或表现需求 |
 | `macro_self_check_period_days` | INTEGER | 自检周期 | 否 | `14` | v5 字段 |
 | `macro_self_check_enabled` | INTEGER | 自检开关 | 否 | `1` | bool 以 0/1 存储 |
 | `last_macro_self_check_at` | TEXT | 上次自检反馈时间 | 是 | null | ISO datetime |
@@ -184,7 +184,7 @@
 | Repository | `ProfileRepository` | Profile 读写、体重日志 upsert、校准状态读写、自检反馈写入 | `lib/data/repositories/profile_repository.dart` |
 | Service | `NutritionCalculator` | 外部 JSON 解析、饮食宏量/热量求和 | `lib/domain/services/nutrition_calculator.dart` |
 | Service | `DailySummaryService` | 每日汇总、BMR、目标摄入、动态校准、自检整合 | `lib/domain/services/daily_summary_service.dart` |
-| Service | `MacroTargetCalculator` | energy_ratio 与 gram_per_kg 宏量目标计算 | `lib/domain/services/macro_target_calculator.dart` |
+| Service | `MacroTargetCalculator` | `energy_ratio` 热量赤字宏量比例换算与 `gram_per_kg` 减脂 g/kg 默认表计算 | `lib/domain/services/macro_target_calculator.dart` |
 | Service | `WorkoutCalorieCalculator` | 有氧与力量净消耗估算 | `lib/domain/services/workout_calorie_calculator.dart` |
 | Service | `TrainingFrequencySelfCheckService` | g/kg 模式训练频率自检 | `lib/domain/services/training_frequency_self_check_service.dart` |
 | Export Service | `XlsxExportService`、`CsvExportService` | 本地数据导出 | `lib/export/*` |
@@ -217,7 +217,7 @@ UI 通常通过 `context.read<AppServices>()` 使用 Repository/Service；未发
 | 今日 kcal / P / C / F | 否 | 按日期查询 `food_records` 后求和 | `DailySummaryService`、`NutritionCalculator` |
 | 今日运动消耗 | 否 | 按日期查询 `workout_sessions.estimated_calories` 后求和 | `DailySummaryService` |
 | BMR / TDEE 参考 | 否 | 由 profile 与校准状态运行时计算 | `DailySummaryService.calculateBmr` |
-| 今日目标摄入 | 否 | BMR、活动系数、目标差值、运动消耗运行时计算 | `DailySummaryService` |
+| 今日目标摄入 | 否 | BMR、活动系数、每日热量赤字、运动消耗运行时计算 | `DailySummaryService` |
 | 今日剩余 kcal/macros | 否 | 目标减去已摄入 | `DailySummaryService` |
 | 导出 Daily Summary | 否 | 导出时按历史记录日期逐日计算 | `XlsxExportService`、`CsvExportService` |
 | 校准 lifestyle factor | 是 | 动态校准后保存到单例表 | `calorie_calibration_state` |

@@ -9,13 +9,13 @@
 | `weight_kg` | 体重 kg；用于 BMR、g/kg 宏量目标、运动消耗 | Profile 输入或默认值；保存资料时写入体重日志 | 是 | `UserProfile.weightKg`、`ProfileRepository.saveProfile` |
 | `sex_for_formula` | `male` / `female` / `prefer_not_to_say`；用于 BMR 与 g/kg 系数 | Profile 下拉 | 是 | `AppConstants.sexOptions`、`DailySummaryService.calculateBmr` |
 | `activity_level` | 非专项训练日常活动水平 | Profile 下拉；仅 energy_ratio 模式显示 | energy_ratio 需要 | `AppConstants.activityLevels`、`DailySummaryService.defaultLifestyleFactorForActivity` |
-| `daily_energy_goal_type` | `maintenance` / `deficit` / `surplus` | Profile 下拉 | energy_ratio 需要 | `AppConstants.dailyEnergyGoalTypes` |
-| `daily_energy_goal_kcal` | 目标热量差值 kcal | Profile 输入 | energy_ratio 需要 | `UserProfile.dailyEnergyGoalKcal` |
+| `daily_energy_goal_type` | 当前减脂 MVP 使用 `deficit`；代码保留 `maintenance/surplus` 兼容值，但本轮不设计增肌期算法 | Profile 下拉 | energy_ratio 需要 | `AppConstants.dailyEnergyGoalTypes` |
+| `daily_energy_goal_kcal` | 每日热量赤字 kcal | Profile 输入 | energy_ratio 需要 | `UserProfile.dailyEnergyGoalKcal` |
 | `protein_ratio_percent` | 蛋白质热量比例 | Profile 输入 | energy_ratio 需要 | `MacroTargetCalculator.calculateByEnergyRatio` |
 | `carbs_ratio_percent` | 碳水热量比例 | Profile 输入 | energy_ratio 需要 | `MacroTargetCalculator.calculateByEnergyRatio` |
 | `fat_ratio_percent` | 脂肪热量比例 | Profile 输入 | energy_ratio 需要 | `MacroTargetCalculator.calculateByEnergyRatio` |
 | `diet_calculation_mode` | `energy_ratio` 或 `gram_per_kg` | Profile 下拉 | 是 | `AppConstants.dietCalculationModes`、`DailySummaryService` |
-| `training_frequency_per_week` | 每周训练次数档位 2/3/4/5；用于 g/kg 系数 | Profile 下拉 | gram_per_kg 需要 | `MacroTargetCalculator.calculateByGramPerKg` |
+| `training_frequency_per_week` | 每周训练频率粗略档位 2/3/4/5；仅用于减脂 g/kg 系数，不代表真实训练强度、训练年限、训练容量或竞技表现需求 | Profile 下拉 | gram_per_kg 需要 | `MacroTargetCalculator.calculateByGramPerKg` |
 | `macro_self_check_period_days` | g/kg 自检观察周期 7/14/21/28 天 | Profile 下拉 | 自检需要 | `TrainingFrequencySelfCheckService.evaluate` |
 | `macro_self_check_enabled` | 是否启用训练频率自检提醒 | Profile 开关 | 自检需要 | `UserProfile.macroSelfCheckEnabled` |
 | `food_records.*` | 每餐热量、P/C/F、日期 | 饮食录入 | 汇总需要 | `FoodRecord`、`FoodRepository.getFoodRecordsByDate` |
@@ -58,19 +58,14 @@ README 中仍保留旧 TDEE 档位示例 `1.2 / 1.375 / 1.55 / 1.725`；当前�
 
 当前每日目标热量由 `DailySummaryService.getSummaryForDate` 计算。
 
-### energy_ratio 模式
+### energy_ratio 模式（热量赤字算法）
 
 ```text
 bmr = calculateBmr(profile)
 lifestyleFactorUsed = calibratedFactor 或 defaultLifestyleFactorForActivity(activity_level)
 baselineNoExerciseTdee = bmr * lifestyleFactorUsed
 
-if goalType == deficit:
-  noExerciseTarget = baselineNoExerciseTdee - dailyEnergyGoalKcal
-else if goalType == surplus:
-  noExerciseTarget = baselineNoExerciseTdee + dailyEnergyGoalKcal
-else:
-  noExerciseTarget = baselineNoExerciseTdee
+noExerciseTarget = baselineNoExerciseTdee - dailyEnergyGoalKcal
 
 targetIntake = noExerciseTarget + loggedNetExerciseKcal
 remainingCalories = targetIntake - caloriesInToday
@@ -114,18 +109,19 @@ macroEnergyEquivalentKcal = protein*4 + carbs*4 + fat*9
 
 ### gram_per_kg 模式
 
-算法按体重和 `(sex_for_formula, training_frequency_per_week)` 查表计算。
+算法按体重和 `(sex_for_formula, training_frequency_per_week)` 查减脂 MVP 默认表计算。
+`training_frequency_per_week` 只是粗略训练频率档位，不代表真实训练强度、训练年限、训练容量或竞技表现需求。
 
 | 性别 | 每周训练 | protein g/kg | carbs g/kg | fat g/kg |
 | -- | --: | --: | --: | --: |
-| male | 2 | 1.4 | 2.2 | 0.8 |
-| male | 3 | 1.6 | 2.5 | 0.8 |
-| male | 4 | 1.7 | 3.0 | 0.9 |
-| male | 5 | 1.8 | 3.5 | 1.0 |
-| female | 2 | 1.4 | 2.0 | 1.0 |
-| female | 3 | 1.6 | 2.2 | 1.0 |
-| female | 4 | 1.7 | 2.5 | 1.1 |
-| female | 5 | 1.8 | 3.0 | 1.2 |
+| male | 2 | 1.4 | 1.5 | 0.8 |
+| male | 3 | 1.6 | 1.8 | 0.8 |
+| male | 4 | 1.7 | 2.0 | 0.9 |
+| male | 5 | 1.8 | 2.2 | 1.0 |
+| female | 2 | 1.4 | 1.4 | 1.0 |
+| female | 3 | 1.6 | 1.6 | 1.0 |
+| female | 4 | 1.7 | 1.7 | 1.1 |
+| female | 5 | 1.8 | 1.9 | 1.2 |
 
 `prefer_not_to_say` 使用同频率男女系数平均值。公式：
 
@@ -136,7 +132,8 @@ targetFatG = weightKg * fatCoeff
 macroEnergyEquivalentKcal = protein*4 + carbs*4 + fat*9
 ```
 
-当前 local 版已实现 g/kg 体重算法。代码位置：`MacroTargetCalculator.calculateByGramPerKg`。
+当前 local 版已实现减脂 g/kg 体重算法。它不是增肌期表，不是运动表现最大化表，也不是耐力训练补糖表。
+`gram_per_kg` 与 `energy_ratio` 是两套互不干涉的减脂期饮食计算方法；g/kg 不使用 BMR、`activity_level`、`daily_energy_goal_kcal`、`loggedNetExerciseKcal` 或 P/C/F 热量比例重算碳水。代码位置：`MacroTargetCalculator.calculateByGramPerKg`。
 
 ## 6. 今日摄入汇总
 
@@ -296,4 +293,5 @@ observedLifestyleFactor = observedNoExerciseTdee / avgBmr
 - `lib/data/repositories/profile_repository.dart`
 - `lib/features/profile/profile_page.dart`
 - `lib/features/home/home_page.dart`
+- `test/macro_target_calculator_test.dart`
 - `test/workout_calorie_calculator_test.dart`

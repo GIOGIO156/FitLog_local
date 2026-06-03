@@ -137,7 +137,7 @@
   - `lib/features/profile/profile_page.dart`
 - Daily target logic is now:
   - `baseline_no_exercise_tdee = BMR * lifestyle_factor_non_exercise`
-  - `no_exercise_target_intake = baseline_no_exercise_tdee ± goal_delta`
+  - `no_exercise_target_intake = baseline_no_exercise_tdee - daily_energy_goal_kcal`
   - `final_food_target = no_exercise_target_intake + logged_net_exercise_kcal`
 - This removes the previous risk of counting planned/implicit exercise twice.
 
@@ -403,3 +403,35 @@
   - calories shown as auxiliary intake only; no kcal target/remaining counter.
 - Export:
   - added mode, g/kg/self-check fields for both profile and daily summary sheets/csv.
+
+## 15) Cut MVP g/kg Carbohydrate Table Update (2026-06-04)
+
+### A. gram_per_kg default table revised
+- File: `lib/domain/services/macro_target_calculator.dart`
+- Scope:
+  - updated only the `gram_per_kg` coefficient table for the cut-phase MVP.
+  - reduced carbohydrate coefficients for male/female 2/3/4/5 training-frequency tiers.
+  - kept protein and fat coefficients aligned with the cut MVP default table.
+- `prefer_not_to_say` still uses the male/female average in the same frequency tier.
+
+### B. Algorithm boundary clarified
+- Files:
+  - `lib/core/localization/app_strings.dart`
+  - `README.md`
+  - `docs/Algorithm.md`
+  - `docs/Product.md`
+  - `docs/Agent.md`
+  - `docs/Database.md`
+- Clarified that:
+  - `gram_per_kg` and `energy_ratio` are parallel, independent cut-phase diet calculation methods.
+  - `gram_per_kg` does not use BMR, activity level, daily deficit, logged exercise calories, or macro ratio percentages to recalculate carbs.
+  - the g/kg table is not a bulking table, maximum sports-performance table, or endurance carb-loading table.
+  - training frequency is only a coarse lookup tier, not true intensity, training age, training volume, or performance demand.
+
+### C. Tests
+- File: `test/macro_target_calculator_test.dart`
+- Added coverage for:
+  - male 80 kg at 2 and 5 sessions/week.
+  - female 80 kg at 2 and 5 sessions/week.
+  - `prefer_not_to_say` 80 kg at 5 sessions/week using male/female average coefficients.
+  - `energy_ratio` still converting target kcal by macro ratios.

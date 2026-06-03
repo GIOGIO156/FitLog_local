@@ -29,9 +29,9 @@ FitLog Local 是一个 Flutter 本地优先的个人饮食与训练记录 App。
 | 有氧训练记录 | 为有氧动作填写时长并估算消耗；无组清单 | 已实现 | `AddWorkoutPage`、`WorkoutCalorieCalculator.estimateCardioCalories` |
 | 训练计划详情与编辑 | 查看计划内动作，编辑日期、开始时间和总时长，并重算消耗 | 已实现 | `lib/features/workout/workout_plan_page.dart` |
 | 训练单项详情与打卡 | 查看单个动作详情；力量训练可切换每组完成状态 | 已实现 | `lib/features/workout/workout_session_page.dart`、`WorkoutRepository.completeSet` |
-| 个人资料与目标设置 | 设置年龄、身高、体重、性别、活动水平、目标类型、目标差值、饮食算法模式 | 已实现 | `lib/features/profile/profile_page.dart`、`UserProfile` |
-| 饮食算法双模式 | `energy_ratio` 和 `gram_per_kg` 两种宏量目标计算模式 | 已实现 | `MacroTargetCalculator`、`DailySummaryService` |
-| g/kg 训练频率自检 | 在 g/kg 模式下按历史训练日期计算建议训练频率，用户可应用或保留 | 已实现 | `TrainingFrequencySelfCheckService`、`ProfilePage._applySelfCheckSuggestion` |
+| 个人资料与目标设置 | 设置年龄、身高、体重、性别、活动水平、目标类型、每日热量赤字、饮食算法模式 | 已实现 | `lib/features/profile/profile_page.dart`、`UserProfile` |
+| 饮食算法双模式 | `energy_ratio` 热量赤字算法和 `gram_per_kg` 减脂 g/kg 算法，两套互不干涉 | 已实现 | `MacroTargetCalculator`、`DailySummaryService` |
+| g/kg 训练频率自检 | 在 g/kg 模式下按历史训练日期计算建议训练频率档位；档位只用于减脂 MVP 默认表，不代表真实训练强度或运动表现需求 | 已实现 | `TrainingFrequencySelfCheckService`、`ProfilePage._applySelfCheckSuggestion` |
 | 未成年人减脂保护 | 年龄小于 18 时不允许 deficit，自动转为 maintenance | 已实现 | `UserProfile.copyWith`、`ProfilePage._normalizeGoalByAge` |
 | 数据导出 | 导出 XLSX 或 CSV ZIP 到 App 文档目录 | 已实现 | `lib/export/xlsx_export_service.dart`、`lib/export/csv_export_service.dart` |
 | 清空本地数据 | 二次确认后删除本地 SQLite 中全部业务数据 | 已实现 | `ProfilePage._clearAllData`、`AppDatabase.clearAllLocalData` |
@@ -87,7 +87,7 @@ FitLog Local 是一个 Flutter 本地优先的个人饮食与训练记录 App。
 ### 资料与目标流程
 
 1. 用户进入 Profile，读取本地 `UserProfile` 或默认资料：`ProfileRepository.getProfile`、`UserProfile.defaults`。
-2. 用户设置身体资料、饮食算法模式、目标差值、宏量比例或 g/kg 训练频率。
+2. 用户设置身体资料、饮食算法模式、每日热量赤字、宏量比例或 g/kg 训练频率档位。
 3. 保存资料时写入 `user_profile`，并将当天体重写入 `user_weight_logs`：`ProfileRepository.saveProfile`。
 4. 首页按最新资料、食物记录、训练记录和校准状态计算每日汇总：`DailySummaryService.getSummaryForDate`。
 
@@ -98,7 +98,7 @@ FitLog Local 是一个 Flutter 本地优先的个人饮食与训练记录 App。
 - 本地饮食记录、手动录入、外部 AI JSON 粘贴解析、预览编辑、复制和删除。
 - 本地训练记录、多动作计划、力量组记录、有氧时长记录、计划编辑和组打卡。
 - 本地每日汇总、BMR、非运动 TDEE 参考、目标摄入、剩余量、宏量目标。
-- 动态热量校准、g/kg 宏量目标、训练频率自检建议。
+- 动态热量校准、减脂 g/kg MVP 默认表宏量目标、训练频率档位自检建议。
 - SQLite 持久化、SharedPreferences 语言偏好、XLSX/CSV ZIP 导出、清空本地数据。
 - 中英文 UI 文案。
 

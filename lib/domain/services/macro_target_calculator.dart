@@ -12,18 +12,18 @@ class MacroTargetCalculator {
 
   static const Map<int, _GramPerKgMacroCoefficient> _maleGramPerKgTable =
       <int, _GramPerKgMacroCoefficient>{
-        2: _GramPerKgMacroCoefficient(carbs: 2.2, protein: 1.4, fat: 0.8),
-        3: _GramPerKgMacroCoefficient(carbs: 2.5, protein: 1.6, fat: 0.8),
-        4: _GramPerKgMacroCoefficient(carbs: 3.0, protein: 1.7, fat: 0.9),
-        5: _GramPerKgMacroCoefficient(carbs: 3.5, protein: 1.8, fat: 1.0),
+        2: _GramPerKgMacroCoefficient(carbs: 1.5, protein: 1.4, fat: 0.8),
+        3: _GramPerKgMacroCoefficient(carbs: 1.8, protein: 1.6, fat: 0.8),
+        4: _GramPerKgMacroCoefficient(carbs: 2.0, protein: 1.7, fat: 0.9),
+        5: _GramPerKgMacroCoefficient(carbs: 2.2, protein: 1.8, fat: 1.0),
       };
 
   static const Map<int, _GramPerKgMacroCoefficient> _femaleGramPerKgTable =
       <int, _GramPerKgMacroCoefficient>{
-        2: _GramPerKgMacroCoefficient(carbs: 2.0, protein: 1.4, fat: 1.0),
-        3: _GramPerKgMacroCoefficient(carbs: 2.2, protein: 1.6, fat: 1.0),
-        4: _GramPerKgMacroCoefficient(carbs: 2.5, protein: 1.7, fat: 1.1),
-        5: _GramPerKgMacroCoefficient(carbs: 3.0, protein: 1.8, fat: 1.2),
+        2: _GramPerKgMacroCoefficient(carbs: 1.4, protein: 1.4, fat: 1.0),
+        3: _GramPerKgMacroCoefficient(carbs: 1.6, protein: 1.6, fat: 1.0),
+        4: _GramPerKgMacroCoefficient(carbs: 1.7, protein: 1.7, fat: 1.1),
+        5: _GramPerKgMacroCoefficient(carbs: 1.9, protein: 1.8, fat: 1.2),
       };
 
   MacroTargets calculateByEnergyRatio({
@@ -61,7 +61,9 @@ class MacroTargetCalculator {
       );
     }
 
-    final frequency = _resolveTrainingFrequency(profile.trainingFrequencyPerWeek);
+    final frequency = _resolveTrainingFrequency(
+      profile.trainingFrequencyPerWeek,
+    );
     final coefficient = _resolveGramPerKgCoefficient(
       sexForFormula: profile.sexForFormula,
       frequencyPerWeek: frequency,
@@ -87,7 +89,9 @@ class MacroTargetCalculator {
     final protein = profile.proteinRatioPercent <= 0
         ? 0
         : profile.proteinRatioPercent;
-    final carbs = profile.carbsRatioPercent <= 0 ? 0 : profile.carbsRatioPercent;
+    final carbs = profile.carbsRatioPercent <= 0
+        ? 0
+        : profile.carbsRatioPercent;
     final fat = profile.fatRatioPercent <= 0 ? 0 : profile.fatRatioPercent;
     final total = protein + carbs + fat;
 

@@ -166,7 +166,7 @@ lib/
 
 ### 今日消耗与目标（新版）
 - `baseline_no_exercise_tdee = bmr * lifestyle_factor_non_exercise`
-- `no_exercise_target = baseline_no_exercise_tdee ± daily_energy_goal_kcal`
+- `no_exercise_target = baseline_no_exercise_tdee - daily_energy_goal_kcal`（减脂赤字口径）
 - `final_food_target = no_exercise_target + logged_net_exercise_kcal`
 - `remaining_calories = final_food_target - calories_in_today`
 - `lifestyle_factor_non_exercise` 只代表非专项训练活动（通勤、站立、家务、体力工作等）。
@@ -269,7 +269,7 @@ flutter build apk --debug
 ### 1) 每日基线与目标
 - `BMR/RMR` 由年龄、身高、体重、性别估算。
 - `baseline_no_exercise_tdee = BMR * lifestyle_factor_non_exercise`
-- `no_exercise_target = baseline_no_exercise_tdee ± goal_delta`
+- `no_exercise_target = baseline_no_exercise_tdee - daily_energy_goal_kcal`
 - `final_food_target = no_exercise_target + logged_net_exercise_kcal`
 
 说明：这里的 `lifestyle_factor` 只代表非专项训练的日常活动（通勤、站立、家务、工作体力等）。
@@ -314,20 +314,20 @@ All logic remains local-only (Flutter + SQLite), no backend and no AI API integr
 ### Concept Split
 
 - `activity_level`: non-exercise daily activity level for baseline energy calculations.
-- `training_frequency_per_week`: dedicated training frequency (2/3/4/5) for g/kg macro table lookup.
+- `training_frequency_per_week`: coarse training-frequency tier (2/3/4/5) for g/kg macro table lookup. It does not represent real intensity, training age, volume, or performance demand.
 
 These are different concepts and must not be merged.
 
-### Mode A: `energy_ratio` (kept)
+### Mode A: `energy_ratio` (deficit algorithm, kept)
 
 - `baseline_no_exercise_tdee = BMR * lifestyle_factor_non_exercise`
-- `no_exercise_target = baseline_no_exercise_tdee +/- goal_delta`
+- `no_exercise_target = baseline_no_exercise_tdee - daily_energy_goal_kcal`
 - `final_food_target = no_exercise_target + logged_net_exercise_kcal`
 - Macro targets are converted from kcal target using macro percentages.
 
-### Mode B: `gram_per_kg` (new)
+### Mode B: `gram_per_kg` (cut MVP default table)
 
-Directly compute macro targets from bodyweight and coefficients:
+Directly compute cut-phase macro targets from bodyweight and coefficients:
 
 - `protein_target_g = weight_kg * protein_coeff`
 - `carbs_target_g = weight_kg * carbs_coeff`
@@ -335,6 +335,27 @@ Directly compute macro targets from bodyweight and coefficients:
 
 Coefficients come from `(sex, training_frequency_per_week)` table.
 For `prefer_not_to_say`, use male/female average in the same frequency tier.
+
+Male default table:
+
+| training_frequency_per_week | protein g/kg | carbs g/kg | fat g/kg |
+| --: | --: | --: | --: |
+| 2 | 1.4 | 1.5 | 0.8 |
+| 3 | 1.6 | 1.8 | 0.8 |
+| 4 | 1.7 | 2.0 | 0.9 |
+| 5 | 1.8 | 2.2 | 1.0 |
+
+Female default table:
+
+| training_frequency_per_week | protein g/kg | carbs g/kg | fat g/kg |
+| --: | --: | --: | --: |
+| 2 | 1.4 | 1.4 | 1.0 |
+| 3 | 1.6 | 1.6 | 1.0 |
+| 4 | 1.7 | 1.7 | 1.1 |
+| 5 | 1.8 | 1.9 | 1.2 |
+
+This is not a bulking table, a maximum sports-performance table, or an endurance carb-loading table.
+It does not mix with the `energy_ratio` deficit calculation and does not use BMR, activity level, daily deficit, logged exercise calories, or macro ratio percentages.
 
 Auxiliary field:
 
@@ -390,21 +411,44 @@ Dynamic calorie calibration and g/kg self-check are independent systems.
 ### 核心区别
 
 - `activity_level`：日常非专项活动水平，用于基础能量计算。
-- `training_frequency_per_week`：每周训练次数（2/3/4/5），只用于 g/kg 查表。
+- `training_frequency_per_week`：每周训练频率粗略档位（2/3/4/5），只用于 g/kg 查表；不代表真实训练强度、训练年限、训练容量或竞技表现需求。
 
-### energy_ratio
+### energy_ratio（热量赤字算法）
 
 - 先算不运动日基线：`BMR * lifestyle_factor_non_exercise`
+- 再减去每日热量赤字：`daily_energy_goal_kcal`
 - 再加当天已记录净运动消耗
 - 最后用宏量营养素百分比换算每日蛋白/碳水/脂肪目标克数
 
-### gram_per_kg
+### gram_per_kg（减脂 MVP 默认表）
 
-直接按体重算三大营养素目标：
+直接按体重和查表系数算减脂期三大营养素目标：
 
 - 蛋白质 = 体重 * 蛋白系数
 - 碳水 = 体重 * 碳水系数
 - 脂肪 = 体重 * 脂肪系数
+
+新版 male 表：
+
+| 每周训练频率档位 | protein g/kg | carbs g/kg | fat g/kg |
+| --: | --: | --: | --: |
+| 2 | 1.4 | 1.5 | 0.8 |
+| 3 | 1.6 | 1.8 | 0.8 |
+| 4 | 1.7 | 2.0 | 0.9 |
+| 5 | 1.8 | 2.2 | 1.0 |
+
+新版 female 表：
+
+| 每周训练频率档位 | protein g/kg | carbs g/kg | fat g/kg |
+| --: | --: | --: | --: |
+| 2 | 1.4 | 1.4 | 1.0 |
+| 3 | 1.6 | 1.6 | 1.0 |
+| 4 | 1.7 | 1.7 | 1.1 |
+| 5 | 1.8 | 1.9 | 1.2 |
+
+`prefer_not_to_say` 使用男女同档位平均值。
+这不是增肌期表，不是运动表现最大化表，也不是耐力训练补糖表。
+`gram_per_kg` 与 `energy_ratio` 是两套互不干涉的减脂期饮食计算方法。
 
 ---
 
@@ -473,8 +517,9 @@ Dynamic calorie calibration and g/kg self-check are independent systems.
   - clear numbers at first glance
   - reduced visual clutter from repeated small rectangles.
 
-系数由“性别 + 每周训练次数”查表得到。
+系数由“性别 + 每周训练频率档位”查减脂 MVP 默认表得到。
 `prefer_not_to_say` 使用男女同档位平均值。
+训练频率只作为粗略档位，不代表真实训练强度、训练年限、训练容量或竞技表现需求。
 
 ### 首页展示规则
 
