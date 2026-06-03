@@ -10,7 +10,7 @@ class MacroTargetCalculator {
   static const double _carbsCaloriesPerGram = 4;
   static const double _fatCaloriesPerGram = 9;
 
-  static const Map<int, _GramPerKgMacroCoefficient> _maleGramPerKgTable =
+  static const Map<int, _GramPerKgMacroCoefficient> _maleCuttingGramPerKgTable =
       <int, _GramPerKgMacroCoefficient>{
         2: _GramPerKgMacroCoefficient(carbs: 1.5, protein: 1.4, fat: 0.8),
         3: _GramPerKgMacroCoefficient(carbs: 1.8, protein: 1.6, fat: 0.8),
@@ -18,12 +18,28 @@ class MacroTargetCalculator {
         5: _GramPerKgMacroCoefficient(carbs: 2.2, protein: 1.8, fat: 1.0),
       };
 
-  static const Map<int, _GramPerKgMacroCoefficient> _femaleGramPerKgTable =
+  static const Map<int, _GramPerKgMacroCoefficient>
+      _femaleCuttingGramPerKgTable = <int, _GramPerKgMacroCoefficient>{
+    2: _GramPerKgMacroCoefficient(carbs: 1.4, protein: 1.4, fat: 1.0),
+    3: _GramPerKgMacroCoefficient(carbs: 1.6, protein: 1.6, fat: 1.0),
+    4: _GramPerKgMacroCoefficient(carbs: 1.7, protein: 1.7, fat: 1.1),
+    5: _GramPerKgMacroCoefficient(carbs: 1.9, protein: 1.8, fat: 1.2),
+  };
+
+  static const Map<int, _GramPerKgMacroCoefficient> _maleBulkingGramPerKgTable =
       <int, _GramPerKgMacroCoefficient>{
-        2: _GramPerKgMacroCoefficient(carbs: 1.4, protein: 1.4, fat: 1.0),
-        3: _GramPerKgMacroCoefficient(carbs: 1.6, protein: 1.6, fat: 1.0),
-        4: _GramPerKgMacroCoefficient(carbs: 1.7, protein: 1.7, fat: 1.1),
-        5: _GramPerKgMacroCoefficient(carbs: 1.9, protein: 1.8, fat: 1.2),
+        2: _GramPerKgMacroCoefficient(carbs: 3.0, protein: 1.6, fat: 0.8),
+        3: _GramPerKgMacroCoefficient(carbs: 3.4, protein: 1.7, fat: 0.9),
+        4: _GramPerKgMacroCoefficient(carbs: 3.8, protein: 1.8, fat: 0.9),
+        5: _GramPerKgMacroCoefficient(carbs: 4.2, protein: 2.0, fat: 1.0),
+      };
+
+  static const Map<int, _GramPerKgMacroCoefficient>
+      _femaleBulkingGramPerKgTable = <int, _GramPerKgMacroCoefficient>{
+        2: _GramPerKgMacroCoefficient(carbs: 2.8, protein: 1.6, fat: 0.9),
+        3: _GramPerKgMacroCoefficient(carbs: 3.1, protein: 1.7, fat: 1.0),
+        4: _GramPerKgMacroCoefficient(carbs: 3.4, protein: 1.8, fat: 1.0),
+        5: _GramPerKgMacroCoefficient(carbs: 3.8, protein: 2.0, fat: 1.1),
       };
 
   MacroTargets calculateByEnergyRatio({
@@ -65,6 +81,7 @@ class MacroTargetCalculator {
       profile.trainingFrequencyPerWeek,
     );
     final coefficient = _resolveGramPerKgCoefficient(
+      dietGoalPhase: profile.dietGoalPhase,
       sexForFormula: profile.sexForFormula,
       frequencyPerWeek: frequency,
     );
@@ -107,11 +124,17 @@ class MacroTargetCalculator {
   }
 
   _GramPerKgMacroCoefficient _resolveGramPerKgCoefficient({
+    required String dietGoalPhase,
     required String sexForFormula,
     required int frequencyPerWeek,
   }) {
-    final male = _maleGramPerKgTable[frequencyPerWeek]!;
-    final female = _femaleGramPerKgTable[frequencyPerWeek]!;
+    final useBulking = dietGoalPhase == AppConstants.dietGoalPhaseBulking;
+    final male = useBulking
+        ? _maleBulkingGramPerKgTable[frequencyPerWeek]!
+        : _maleCuttingGramPerKgTable[frequencyPerWeek]!;
+    final female = useBulking
+        ? _femaleBulkingGramPerKgTable[frequencyPerWeek]!
+        : _femaleCuttingGramPerKgTable[frequencyPerWeek]!;
 
     switch (sexForFormula) {
       case 'male':

@@ -1,5 +1,26 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-04 Diet Goal Phase Split
+
+### Added
+- Added `diet_goal_phase` with `cutting` and `bulking` as the source of truth above diet calculation mode.
+- Upgraded SQLite to v6 with additive `user_profile.diet_goal_phase TEXT NOT NULL DEFAULT 'cutting'`.
+- Added the 2 x 2 diet matrix: `cutting/bulking` x `gram_per_kg/energy_ratio`.
+- Added a separate bulking g/kg table; `prefer_not_to_say` still averages same-tier male/female coefficients.
+- Added `diet_goal_phase` to User Profile and Daily Summary CSV/XLSX export.
+
+### Changed
+- `energy_ratio` now interprets `daily_energy_goal_kcal` by phase: cutting = deficit, bulking = surplus.
+- Profile phase now drives deficit/surplus semantics instead of letting goal types mix freely.
+- Home and Profile show the current goal phase.
+- `gram_per_kg` remains independent from BMR, activity level, daily energy goal, logged exercise calories, and macro ratios.
+- `macro_energy_equivalent_kcal` remains auxiliary in g/kg mode, not a kcal target counter.
+
+### Tests
+- Added coverage for cutting/bulking g/kg tables, `prefer_not_to_say` averaging, and phase-based energy target direction.
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+
 ## 1) Product Goal
 - FitLog Local is a Flutter fitness logging app with local-first storage (no backend).
 - Core value:

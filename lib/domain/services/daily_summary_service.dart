@@ -77,20 +77,18 @@ class DailySummaryService {
     final bmr = calculateBmr(profile);
     final baselineNoExerciseTdee = bmr * calibration.lifestyleFactorUsed;
 
-    final String goalType =
-        profile.isMinor && profile.dailyEnergyGoalType == 'deficit'
-        ? 'maintenance'
-        : profile.dailyEnergyGoalType;
-
-    final noExerciseTarget = _applyGoal(
-      baselineNoExerciseTdee,
-      goalType: goalType,
-      goalKcal: profile.dailyEnergyGoalKcal,
-    );
-
     final isEnergyTargetMode =
         profile.dietCalculationMode != AppConstants.dietCalculationModeGramPerKg;
-    final energyModeTargetIntake = noExerciseTarget + exerciseCaloriesNet;
+    final noExerciseTarget = isEnergyTargetMode
+        ? calculateNoExerciseTargetIntake(
+            baselineNoExerciseTdee: baselineNoExerciseTdee,
+            profile: profile,
+          )
+        : 0.0;
+    final energyModeTargetIntake = resolveEnergyTargetIntake(
+      noExerciseTargetIntake: noExerciseTarget,
+      loggedNetExerciseKcal: exerciseCaloriesNet,
+    );
     final macroTargets = isEnergyTargetMode
         ? _macroTargetCalculator.calculateByEnergyRatio(
             profile: profile,
@@ -129,6 +127,7 @@ class DailySummaryService {
       remainingProteinG: remainingProteinG,
       remainingCarbsG: remainingCarbsG,
       remainingFatG: remainingFatG,
+      dietGoalPhase: profile.dietGoalPhase,
       dietCalculationMode: profile.dietCalculationMode,
       isEnergyTargetMode: isEnergyTargetMode,
       macroEnergyEquivalentKcal: macroTargets.macroEnergyEquivalentKcal,
@@ -177,6 +176,41 @@ class DailySummaryService {
 
   double defaultLifestyleFactorForActivity(String activityLevel) {
     return _defaultNoExerciseLifestyleFactor[activityLevel] ?? 1.425;
+  }
+
+  double calculateNoExerciseTargetIntake({
+    required double baselineNoExerciseTdee,
+    required UserProfile profile,
+  }) {
+    return resolveNoExerciseTargetIntake(
+      baselineNoExerciseTdee: baselineNoExerciseTdee,
+      profile: profile,
+    );
+  }
+
+  static double resolveNoExerciseTargetIntake({
+    required double baselineNoExerciseTdee,
+    required UserProfile profile,
+  }) {
+    if (profile.isMinor &&
+        profile.dietGoalPhase == AppConstants.dietGoalPhaseCutting) {
+      return baselineNoExerciseTdee;
+    }
+
+    switch (profile.dietGoalPhase) {
+      case AppConstants.dietGoalPhaseBulking:
+        return baselineNoExerciseTdee + profile.dailyEnergyGoalKcal;
+      case AppConstants.dietGoalPhaseCutting:
+      default:
+        return baselineNoExerciseTdee - profile.dailyEnergyGoalKcal;
+    }
+  }
+
+  static double resolveEnergyTargetIntake({
+    required double noExerciseTargetIntake,
+    required double loggedNetExerciseKcal,
+  }) {
+    return noExerciseTargetIntake + loggedNetExerciseKcal;
   }
 
   Future<_CalibrationRuntime> _resolveCalibration({
@@ -387,22 +421,6 @@ class DailySummaryService {
     }
 
     return null;
-  }
-
-  double _applyGoal(
-    double baselineNoExerciseTdee, {
-    required String goalType,
-    required double goalKcal,
-  }) {
-    switch (goalType) {
-      case 'deficit':
-        return baselineNoExerciseTdee - goalKcal;
-      case 'surplus':
-        return baselineNoExerciseTdee + goalKcal;
-      case 'maintenance':
-      default:
-        return baselineNoExerciseTdee;
-    }
   }
 
   Future<TrainingFrequencySelfCheckResult?> _resolveMacroSelfCheck({

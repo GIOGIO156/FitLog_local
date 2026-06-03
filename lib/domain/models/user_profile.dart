@@ -14,6 +14,7 @@ class UserProfile {
     required this.proteinRatioPercent,
     required this.carbsRatioPercent,
     required this.fatRatioPercent,
+    required this.dietGoalPhase,
     required this.dietCalculationMode,
     required this.trainingFrequencyPerWeek,
     required this.macroSelfCheckPeriodDays,
@@ -34,6 +35,7 @@ class UserProfile {
   final double proteinRatioPercent;
   final double carbsRatioPercent;
   final double fatRatioPercent;
+  final String dietGoalPhase;
   final String dietCalculationMode;
   final int trainingFrequencyPerWeek;
   final int macroSelfCheckPeriodDays;
@@ -54,6 +56,7 @@ class UserProfile {
     proteinRatioPercent: AppConstants.defaultProteinRatioPercent,
     carbsRatioPercent: AppConstants.defaultCarbsRatioPercent,
     fatRatioPercent: AppConstants.defaultFatRatioPercent,
+    dietGoalPhase: AppConstants.dietGoalPhaseCutting,
     dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
     trainingFrequencyPerWeek: AppConstants.defaultTrainingFrequencyPerWeek,
     macroSelfCheckPeriodDays: AppConstants.defaultMacroSelfCheckPeriodDays,
@@ -79,6 +82,7 @@ class UserProfile {
     double? proteinRatioPercent,
     double? carbsRatioPercent,
     double? fatRatioPercent,
+    String? dietGoalPhase,
     String? dietCalculationMode,
     int? trainingFrequencyPerWeek,
     int? macroSelfCheckPeriodDays,
@@ -87,9 +91,19 @@ class UserProfile {
     String? createdAt,
     String? updatedAt,
   }) {
-    final String safeGoal = (age ?? this.age) < 18
+    final safePhase = AppConstants.dietGoalPhases.contains(
+      dietGoalPhase ?? this.dietGoalPhase,
+    )
+        ? (dietGoalPhase ?? this.dietGoalPhase)
+        : AppConstants.dietGoalPhaseCutting;
+    final phaseGoalType = safePhase == AppConstants.dietGoalPhaseBulking
+        ? 'surplus'
+        : 'deficit';
+    final requestedGoalType = dailyEnergyGoalType ?? phaseGoalType;
+    final String safeGoal =
+        (age ?? this.age) < 18 && requestedGoalType == 'deficit'
         ? 'maintenance'
-        : (dailyEnergyGoalType ?? this.dailyEnergyGoalType);
+        : requestedGoalType;
 
     return UserProfile(
       id: id ?? this.id,
@@ -105,6 +119,7 @@ class UserProfile {
       proteinRatioPercent: proteinRatioPercent ?? this.proteinRatioPercent,
       carbsRatioPercent: carbsRatioPercent ?? this.carbsRatioPercent,
       fatRatioPercent: fatRatioPercent ?? this.fatRatioPercent,
+      dietGoalPhase: safePhase,
       dietCalculationMode:
           AppConstants.dietCalculationModes.contains(
             dietCalculationMode ?? this.dietCalculationMode,
@@ -139,6 +154,7 @@ class UserProfile {
       'protein_ratio_percent': proteinRatioPercent,
       'carbs_ratio_percent': carbsRatioPercent,
       'fat_ratio_percent': fatRatioPercent,
+      'diet_goal_phase': dietGoalPhase,
       'diet_calculation_mode': dietCalculationMode,
       'training_frequency_per_week': trainingFrequencyPerWeek,
       'macro_self_check_period_days': macroSelfCheckPeriodDays,
@@ -177,6 +193,13 @@ class UserProfile {
         map['fat_ratio_percent'],
         fallback: AppConstants.defaultFatRatioPercent,
       ),
+      dietGoalPhase: AppConstants.dietGoalPhases.contains(
+            (map['diet_goal_phase'] ?? AppConstants.dietGoalPhaseCutting)
+                .toString(),
+          )
+          ? (map['diet_goal_phase'] ?? AppConstants.dietGoalPhaseCutting)
+                .toString()
+          : AppConstants.dietGoalPhaseCutting,
       dietCalculationMode: AppConstants.dietCalculationModes.contains(
             (map['diet_calculation_mode'] ??
                     AppConstants.dietCalculationModeEnergyRatio)

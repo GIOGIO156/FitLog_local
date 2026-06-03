@@ -289,6 +289,16 @@ class _OverviewHero extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              Text(
+                strings.phaseLabel(summary.dietGoalPhase),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : Colors.black.withValues(alpha: 0.62),
+                ),
+              ),
+              const SizedBox(width: 8),
               Icon(
                 expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               ),
@@ -446,6 +456,10 @@ class _DashboardDetails extends StatelessWidget {
       return Column(
         children: <Widget>[
           _MetricLine(
+            label: strings.goalPhaseLabel,
+            value: strings.phaseLabel(summary.dietGoalPhase),
+          ),
+          _MetricLine(
             label: strings.caloriesInTodayLabel,
             value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
           ),
@@ -495,6 +509,10 @@ class _DashboardDetails extends StatelessWidget {
     return Column(
       children: <Widget>[
         _MetricLine(
+          label: strings.goalPhaseLabel,
+          value: strings.phaseLabel(summary.dietGoalPhase),
+        ),
+        _MetricLine(
           label: strings.caloriesInTodayLabel,
           value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
         ),
@@ -526,6 +544,11 @@ class _DashboardDetails extends StatelessWidget {
         _MetricLine(
           label: strings.targetIntakeLabel,
           value: '${summary.targetIntake.toStringAsFixed(0)} kcal',
+        ),
+        _MetricLine(
+          label: strings.dailyGoalKcalLabelForPhase(summary.dietGoalPhase),
+          value:
+              '${(summary.noExerciseBaselineTdee - summary.noExerciseTargetIntake).abs().toStringAsFixed(0)} kcal',
         ),
         _MetricLine(
           label: strings.remainingCaloriesLabel,

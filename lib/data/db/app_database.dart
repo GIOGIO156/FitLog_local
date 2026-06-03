@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int _dbVersion = 5;
+  static const int _dbVersion = 6;
 
   Database? _database;
 
@@ -70,6 +70,11 @@ class AppDatabase {
             'ALTER TABLE user_profile ADD COLUMN last_macro_self_check_at TEXT',
           );
         }
+        if (oldVersion < 6) {
+          await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN diet_goal_phase TEXT NOT NULL DEFAULT 'cutting'",
+          );
+        }
       },
     );
   }
@@ -88,6 +93,7 @@ class AppDatabase {
         protein_ratio_percent REAL NOT NULL,
         carbs_ratio_percent REAL NOT NULL,
         fat_ratio_percent REAL NOT NULL,
+        diet_goal_phase TEXT NOT NULL DEFAULT 'cutting',
         diet_calculation_mode TEXT NOT NULL DEFAULT 'energy_ratio',
         training_frequency_per_week INTEGER NOT NULL DEFAULT 3,
         macro_self_check_period_days INTEGER NOT NULL DEFAULT 14,

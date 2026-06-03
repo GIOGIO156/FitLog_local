@@ -1,5 +1,33 @@
 # Database.md
 
+## 2026-06 Schema v6 Update
+
+Database version is now `6`.
+
+Additive migration:
+
+```sql
+ALTER TABLE user_profile
+ADD COLUMN diet_goal_phase TEXT NOT NULL DEFAULT 'cutting';
+```
+
+New `user_profile` field:
+
+| Field | Type | Default | Meaning |
+| -- | -- | -- | -- |
+| `diet_goal_phase` | TEXT NOT NULL | `cutting` | Diet goal phase: `cutting` or `bulking`. Existing users migrate to `cutting`. |
+
+Compatibility notes:
+
+- Existing profile data is preserved.
+- `diet_calculation_mode`, `training_frequency_per_week`, and macro ratio fields keep their previous values.
+- `daily_energy_goal_type` remains available for compatibility, but phase is now the algorithm source of truth.
+
+Export update:
+
+- `user_profile.csv` / User Profile sheet include `diet_goal_phase`.
+- `daily_summary.csv` / Daily Summary sheet include `diet_goal_phase`, `diet_calculation_mode`, and `macro_energy_equivalent_kcal`.
+
 ## 1. 当前数据存储方式
 
 | 存储方式 | 用途 | 是否本地持久化 | 是否远程同步 | 代码位置 |

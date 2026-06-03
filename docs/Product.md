@@ -1,5 +1,29 @@
 # Product.md
 
+## 2026-06 Diet Goal Phase Product Design
+
+Profile presents diet setup as:
+
+1. Basic body profile: age, height, weight, sex.
+2. Goal phase: `cutting` or `bulking`.
+3. Diet calculation method: `g/kg bodyweight method` or `energy ratio method`.
+4. Phase/method-specific settings.
+
+Expected UI behavior:
+
+- `cutting + gram_per_kg`: show training-frequency tier, g/kg self-check settings, cutting g/kg table notice, and macro target preview.
+- `bulking + gram_per_kg`: show training-frequency tier, g/kg self-check settings, bulking g/kg table notice, and macro target preview.
+- `cutting + energy_ratio`: show activity level, daily calorie deficit, macro ratios, and target kcal preview.
+- `bulking + energy_ratio`: show activity level, daily calorie surplus, macro ratios, default 25/50/25 suggestion, and target kcal preview.
+
+Home behavior:
+
+- In `gram_per_kg`, macros are the primary counters and kcal is auxiliary intake information.
+- In `energy_ratio`, kcal target/intake/remaining is primary, with macro targets shown alongside.
+- Home and Profile both show the current goal phase.
+
+Product boundaries remain unchanged: no backend, no cloud sync, no AI/agent/LLM algorithm, no automatic meal planning, and no medical-advice feature.
+
 ## 1. 项目定位
 
 FitLog Local 是一个 Flutter 本地优先的个人饮食与训练记录 App。当前代码库实现的核心能力是：记录饮食营养值、记录训练与估算运动净消耗、按日期汇总每日摄入/消耗/目标、管理个人资料与饮食算法模式，并导出本地数据。

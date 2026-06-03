@@ -1,5 +1,15 @@
 # Agent.md
 
+## 2026-06-04 Diet Goal Phase Split
+
+- Added `diet_goal_phase` (`cutting` / `bulking`) above `diet_calculation_mode`.
+- DB version is v6 with additive `user_profile.diet_goal_phase`, defaulting old users to `cutting`.
+- Active matrix: `cutting + gram_per_kg`, `cutting + energy_ratio`, `bulking + gram_per_kg`, `bulking + energy_ratio`.
+- `gram_per_kg` uses only bodyweight, sex, and training-frequency tables.
+- `energy_ratio` uses phase to interpret `daily_energy_goal_kcal`: cutting subtracts it; bulking adds it.
+- Export includes `diet_goal_phase` in profile and daily summary output.
+- Validation for this round: `flutter analyze` passed; `flutter test` passed.
+
 ## 1. 当前是否存在 AI / LLM 功能
 
 当前 local 版未发现真正的 AI / LLM / Agent 执行能力。代码中没有发现 OpenAI、Gemini、ChatGPT API、LLM SDK、embedding、向量数据库、RAG、function calling、tool calling 或 agent loop。

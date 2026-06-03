@@ -83,6 +83,13 @@ class AppConstants {
     'surplus',
   ];
 
+  static const String dietGoalPhaseCutting = 'cutting';
+  static const String dietGoalPhaseBulking = 'bulking';
+  static const List<String> dietGoalPhases = <String>[
+    dietGoalPhaseCutting,
+    dietGoalPhaseBulking,
+  ];
+
   static const String dietCalculationModeEnergyRatio = 'energy_ratio';
   static const String dietCalculationModeGramPerKg = 'gram_per_kg';
   static const List<String> dietCalculationModes = <String>[
@@ -106,4 +113,8 @@ class AppConstants {
   static const double defaultProteinRatioPercent = 30;
   static const double defaultCarbsRatioPercent = 40;
   static const double defaultFatRatioPercent = 30;
+
+  static const double bulkingProteinRatioPercent = 25;
+  static const double bulkingCarbsRatioPercent = 50;
+  static const double bulkingFatRatioPercent = 25;
 }

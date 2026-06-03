@@ -35,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _sexForFormula = AppConstants.sexOptions.last;
   String _activityLevel = AppConstants.activityLevels[2];
   String _dailyGoalType = 'maintenance';
+  String _dietGoalPhase = AppConstants.dietGoalPhaseCutting;
   String _dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio;
   int _trainingFrequencyPerWeek = AppConstants.defaultTrainingFrequencyPerWeek;
   int _macroSelfCheckPeriodDays = AppConstants.defaultMacroSelfCheckPeriodDays;
@@ -110,6 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _sexForFormula = profile.sexForFormula;
       _activityLevel = profile.activityLevel;
       _dailyGoalType = profile.dailyEnergyGoalType;
+      _dietGoalPhase = profile.dietGoalPhase;
       _dietCalculationMode = profile.dietCalculationMode;
       _trainingFrequencyPerWeek = profile.trainingFrequencyPerWeek;
       _macroSelfCheckPeriodDays = profile.macroSelfCheckPeriodDays;
@@ -152,21 +154,46 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool get _isMinor => _age > 0 && _age < 18;
 
+  bool get _isBulkingPhase =>
+      _dietGoalPhase == AppConstants.dietGoalPhaseBulking;
+
   void _onAgeChanged() {
     setState(_normalizeGoalByAge);
   }
 
   void _normalizeGoalByAge() {
+    _dailyGoalType = _dailyGoalTypeForPhase();
     if (_isMinor && _dailyGoalType == 'deficit') {
       _dailyGoalType = 'maintenance';
     }
   }
 
-  List<String> get _goalTypeOptions {
-    if (_isMinor) {
-      return const <String>['maintenance', 'surplus'];
-    }
-    return AppConstants.dailyEnergyGoalTypes;
+  String _dailyGoalTypeForPhase() {
+    return _isBulkingPhase ? 'surplus' : 'deficit';
+  }
+
+  void _setDietGoalPhase(String phase) {
+    setState(() {
+      _dietGoalPhase = AppConstants.dietGoalPhases.contains(phase)
+          ? phase
+          : AppConstants.dietGoalPhaseCutting;
+      _normalizeGoalByAge();
+      final isUntouchedCuttingDefault =
+          (_proteinRatioPercent - AppConstants.defaultProteinRatioPercent)
+                  .abs() <
+              0.01 &&
+          (_carbsRatioPercent - AppConstants.defaultCarbsRatioPercent).abs() <
+              0.01 &&
+          (_fatRatioPercent - AppConstants.defaultFatRatioPercent).abs() < 0.01;
+      if (_isBulkingPhase && isUntouchedCuttingDefault) {
+        _proteinRatioController.text = AppConstants.bulkingProteinRatioPercent
+            .toStringAsFixed(0);
+        _carbsRatioController.text = AppConstants.bulkingCarbsRatioPercent
+            .toStringAsFixed(0);
+        _fatRatioController.text = AppConstants.bulkingFatRatioPercent
+            .toStringAsFixed(0);
+      }
+    });
   }
 
   UserProfile _buildDraftProfile() {
@@ -181,6 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
       proteinRatioPercent: _proteinRatioPercent,
       carbsRatioPercent: _carbsRatioPercent,
       fatRatioPercent: _fatRatioPercent,
+      dietGoalPhase: _dietGoalPhase,
       dietCalculationMode: _dietCalculationMode,
       trainingFrequencyPerWeek: _trainingFrequencyPerWeek,
       macroSelfCheckPeriodDays: _macroSelfCheckPeriodDays,
@@ -216,11 +244,13 @@ class _ProfilePageState extends State<ProfilePage> {
       return 0;
     }
     final baselineNoExerciseTdee = _calculateNoExerciseBaseline(bmr);
-    final noExerciseTarget = switch (_dailyGoalType) {
-      'deficit' => baselineNoExerciseTdee - _goalKcal,
-      'surplus' => baselineNoExerciseTdee + _goalKcal,
-      _ => baselineNoExerciseTdee,
-    };
+    final noExerciseTarget = context
+        .read<AppServices>()
+        .dailySummaryService
+        .calculateNoExerciseTargetIntake(
+          baselineNoExerciseTdee: baselineNoExerciseTdee,
+          profile: _buildDraftProfile(),
+        );
     return noExerciseTarget + _todayExerciseCalories;
   }
 
@@ -231,7 +261,9 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    if (!_isGramPerKgMode && _isMinor && _dailyGoalType == 'deficit') {
+    _normalizeGoalByAge();
+
+    if (!_isGramPerKgMode && _isMinor && !_isBulkingPhase) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(strings.ageMinorNoDeficit)));
@@ -568,6 +600,24 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
+                  initialValue: _dietGoalPhase,
+                  decoration: InputDecoration(labelText: strings.goalPhaseLabel),
+                  items: AppConstants.dietGoalPhases
+                      .map(
+                        (phase) => DropdownMenuItem<String>(
+                          value: phase,
+                          child: Text(strings.phaseLabel(phase)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      _setDietGoalPhase(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
                   initialValue: _dietCalculationMode,
                   decoration: InputDecoration(
                     labelText: strings.dietCalculationModeLabel,
@@ -612,32 +662,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    initialValue: _goalTypeOptions.contains(_dailyGoalType)
-                        ? _dailyGoalType
-                        : _goalTypeOptions.first,
-                    decoration: InputDecoration(
-                      labelText: strings.dailyGoalTypeLabel,
-                    ),
-                    items: _goalTypeOptions
-                        .map(
-                          (value) => DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(strings.goalTypeLabel(value)),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _dailyGoalType = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 10),
                   TextFormField(
                     controller: _goalKcalController,
                     decoration: InputDecoration(
-                      labelText: strings.dailyGoalKcalLabel,
+                      labelText: strings.dailyGoalKcalLabelForPhase(
+                        _dietGoalPhase,
+                      ),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -649,6 +679,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
+                  if (_isBulkingPhase)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        strings.bulkingMacroRatioSuggestion,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                   TextFormField(
                     controller: _proteinRatioController,
                     decoration: InputDecoration(
@@ -729,6 +767,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                 ],
                 if (_isGramPerKgMode) ...<Widget>[
+                  Text(
+                    strings.gramPerKgTableTitle(_dietGoalPhase),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    strings.gramPerKgPhaseNotice(_dietGoalPhase),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 10),
                   DropdownButtonFormField<int>(
                     initialValue: _trainingFrequencyPerWeek,
                     decoration: InputDecoration(
@@ -917,10 +965,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       '${_calibrationState!.windowDays} d (${_calibrationState!.validDays} valid)',
                 ),
               _Line(
+                label: strings.goalPhaseLabel,
+                value: strings.phaseLabel(_dietGoalPhase),
+              ),
+              _Line(
                 label: strings.todayExerciseCaloriesLabel,
                 value: _todayExerciseCalories.toStringAsFixed(0),
               ),
               if (!_isGramPerKgMode) ...<Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    strings.energyRatioPhaseNotice(_dietGoalPhase),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
                 _Line(
                   label: strings.targetIntakeTodayLabel,
                   value: targetIntake.toStringAsFixed(0),

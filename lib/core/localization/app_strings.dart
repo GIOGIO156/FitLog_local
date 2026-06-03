@@ -123,13 +123,20 @@ class AppStrings {
   String get weightKgLabel => _t('Weight (kg)', '体重 (kg)');
   String get sexForFormulaLabel => _t('Sex for Formula', 'BMR 性别参数');
   String get activityLevelLabel => _t('Activity Level', '活动水平');
+  String get goalPhaseLabel => _t('Goal phase', '目标阶段');
+  String get cuttingLabel => _t('Cutting', '减脂期');
+  String get bulkingLabel => _t('Bulking', '增肌期');
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
-  String get dailyGoalKcalLabel => _t('Daily Deficit (kcal)', '每日热量赤字 (kcal)');
-  String get dietCalculationModeLabel => _t('Diet Calculation Mode', '饮食计算方式');
+  String dailyGoalKcalLabelForPhase(String phase) =>
+      phase == 'bulking'
+          ? _t('Daily Calorie Surplus (kcal)', '每日热量盈余 (kcal)')
+          : _t('Daily Calorie Deficit (kcal)', '每日热量赤字 (kcal)');
+  String get dailyGoalKcalLabel => dailyGoalKcalLabelForPhase('cutting');
+  String get dietCalculationModeLabel => _t('Diet calculation method', '饮食计算方法');
   String get energyRatioModeLabel =>
-      _t('Energy Ratio Deficit Method', '热量赤字比例算法');
+      _t('Energy ratio method', '热量比例算法');
   String get gramPerKgModeLabel =>
-      _t('Cut g/kg Bodyweight Method', '减脂 g/kg 体重算法');
+      _t('g/kg bodyweight method', 'g/kg 体重算法');
   String get trainingFrequencyPerWeekLabel =>
       _t('Training Frequency Tier / Week', '每周训练频率档位');
   String trainingFrequencyOptionLabel(int value) =>
@@ -173,6 +180,10 @@ class AppStrings {
   );
   String get macroRatioSettingsLabel =>
       _t('Daily Macro Ratio (%)', '每日三大营养比例 (%)');
+  String get bulkingMacroRatioSuggestion => _t(
+    'Default bulking suggestion: protein 25%, carbs 50%, fat 25%.',
+    '增肌期默认比例建议：protein 25%, carbs 50%, fat 25%。',
+  );
   String get proteinRatioPercentLabel => _t('Protein Ratio (%)', '蛋白质比例 (%)');
   String get carbsRatioPercentLabel => _t('Carbs Ratio (%)', '碳水比例 (%)');
   String get fatRatioPercentLabel => _t('Fat Ratio (%)', '脂肪比例 (%)');
@@ -368,11 +379,50 @@ class AppStrings {
   String get targetIntakeLabel => _t('Target intake', '今日目标摄入');
   String get remainingCaloriesLabel => _t('Remaining calories', '剩余热量');
   String get macroTargetModeGramPerKg =>
-      _t('Cut Macro Targets (g/kg)', '减脂三大营养目标（g/kg）');
+      _t('Macro Targets (g/kg)', '三大营养目标（g/kg）');
   String get gramPerKgModeNotice => _t(
-    'Cut g/kg mode uses bodyweight and the MVP default table only. Training frequency is a coarse tier, not intensity or performance demand; kcal is auxiliary.',
-    '减脂 g/kg 模式只按体重和 MVP 默认表计算。训练频率只是粗略档位，不代表强度或运动表现需求；kcal 仅作辅助信息。',
+    'g/kg mode uses bodyweight, sex, training-frequency tier, and the current phase table only. It does not mix with calorie deficit or surplus math; kcal is auxiliary.',
+    'g/kg 模式只按体重、性别、训练频率档位和当前阶段表计算，不与热量赤字或盈余算法混合；kcal 仅作辅助信息。',
   );
+  String phaseLabel(String phase) {
+    switch (phase) {
+      case 'bulking':
+        return bulkingLabel;
+      case 'cutting':
+      default:
+        return cuttingLabel;
+    }
+  }
+
+  String gramPerKgTableTitle(String phase) {
+    return phase == 'bulking'
+        ? _t('Bulking g/kg table', '增肌期 g/kg 表')
+        : _t('Cutting g/kg table', '减脂期 g/kg 表');
+  }
+
+  String gramPerKgPhaseNotice(String phase) {
+    return phase == 'bulking'
+        ? _t(
+            'This is the bulking g/kg default table. It gives macro targets directly from bodyweight, sex, and training frequency, without mixing in calorie surplus math.',
+            '这是增肌期 g/kg 默认表。它直接按体重、性别和训练频率给出宏量目标，不与热量盈余算法混合计算。',
+          )
+        : _t(
+            'This is the cutting g/kg default table. Carbohydrate coefficients are tuned for cutting and are not a bulking or performance-maximization table.',
+            '这是减脂期 g/kg 默认表。碳水系数已按减脂场景调整，不是增肌期表，也不是运动表现最大化表。',
+          );
+  }
+
+  String energyRatioPhaseNotice(String phase) {
+    return phase == 'bulking'
+        ? _t(
+            'Uses BMR, non-exercise lifestyle factor, daily calorie surplus, and logged net exercise to calculate target kcal.',
+            '按 BMR、非运动活动系数、每日热量盈余和当天已记录净运动消耗计算目标 kcal。',
+          )
+        : _t(
+            'Uses BMR, non-exercise lifestyle factor, daily calorie deficit, and logged net exercise to calculate target kcal.',
+            '按 BMR、非运动活动系数、每日热量赤字和当天已记录净运动消耗计算目标 kcal。',
+          );
+  }
   String get macroEquivalentEnergyLabel =>
       _t('Macro equivalent energy', '三大营养换算能量');
   String get proteinLabel => _t('Protein', '蛋白质');

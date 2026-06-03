@@ -1,5 +1,40 @@
 # Algorithm.md
 
+## 2026-06 Diet Goal Phase Matrix
+
+The diet algorithm is selected by two dimensions:
+
+| Dimension | Values |
+| -- | -- |
+| `diet_goal_phase` | `cutting`, `bulking` |
+| `diet_calculation_mode` | `gram_per_kg`, `energy_ratio` |
+
+The four combinations are intentionally separated:
+
+| Combination | Primary inputs | Target behavior |
+| -- | -- | -- |
+| `cutting + gram_per_kg` | `weight_kg`, `sex_for_formula`, `training_frequency_per_week` | Uses the cutting g/kg table. kcal is auxiliary only. |
+| `bulking + gram_per_kg` | `weight_kg`, `sex_for_formula`, `training_frequency_per_week` | Uses the bulking g/kg table. kcal is auxiliary only. |
+| `cutting + energy_ratio` | BMR inputs, activity level, `daily_energy_goal_kcal`, logged net exercise, macro ratios | `baseline_no_exercise_tdee - daily_energy_goal_kcal + logged_net_exercise_kcal`. |
+| `bulking + energy_ratio` | BMR inputs, activity level, `daily_energy_goal_kcal`, logged net exercise, macro ratios | `baseline_no_exercise_tdee + daily_energy_goal_kcal + logged_net_exercise_kcal`. |
+
+Boundaries:
+
+- `gram_per_kg` never uses BMR, `activity_level`, `daily_energy_goal_kcal`, logged exercise calories, or macro ratio percentages.
+- `energy_ratio` never uses the g/kg coefficient table or `training_frequency_per_week`.
+- `daily_energy_goal_kcal` means deficit in cutting and surplus in bulking.
+- In g/kg mode, `macro_energy_equivalent_kcal = protein*4 + carbs*4 + fat*9` is an auxiliary analysis/export value, not the kcal target counter.
+- `daily_energy_goal_type` can remain in storage for compatibility, mapped as cutting -> `deficit` and bulking -> `surplus`; algorithm source of truth is `diet_goal_phase`.
+
+g/kg tables use protein/carbs/fat g/kg:
+
+- Cutting male: 2 = 1.4/1.5/0.8, 3 = 1.6/1.8/0.8, 4 = 1.7/2.0/0.9, 5 = 1.8/2.2/1.0.
+- Cutting female: 2 = 1.4/1.4/1.0, 3 = 1.6/1.6/1.0, 4 = 1.7/1.7/1.1, 5 = 1.8/1.9/1.2.
+- Bulking male: 2 = 1.6/3.0/0.8, 3 = 1.7/3.4/0.9, 4 = 1.8/3.8/0.9, 5 = 2.0/4.2/1.0.
+- Bulking female: 2 = 1.6/2.8/0.9, 3 = 1.7/3.1/1.0, 4 = 1.8/3.4/1.0, 5 = 2.0/3.8/1.1.
+
+For `prefer_not_to_say`, use the same-frequency male/female average.
+
 ## 1. 算法依赖的用户数据
 
 | 字段 | 含义 | 来源 | 是否必需 | 代码位置 |

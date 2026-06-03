@@ -19,6 +19,7 @@ class DailySummary {
     required this.remainingProteinG,
     required this.remainingCarbsG,
     required this.remainingFatG,
+    required this.dietGoalPhase,
     required this.dietCalculationMode,
     required this.isEnergyTargetMode,
     required this.macroEnergyEquivalentKcal,
@@ -58,6 +59,7 @@ class DailySummary {
   final double remainingProteinG;
   final double remainingCarbsG;
   final double remainingFatG;
+  final String dietGoalPhase;
   final String dietCalculationMode;
   final bool isEnergyTargetMode;
   final double macroEnergyEquivalentKcal;

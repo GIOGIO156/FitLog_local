@@ -149,6 +149,7 @@ class CsvExportService {
     final List<List<dynamic>> summaryRows = <List<dynamic>>[
       <dynamic>[
         'date',
+        'diet_goal_phase',
         'diet_calculation_mode',
         'is_energy_target_mode',
         'calories_in',
@@ -188,6 +189,7 @@ class CsvExportService {
       final daily = await _dailySummaryService.getSummaryForDate(date);
       summaryRows.add(<dynamic>[
         date,
+        daily.dietGoalPhase,
         daily.dietCalculationMode,
         daily.isEnergyTargetMode ? 1 : 0,
         daily.caloriesIn,
@@ -234,6 +236,7 @@ class CsvExportService {
         'protein_ratio_percent',
         'carbs_ratio_percent',
         'fat_ratio_percent',
+        'diet_goal_phase',
         'diet_calculation_mode',
         'training_frequency_per_week',
         'macro_self_check_period_days',
@@ -251,6 +254,7 @@ class CsvExportService {
         profile.proteinRatioPercent,
         profile.carbsRatioPercent,
         profile.fatRatioPercent,
+        profile.dietGoalPhase,
         profile.dietCalculationMode,
         profile.trainingFrequencyPerWeek,
         profile.macroSelfCheckPeriodDays,

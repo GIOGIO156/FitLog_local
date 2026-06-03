@@ -1,5 +1,33 @@
 # FitLog Local
 
+## 2026-06 Diet Goal Phase Update
+
+FitLog Local now separates diet setup into two dimensions:
+
+```text
+diet_goal_phase:
+  - cutting
+  - bulking
+
+diet_calculation_mode:
+  - gram_per_kg
+  - energy_ratio
+```
+
+This creates four combinations: `cutting + gram_per_kg`, `cutting + energy_ratio`, `bulking + gram_per_kg`, and `bulking + energy_ratio`.
+
+The two calculation modes stay independent. `gram_per_kg` uses bodyweight, sex, and training-frequency table lookup only. It does not use BMR, activity level, daily deficit/surplus, logged exercise calories, or macro-ratio percentages. `energy_ratio` uses BMR, non-exercise lifestyle factor, `daily_energy_goal_kcal`, logged net exercise, and macro ratios.
+
+Phase semantics:
+
+- cutting + g/kg: uses the cutting lower-carb g/kg table.
+- bulking + g/kg: uses the bulking higher-carb g/kg table.
+- cutting + energy_ratio: `daily_energy_goal_kcal` means daily calorie deficit.
+- bulking + energy_ratio: `daily_energy_goal_kcal` means daily calorie surplus.
+- In g/kg mode, `macro_energy_equivalent_kcal = protein*4 + carbs*4 + fat*9` is auxiliary analysis/export data, not the calorie target counter.
+
+Database note: schema v6 adds `user_profile.diet_goal_phase` with default `cutting` for existing local users.
+
 ## 这个 App 解决什么问题？怎么解决？
 **解决的问题**  
 很多人会用 ChatGPT / Gemini 拍照估算食物热量和三大营养素，但结果常常散落在聊天记录里，最后还要手动抄到 Excel，记录成本高、容易漏记。
