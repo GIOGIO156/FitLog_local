@@ -21,14 +21,15 @@ class DailySummaryService {
     MacroTargetCalculator? macroTargetCalculator,
     TrainingFrequencySelfCheckService? trainingFrequencySelfCheckService,
   }) : _foodRepository = foodRepository,
-        _workoutRepository = workoutRepository,
-        _profileRepository = profileRepository,
-        _macroTargetCalculator = macroTargetCalculator ?? const MacroTargetCalculator(),
-        _trainingFrequencySelfCheckService =
-            trainingFrequencySelfCheckService ??
-            TrainingFrequencySelfCheckService(
-              workoutRepository: workoutRepository,
-            );
+       _workoutRepository = workoutRepository,
+       _profileRepository = profileRepository,
+       _macroTargetCalculator =
+           macroTargetCalculator ?? const MacroTargetCalculator(),
+       _trainingFrequencySelfCheckService =
+           trainingFrequencySelfCheckService ??
+           TrainingFrequencySelfCheckService(
+             workoutRepository: workoutRepository,
+           );
 
   final FoodRepository _foodRepository;
   final WorkoutRepository _workoutRepository;
@@ -78,7 +79,8 @@ class DailySummaryService {
     final baselineNoExerciseTdee = bmr * calibration.lifestyleFactorUsed;
 
     final isEnergyTargetMode =
-        profile.dietCalculationMode != AppConstants.dietCalculationModeGramPerKg;
+        profile.dietCalculationMode !=
+        AppConstants.dietCalculationModeGramPerKg;
     final noExerciseTarget = isEnergyTargetMode
         ? calculateNoExerciseTargetIntake(
             baselineNoExerciseTdee: baselineNoExerciseTdee,
@@ -97,7 +99,9 @@ class DailySummaryService {
         : _macroTargetCalculator.calculateByGramPerKg(profile: profile);
 
     final targetIntake = isEnergyTargetMode ? energyModeTargetIntake : 0.0;
-    final remaining = isEnergyTargetMode ? energyModeTargetIntake - caloriesIn : 0.0;
+    final remaining = isEnergyTargetMode
+        ? energyModeTargetIntake - caloriesIn
+        : 0.0;
     final targetProteinG = macroTargets.proteinTargetG;
     final targetCarbsG = macroTargets.carbsTargetG;
     final targetFatG = macroTargets.fatTargetG;
@@ -427,7 +431,8 @@ class DailySummaryService {
     required UserProfile profile,
     required String day,
   }) async {
-    if (profile.dietCalculationMode != AppConstants.dietCalculationModeGramPerKg) {
+    if (profile.dietCalculationMode !=
+        AppConstants.dietCalculationModeGramPerKg) {
       return null;
     }
     return _trainingFrequencySelfCheckService.evaluate(

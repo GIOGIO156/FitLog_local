@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/selected_date_header.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
 import 'add_food_page.dart';
@@ -196,32 +197,17 @@ class _FoodLogPageState extends State<FoodLogPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      IconButton(
-                        onPressed: () => _shiftDate(selectedDateNotifier, -1),
-                        icon: const Icon(Icons.chevron_left),
-                      ),
-                      Expanded(
-                        child: Text(
-                          DateUtilsX.formatReadable(selectedDate),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => _shiftDate(selectedDateNotifier, 1),
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            _pickDate(context, selectedDateNotifier),
-                        child: Text(strings.change),
-                      ),
-                    ],
+                  SelectedDateHeader(
+                    dateText: DateUtilsX.formatReadable(selectedDate),
+                    changeLabel: strings.change,
+                    onPrevious: () => _shiftDate(selectedDateNotifier, -1),
+                    onNext: () => _shiftDate(selectedDateNotifier, 1),
+                    onChangeDate: () =>
+                        _pickDate(context, selectedDateNotifier),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(

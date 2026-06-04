@@ -23,5 +23,6 @@ class TrainingFrequencySelfCheckResult {
   final bool shouldSuggestAdjustment;
   final bool belowRecommendedRange;
 
-  bool get isConsistent => recommendedTrainingFrequency == currentTrainingFrequency;
+  bool get isConsistent =>
+      recommendedTrainingFrequency == currentTrainingFrequency;
 }

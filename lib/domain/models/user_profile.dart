@@ -91,11 +91,9 @@ class UserProfile {
     String? createdAt,
     String? updatedAt,
   }) {
-    final safePhase = AppConstants.dietGoalPhases.contains(
+    final safePhase = AppConstants.resolveDietGoalPhase(
       dietGoalPhase ?? this.dietGoalPhase,
-    )
-        ? (dietGoalPhase ?? this.dietGoalPhase)
-        : AppConstants.dietGoalPhaseCutting;
+    );
     final phaseGoalType = safePhase == AppConstants.dietGoalPhaseBulking
         ? 'surplus'
         : 'deficit';
@@ -120,21 +118,17 @@ class UserProfile {
       carbsRatioPercent: carbsRatioPercent ?? this.carbsRatioPercent,
       fatRatioPercent: fatRatioPercent ?? this.fatRatioPercent,
       dietGoalPhase: safePhase,
-      dietCalculationMode:
-          AppConstants.dietCalculationModes.contains(
-            dietCalculationMode ?? this.dietCalculationMode,
-          )
-          ? (dietCalculationMode ?? this.dietCalculationMode)
-          : AppConstants.dietCalculationModeEnergyRatio,
-      trainingFrequencyPerWeek: AppConstants.trainingFrequencyPerWeekOptions
-              .contains(trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek)
-          ? (trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek)
-          : AppConstants.defaultTrainingFrequencyPerWeek,
-      macroSelfCheckPeriodDays: AppConstants.macroSelfCheckPeriodDayOptions
-              .contains(macroSelfCheckPeriodDays ?? this.macroSelfCheckPeriodDays)
-          ? (macroSelfCheckPeriodDays ?? this.macroSelfCheckPeriodDays)
-          : AppConstants.defaultMacroSelfCheckPeriodDays,
-      macroSelfCheckEnabled: macroSelfCheckEnabled ?? this.macroSelfCheckEnabled,
+      dietCalculationMode: AppConstants.resolveDietCalculationMode(
+        dietCalculationMode ?? this.dietCalculationMode,
+      ),
+      trainingFrequencyPerWeek: AppConstants.resolveTrainingFrequencyPerWeek(
+        trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek,
+      ),
+      macroSelfCheckPeriodDays: AppConstants.resolveMacroSelfCheckPeriodDays(
+        macroSelfCheckPeriodDays ?? this.macroSelfCheckPeriodDays,
+      ),
+      macroSelfCheckEnabled:
+          macroSelfCheckEnabled ?? this.macroSelfCheckEnabled,
       lastMacroSelfCheckAt: lastMacroSelfCheckAt ?? this.lastMacroSelfCheckAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -193,29 +187,22 @@ class UserProfile {
         map['fat_ratio_percent'],
         fallback: AppConstants.defaultFatRatioPercent,
       ),
-      dietGoalPhase: AppConstants.dietGoalPhases.contains(
-            (map['diet_goal_phase'] ?? AppConstants.dietGoalPhaseCutting)
-                .toString(),
-          )
-          ? (map['diet_goal_phase'] ?? AppConstants.dietGoalPhaseCutting)
-                .toString()
-          : AppConstants.dietGoalPhaseCutting,
-      dietCalculationMode: AppConstants.dietCalculationModes.contains(
-            (map['diet_calculation_mode'] ??
-                    AppConstants.dietCalculationModeEnergyRatio)
-                .toString(),
-          )
-          ? (map['diet_calculation_mode'] ??
+      dietGoalPhase: AppConstants.resolveDietGoalPhase(
+        (map['diet_goal_phase'] ?? AppConstants.dietGoalPhaseCutting)
+            .toString(),
+      ),
+      dietCalculationMode: AppConstants.resolveDietCalculationMode(
+        (map['diet_calculation_mode'] ??
                 AppConstants.dietCalculationModeEnergyRatio)
-                .toString()
-          : AppConstants.dietCalculationModeEnergyRatio,
-      trainingFrequencyPerWeek: _resolveTrainingFrequency(
+            .toString(),
+      ),
+      trainingFrequencyPerWeek: AppConstants.resolveTrainingFrequencyPerWeek(
         NumberUtils.toInt(
           map['training_frequency_per_week'],
           fallback: AppConstants.defaultTrainingFrequencyPerWeek,
         ),
       ),
-      macroSelfCheckPeriodDays: _resolveMacroSelfCheckPeriod(
+      macroSelfCheckPeriodDays: AppConstants.resolveMacroSelfCheckPeriodDays(
         NumberUtils.toInt(
           map['macro_self_check_period_days'],
           fallback: AppConstants.defaultMacroSelfCheckPeriodDays,
@@ -227,19 +214,5 @@ class UserProfile {
       createdAt: map['created_at']?.toString(),
       updatedAt: map['updated_at']?.toString(),
     );
-  }
-
-  static int _resolveTrainingFrequency(int raw) {
-    if (AppConstants.trainingFrequencyPerWeekOptions.contains(raw)) {
-      return raw;
-    }
-    return AppConstants.defaultTrainingFrequencyPerWeek;
-  }
-
-  static int _resolveMacroSelfCheckPeriod(int raw) {
-    if (AppConstants.macroSelfCheckPeriodDayOptions.contains(raw)) {
-      return raw;
-    }
-    return AppConstants.defaultMacroSelfCheckPeriodDays;
   }
 }

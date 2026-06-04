@@ -29,6 +29,32 @@ class WorkoutRepository {
     });
   }
 
+  Future<void> insertWorkoutPlan(List<WorkoutSession> sessions) async {
+    if (sessions.isEmpty) {
+      return;
+    }
+
+    final db = await _database.database;
+    final now = DateTime.now().toIso8601String();
+
+    await db.transaction((txn) async {
+      for (final session in sessions) {
+        final int sessionId = await txn.insert(
+          'workout_sessions',
+          session.copyWith(createdAt: now, updatedAt: now).toMap()
+            ..remove('id'),
+        );
+
+        for (final set in session.sets) {
+          await txn.insert(
+            'workout_sets',
+            set.copyWith(workoutSessionId: sessionId).toMap()..remove('id'),
+          );
+        }
+      }
+    });
+  }
+
   Future<void> updateWorkoutSession(WorkoutSession session) async {
     if (session.id == null) {
       throw ArgumentError('Workout session id is required for update.');

@@ -356,55 +356,62 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
               ),
             ),
           );
-          setState(() => _saving = false);
           return;
         }
 
-        final sets = <WorkoutSet>[];
-        if (!draft.isCardio) {
-          if (draft.sets.isEmpty) {
+        if (draft.isCardio) {
+          continue;
+        }
+
+        if (draft.sets.isEmpty) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                strings.noSetsForExercise(
+                  strings.exerciseDisplayName(draft.exerciseName),
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+
+        for (final setDraft in draft.sets) {
+          final reps = NumberUtils.toInt(
+            setDraft.effectiveRepsText,
+            fallback: -1,
+          );
+          final weight = NumberUtils.toDouble(
+            setDraft.effectiveWeightText,
+            fallback: double.nan,
+          );
+          if (reps <= 0 || weight.isNaN || weight < 0) {
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
-                  strings.noSetsForExercise(
+                  strings.invalidSetValue(
                     strings.exerciseDisplayName(draft.exerciseName),
                   ),
                 ),
               ),
             );
-            setState(() => _saving = false);
             return;
           }
+        }
+      }
 
+      final sessions = <WorkoutSession>[];
+      for (final draft in drafts) {
+        final durationMinutes = _durationForDraft(draft);
+        final sets = <WorkoutSet>[];
+        if (!draft.isCardio) {
           for (var i = 0; i < draft.sets.length; i++) {
             final setDraft = draft.sets[i];
-            final reps = NumberUtils.toInt(
-              setDraft.effectiveRepsText,
-              fallback: -1,
-            );
-            final weight = NumberUtils.toDouble(
-              setDraft.effectiveWeightText,
-              fallback: double.nan,
-            );
-            if (reps <= 0 || weight.isNaN || weight < 0) {
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    strings.invalidSetValue(
-                      strings.exerciseDisplayName(draft.exerciseName),
-                    ),
-                  ),
-                ),
-              );
-              setState(() => _saving = false);
-              return;
-            }
-
             sets.add(
               WorkoutSet(
                 setNumber: i + 1,
-                weightKg: weight,
-                reps: reps,
+                weightKg: NumberUtils.toDouble(setDraft.effectiveWeightText),
+                reps: NumberUtils.toInt(setDraft.effectiveRepsText),
                 isCompleted: setDraft.isCompleted,
                 completedAt: setDraft.isCompleted ? now : null,
               ),
@@ -412,32 +419,34 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           }
         }
 
-        final session = WorkoutSession(
-          planId: planId,
-          date: _date,
-          bodyPart: draft.bodyPart,
-          exerciseName: draft.exerciseName,
-          exerciseType: draft.isCardio ? 'cardio' : 'strength',
-          durationMinutes: durationMinutes,
-          intensity: 'medium',
-          estimatedCalories: draft.isCardio
-              ? WorkoutCalorieCalculator.estimateCardioCalories(
-                  exerciseName: draft.exerciseName,
-                  bodyWeightKg: _profileWeightKg,
-                  durationMinutes: durationMinutes,
-                )
-              : WorkoutCalorieCalculator.estimateStrengthCalories(
-                  exerciseName: draft.exerciseName,
-                  bodyWeightKg: _profileWeightKg,
-                  sets: sets,
-                  totalSessionDurationMinutes: durationMinutes,
-                ),
-          notes: notes,
-          sets: sets,
+        sessions.add(
+          WorkoutSession(
+            planId: planId,
+            date: _date,
+            bodyPart: draft.bodyPart,
+            exerciseName: draft.exerciseName,
+            exerciseType: draft.isCardio ? 'cardio' : 'strength',
+            durationMinutes: durationMinutes,
+            intensity: 'medium',
+            estimatedCalories: draft.isCardio
+                ? WorkoutCalorieCalculator.estimateCardioCalories(
+                    exerciseName: draft.exerciseName,
+                    bodyWeightKg: _profileWeightKg,
+                    durationMinutes: durationMinutes,
+                  )
+                : WorkoutCalorieCalculator.estimateStrengthCalories(
+                    exerciseName: draft.exerciseName,
+                    bodyWeightKg: _profileWeightKg,
+                    sets: sets,
+                    totalSessionDurationMinutes: durationMinutes,
+                  ),
+            notes: notes,
+            sets: sets,
+          ),
         );
-
-        await services.workoutRepository.insertWorkoutSession(session);
       }
+
+      await services.workoutRepository.insertWorkoutPlan(sessions);
     } catch (error) {
       if (mounted) {
         messenger.showSnackBar(

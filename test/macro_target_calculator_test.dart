@@ -125,41 +125,44 @@ void main() {
       expect(targets.macroEnergyEquivalentKcal, closeTo(2000, 0.001));
     });
 
-    test('ignores training frequency when target intake and ratios are same', () {
-      final lowFrequencyTargets = calculator.calculateByEnergyRatio(
-        profile: _profile(
-          dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
-          trainingFrequencyPerWeek: 2,
-          proteinRatioPercent: 25,
-          carbsRatioPercent: 50,
-          fatRatioPercent: 25,
-        ),
-        targetIntakeKcal: 2600,
-      );
-      final highFrequencyTargets = calculator.calculateByEnergyRatio(
-        profile: _profile(
-          dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
-          trainingFrequencyPerWeek: 5,
-          proteinRatioPercent: 25,
-          carbsRatioPercent: 50,
-          fatRatioPercent: 25,
-        ),
-        targetIntakeKcal: 2600,
-      );
+    test(
+      'ignores training frequency when target intake and ratios are same',
+      () {
+        final lowFrequencyTargets = calculator.calculateByEnergyRatio(
+          profile: _profile(
+            dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+            trainingFrequencyPerWeek: 2,
+            proteinRatioPercent: 25,
+            carbsRatioPercent: 50,
+            fatRatioPercent: 25,
+          ),
+          targetIntakeKcal: 2600,
+        );
+        final highFrequencyTargets = calculator.calculateByEnergyRatio(
+          profile: _profile(
+            dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+            trainingFrequencyPerWeek: 5,
+            proteinRatioPercent: 25,
+            carbsRatioPercent: 50,
+            fatRatioPercent: 25,
+          ),
+          targetIntakeKcal: 2600,
+        );
 
-      expect(
-        lowFrequencyTargets.proteinTargetG,
-        closeTo(highFrequencyTargets.proteinTargetG, 0.001),
-      );
-      expect(
-        lowFrequencyTargets.carbsTargetG,
-        closeTo(highFrequencyTargets.carbsTargetG, 0.001),
-      );
-      expect(
-        lowFrequencyTargets.fatTargetG,
-        closeTo(highFrequencyTargets.fatTargetG, 0.001),
-      );
-    });
+        expect(
+          lowFrequencyTargets.proteinTargetG,
+          closeTo(highFrequencyTargets.proteinTargetG, 0.001),
+        );
+        expect(
+          lowFrequencyTargets.carbsTargetG,
+          closeTo(highFrequencyTargets.carbsTargetG, 0.001),
+        );
+        expect(
+          lowFrequencyTargets.fatTargetG,
+          closeTo(highFrequencyTargets.fatTargetG, 0.001),
+        );
+      },
+    );
   });
 
   group('MacroTargetCalculator isolation', () {

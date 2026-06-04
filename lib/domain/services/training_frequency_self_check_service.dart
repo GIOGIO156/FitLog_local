@@ -22,7 +22,8 @@ class TrainingFrequencySelfCheckService {
     );
     final periodDays = _resolvePeriodDays(profile.macroSelfCheckPeriodDays);
     final isGramMode =
-        profile.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
+        profile.dietCalculationMode ==
+        AppConstants.dietCalculationModeGramPerKg;
     final isEnabled = profile.macroSelfCheckEnabled;
 
     if (!isGramMode) {
@@ -133,25 +134,18 @@ class TrainingFrequencySelfCheckService {
       return true;
     }
     final lastDay = DateUtilsX.formatDate(parsed);
-    final diff = DateUtilsX
-        .parseDay(referenceDay)
-        .difference(DateUtilsX.parseDay(lastDay))
-        .inDays;
+    final diff = DateUtilsX.parseDay(
+      referenceDay,
+    ).difference(DateUtilsX.parseDay(lastDay)).inDays;
     return diff >= AppConstants.macroSelfCheckReminderCooldownDays;
   }
 
   int _resolveTrainingFrequency(int value) {
-    if (AppConstants.trainingFrequencyPerWeekOptions.contains(value)) {
-      return value;
-    }
-    return AppConstants.defaultTrainingFrequencyPerWeek;
+    return AppConstants.resolveTrainingFrequencyPerWeek(value);
   }
 
   int _resolvePeriodDays(int value) {
-    if (AppConstants.macroSelfCheckPeriodDayOptions.contains(value)) {
-      return value;
-    }
-    return AppConstants.defaultMacroSelfCheckPeriodDays;
+    return AppConstants.resolveMacroSelfCheckPeriodDays(value);
   }
 
   int _clampFrequency(int value) {

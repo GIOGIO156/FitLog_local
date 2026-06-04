@@ -15,39 +15,43 @@ class AppConstants {
     'Full Body',
   ];
 
-  static const Map<String, List<String>>
-  bodyPartExercises = <String, List<String>>{
-    'Chest': <String>[
-      'Bench Press',
-      'Incline Dumbbell Press',
-      'Push-up',
-      'Chest Fly',
-    ],
-    'Back': <String>[
-      'Pull-up',
-      'Lat Pulldown',
-      'Barbell Row',
-      'Seated Cable Row',
-    ],
-    'Legs': <String>[
-      'Squat',
-      'Leg Press',
-      'Romanian Deadlift',
-      'Leg Extension',
-      'Leg Curl',
-    ],
-    'Shoulders': <String>['Overhead Press', 'Lateral Raise', 'Rear Delt Fly'],
-    'Arms': <String>['Biceps Curl', 'Triceps Pushdown', 'Hammer Curl'],
-    'Core': <String>['Plank', 'Crunch', 'Hanging Leg Raise'],
-    'Cardio': <String>[
-      'Walking',
-      'Running',
-      'Cycling',
-      'Rowing Machine',
-      'Stair Climber',
-    ],
-    'Full Body': <String>['Deadlift', 'Kettlebell Swing', 'Burpee'],
-  };
+  static const Map<String, List<String>> bodyPartExercises =
+      <String, List<String>>{
+        'Chest': <String>[
+          'Bench Press',
+          'Incline Dumbbell Press',
+          'Push-up',
+          'Chest Fly',
+        ],
+        'Back': <String>[
+          'Pull-up',
+          'Lat Pulldown',
+          'Barbell Row',
+          'Seated Cable Row',
+        ],
+        'Legs': <String>[
+          'Squat',
+          'Leg Press',
+          'Romanian Deadlift',
+          'Leg Extension',
+          'Leg Curl',
+        ],
+        'Shoulders': <String>[
+          'Overhead Press',
+          'Lateral Raise',
+          'Rear Delt Fly',
+        ],
+        'Arms': <String>['Biceps Curl', 'Triceps Pushdown', 'Hammer Curl'],
+        'Core': <String>['Plank', 'Crunch', 'Hanging Leg Raise'],
+        'Cardio': <String>[
+          'Walking',
+          'Running',
+          'Cycling',
+          'Rowing Machine',
+          'Stair Climber',
+        ],
+        'Full Body': <String>['Deadlift', 'Kettlebell Swing', 'Burpee'],
+      };
 
   static const Set<String> bodyweightExercises = <String>{
     'Pull-up',
@@ -100,12 +104,7 @@ class AppConstants {
   static const int defaultTrainingFrequencyPerWeek = 3;
   static const List<int> trainingFrequencyPerWeekOptions = <int>[2, 3, 4, 5];
   static const int defaultMacroSelfCheckPeriodDays = 14;
-  static const List<int> macroSelfCheckPeriodDayOptions = <int>[
-    7,
-    14,
-    21,
-    28,
-  ];
+  static const List<int> macroSelfCheckPeriodDayOptions = <int>[7, 14, 21, 28];
   static const int macroSelfCheckReminderCooldownDays = 7;
   static const int validWorkoutCardioMinutesThreshold = 20;
   static const double validWorkoutCaloriesThreshold = 80;
@@ -117,4 +116,32 @@ class AppConstants {
   static const double bulkingProteinRatioPercent = 25;
   static const double bulkingCarbsRatioPercent = 50;
   static const double bulkingFatRatioPercent = 25;
+
+  static String resolveDietGoalPhase(String? value) {
+    if (dietGoalPhases.contains(value)) {
+      return value!;
+    }
+    return dietGoalPhaseCutting;
+  }
+
+  static String resolveDietCalculationMode(String? value) {
+    if (dietCalculationModes.contains(value)) {
+      return value!;
+    }
+    return dietCalculationModeEnergyRatio;
+  }
+
+  static int resolveTrainingFrequencyPerWeek(int? value) {
+    if (trainingFrequencyPerWeekOptions.contains(value)) {
+      return value!;
+    }
+    return defaultTrainingFrequencyPerWeek;
+  }
+
+  static int resolveMacroSelfCheckPeriodDays(int? value) {
+    if (macroSelfCheckPeriodDayOptions.contains(value)) {
+      return value!;
+    }
+    return defaultMacroSelfCheckPeriodDays;
+  }
 }

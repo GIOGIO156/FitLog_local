@@ -7,6 +7,7 @@ import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/selected_date_header.dart';
 import '../../domain/models/daily_summary.dart';
 
 class HomePage extends StatefulWidget {
@@ -98,34 +99,17 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          IconButton(
-                            onPressed: () =>
-                                _shiftDate(selectedDateNotifier, -1),
-                            icon: const Icon(Icons.chevron_left),
-                          ),
-                          Expanded(
-                            child: Text(
-                              DateUtilsX.formatReadable(summary.date),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () =>
-                                _shiftDate(selectedDateNotifier, 1),
-                            icon: const Icon(Icons.chevron_right),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                _pickDate(context, selectedDateNotifier),
-                            child: Text(strings.change),
-                          ),
-                        ],
+                      SelectedDateHeader(
+                        dateText: DateUtilsX.formatReadable(summary.date),
+                        changeLabel: strings.change,
+                        onPrevious: () => _shiftDate(selectedDateNotifier, -1),
+                        onNext: () => _shiftDate(selectedDateNotifier, 1),
+                        onChangeDate: () =>
+                            _pickDate(context, selectedDateNotifier),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Material(
@@ -246,7 +230,8 @@ class _OverviewHero extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
     final isGramPerKgMode =
-        summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
+        summary.dietCalculationMode ==
+        AppConstants.dietCalculationModeGramPerKg;
 
     return Container(
       width: double.infinity,
@@ -450,7 +435,8 @@ class _DashboardDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isGramPerKgMode =
-        summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
+        summary.dietCalculationMode ==
+        AppConstants.dietCalculationModeGramPerKg;
 
     if (isGramPerKgMode) {
       return Column(
@@ -484,7 +470,8 @@ class _DashboardDetails extends StatelessWidget {
           ),
           _MetricLine(
             label: strings.macroEquivalentEnergyLabel,
-            value: '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal',
+            value:
+                '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal',
           ),
           const SizedBox(height: 8),
           Align(

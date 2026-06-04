@@ -127,16 +127,14 @@ class AppStrings {
   String get cuttingLabel => _t('Cutting', '减脂期');
   String get bulkingLabel => _t('Bulking', '增肌期');
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
-  String dailyGoalKcalLabelForPhase(String phase) =>
-      phase == 'bulking'
-          ? _t('Daily Calorie Surplus (kcal)', '每日热量盈余 (kcal)')
-          : _t('Daily Calorie Deficit (kcal)', '每日热量赤字 (kcal)');
+  String dailyGoalKcalLabelForPhase(String phase) => phase == 'bulking'
+      ? _t('Daily Calorie Surplus (kcal)', '每日热量盈余 (kcal)')
+      : _t('Daily Calorie Deficit (kcal)', '每日热量赤字 (kcal)');
   String get dailyGoalKcalLabel => dailyGoalKcalLabelForPhase('cutting');
-  String get dietCalculationModeLabel => _t('Diet calculation method', '饮食计算方法');
-  String get energyRatioModeLabel =>
-      _t('Energy ratio method', '热量比例算法');
-  String get gramPerKgModeLabel =>
-      _t('g/kg bodyweight method', 'g/kg 体重算法');
+  String get dietCalculationModeLabel =>
+      _t('Diet calculation method', '饮食计算方法');
+  String get energyRatioModeLabel => _t('Energy ratio method', '热量比例算法');
+  String get gramPerKgModeLabel => _t('g/kg bodyweight method', 'g/kg 体重算法');
   String get trainingFrequencyPerWeekLabel =>
       _t('Training Frequency Tier / Week', '每周训练频率档位');
   String trainingFrequencyOptionLabel(int value) =>
@@ -423,6 +421,7 @@ class AppStrings {
             '按 BMR、非运动活动系数、每日热量赤字和当天已记录净运动消耗计算目标 kcal。',
           );
   }
+
   String get macroEquivalentEnergyLabel =>
       _t('Macro equivalent energy', '三大营养换算能量');
   String get proteinLabel => _t('Protein', '蛋白质');

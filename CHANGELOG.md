@@ -1,5 +1,28 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-05 Workout Plan Save Atomicity Fix
+
+### Fixed
+- Workout plan save now finishes all validation before any workout session is inserted.
+- If any exercise is missing duration or required set data, the app only shows the validation prompt and does not save a partial plan.
+- Full-plan saves now use one repository transaction so repeated taps on an invalid first-time exercise no longer leave behind duplicate incomplete plans.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+- `flutter build apk --debug`: success.
+
+## 2026-06-04 Round 1 Simplification Cleanup
+
+### Changed
+- Extracted a shared `SelectedDateHeader` widget for Home, Food Log, and Workout Log date navigation UI.
+- Extracted reusable Profile form field widgets for repeated numeric and option inputs without changing save flow or field behavior.
+- Centralized allowed-option resolution helpers in `AppConstants` and reused them from profile/model/service code paths.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+
 ## 2026-06-04 Diet Goal Phase Split
 
 ### Added

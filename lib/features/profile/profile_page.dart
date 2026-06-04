@@ -9,6 +9,7 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/profile_form_fields.dart';
 import '../../domain/models/calorie_calibration_state.dart';
 import '../../domain/models/training_frequency_self_check_result.dart';
 import '../../domain/models/user_profile.dart';
@@ -174,9 +175,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _setDietGoalPhase(String phase) {
     setState(() {
-      _dietGoalPhase = AppConstants.dietGoalPhases.contains(phase)
-          ? phase
-          : AppConstants.dietGoalPhaseCutting;
+      _dietGoalPhase = AppConstants.resolveDietGoalPhase(phase);
       _normalizeGoalByAge();
       final isUntouchedCuttingDefault =
           (_proteinRatioPercent - AppConstants.defaultProteinRatioPercent)
@@ -539,9 +538,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                ProfileNumericField(
                   controller: _ageController,
-                  decoration: InputDecoration(labelText: strings.ageLabel),
+                  labelText: strings.ageLabel,
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (NumberUtils.toInt(value, fallback: 0) <= 0) {
@@ -551,9 +550,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                TextFormField(
+                ProfileNumericField(
                   controller: _heightController,
-                  decoration: InputDecoration(labelText: strings.heightCmLabel),
+                  labelText: strings.heightCmLabel,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -565,9 +564,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                TextFormField(
+                ProfileNumericField(
                   controller: _weightController,
-                  decoration: InputDecoration(labelText: strings.weightKgLabel),
+                  labelText: strings.weightKgLabel,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -579,19 +578,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _sexForFormula,
-                  decoration: InputDecoration(
-                    labelText: strings.sexForFormulaLabel,
-                  ),
-                  items: AppConstants.sexOptions
-                      .map(
-                        (value) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(strings.sexOptionLabel(value)),
-                        ),
-                      )
-                      .toList(),
+                ProfileOptionField<String>(
+                  value: _sexForFormula,
+                  labelText: strings.sexForFormulaLabel,
+                  options: AppConstants.sexOptions,
+                  labelBuilder: strings.sexOptionLabel,
                   onChanged: (value) {
                     if (value != null) {
                       setState(() => _sexForFormula = value);
@@ -599,17 +590,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _dietGoalPhase,
-                  decoration: InputDecoration(labelText: strings.goalPhaseLabel),
-                  items: AppConstants.dietGoalPhases
-                      .map(
-                        (phase) => DropdownMenuItem<String>(
-                          value: phase,
-                          child: Text(strings.phaseLabel(phase)),
-                        ),
-                      )
-                      .toList(),
+                ProfileOptionField<String>(
+                  value: _dietGoalPhase,
+                  labelText: strings.goalPhaseLabel,
+                  options: AppConstants.dietGoalPhases,
+                  labelBuilder: strings.phaseLabel,
                   onChanged: (value) {
                     if (value != null) {
                       _setDietGoalPhase(value);
@@ -617,23 +602,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _dietCalculationMode,
-                  decoration: InputDecoration(
-                    labelText: strings.dietCalculationModeLabel,
-                  ),
-                  items: AppConstants.dietCalculationModes
-                      .map(
-                        (mode) => DropdownMenuItem<String>(
-                          value: mode,
-                          child: Text(
-                            mode == AppConstants.dietCalculationModeGramPerKg
-                                ? strings.gramPerKgModeLabel
-                                : strings.energyRatioModeLabel,
-                          ),
-                        ),
-                      )
-                      .toList(),
+                ProfileOptionField<String>(
+                  value: _dietCalculationMode,
+                  labelText: strings.dietCalculationModeLabel,
+                  options: AppConstants.dietCalculationModes,
+                  labelBuilder: (mode) =>
+                      mode == AppConstants.dietCalculationModeGramPerKg
+                      ? strings.gramPerKgModeLabel
+                      : strings.energyRatioModeLabel,
                   onChanged: (value) {
                     if (value != null) {
                       setState(() => _dietCalculationMode = value);
@@ -642,19 +618,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 if (!_isGramPerKgMode) ...<Widget>[
-                  DropdownButtonFormField<String>(
-                    initialValue: _activityLevel,
-                    decoration: InputDecoration(
-                      labelText: strings.activityLevelLabel,
-                    ),
-                    items: AppConstants.activityLevels
-                        .map(
-                          (value) => DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(strings.activityOptionLabel(value)),
-                          ),
-                        )
-                        .toList(),
+                  ProfileOptionField<String>(
+                    value: _activityLevel,
+                    labelText: strings.activityLevelLabel,
+                    options: AppConstants.activityLevels,
+                    labelBuilder: strings.activityOptionLabel,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() => _activityLevel = value);
@@ -662,12 +630,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(
+                  ProfileNumericField(
                     controller: _goalKcalController,
-                    decoration: InputDecoration(
-                      labelText: strings.dailyGoalKcalLabelForPhase(
-                        _dietGoalPhase,
-                      ),
+                    labelText: strings.dailyGoalKcalLabelForPhase(
+                      _dietGoalPhase,
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -687,11 +653,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
-                  TextFormField(
+                  ProfileNumericField(
                     controller: _proteinRatioController,
-                    decoration: InputDecoration(
-                      labelText: strings.proteinRatioPercentLabel,
-                    ),
+                    labelText: strings.proteinRatioPercentLabel,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -705,11 +669,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(
+                  ProfileNumericField(
                     controller: _carbsRatioController,
-                    decoration: InputDecoration(
-                      labelText: strings.carbsRatioPercentLabel,
-                    ),
+                    labelText: strings.carbsRatioPercentLabel,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -723,11 +685,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(
+                  ProfileNumericField(
                     controller: _fatRatioController,
-                    decoration: InputDecoration(
-                      labelText: strings.fatRatioPercentLabel,
-                    ),
+                    labelText: strings.fatRatioPercentLabel,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -777,19 +737,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    initialValue: _trainingFrequencyPerWeek,
-                    decoration: InputDecoration(
-                      labelText: strings.trainingFrequencyPerWeekLabel,
-                    ),
-                    items: AppConstants.trainingFrequencyPerWeekOptions
-                        .map(
-                          (value) => DropdownMenuItem<int>(
-                            value: value,
-                            child: Text(strings.trainingFrequencyOptionLabel(value)),
-                          ),
-                        )
-                        .toList(),
+                  ProfileOptionField<int>(
+                    value: _trainingFrequencyPerWeek,
+                    labelText: strings.trainingFrequencyPerWeekLabel,
+                    options: AppConstants.trainingFrequencyPerWeekOptions,
+                    labelBuilder: strings.trainingFrequencyOptionLabel,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() => _trainingFrequencyPerWeek = value);
@@ -797,21 +749,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    initialValue: _macroSelfCheckPeriodDays,
-                    decoration: InputDecoration(
-                      labelText: strings.macroSelfCheckPeriodLabel,
-                    ),
-                    items: AppConstants.macroSelfCheckPeriodDayOptions
-                        .map(
-                          (value) => DropdownMenuItem<int>(
-                            value: value,
-                            child: Text(
-                              strings.macroSelfCheckPeriodOptionLabel(value),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                  ProfileOptionField<int>(
+                    value: _macroSelfCheckPeriodDays,
+                    labelText: strings.macroSelfCheckPeriodLabel,
+                    options: AppConstants.macroSelfCheckPeriodDayOptions,
+                    labelBuilder: strings.macroSelfCheckPeriodOptionLabel,
                     onChanged: (value) {
                       if (value != null) {
                         setState(() => _macroSelfCheckPeriodDays = value);
@@ -885,7 +827,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       _trainingSelfCheckResult!.averageWeeklyTrainingFrequency,
                     ),
                   ),
-                  if (_trainingSelfCheckResult!.belowRecommendedRange) ...<Widget>[
+                  if (_trainingSelfCheckResult!
+                      .belowRecommendedRange) ...<Widget>[
                     const SizedBox(height: 8),
                     Text(strings.macroSelfCheckBelowRangeNotice),
                   ],
@@ -897,7 +840,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    if (_trainingSelfCheckResult!.shouldSuggestAdjustment) ...<Widget>[
+                    if (_trainingSelfCheckResult!
+                        .shouldSuggestAdjustment) ...<Widget>[
                       const SizedBox(height: 10),
                       Row(
                         children: <Widget>[
