@@ -7,6 +7,7 @@ import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
+import 'food_form_support.dart';
 
 class ManualFoodEntryPage extends StatefulWidget {
   const ManualFoodEntryPage({super.key, this.initialDate});
@@ -121,19 +122,11 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(DateUtilsX.formatReadable(_date)),
-              trailing: TextButton(
-                onPressed: _pickDate,
-                child: const Text('Change'),
-              ),
-            ),
+            FoodDateTile(date: _date, onChange: _pickDate),
             const SizedBox(height: 8),
-            TextFormField(
+            FoodFormField(
               controller: _mealNameController,
-              decoration: const InputDecoration(labelText: 'meal_name'),
+              labelText: 'meal_name',
               validator: (value) {
                 if ((value ?? '').trim().isEmpty) {
                   return 'Please enter meal name';
@@ -142,51 +135,49 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
               },
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _weightController,
-              decoration: const InputDecoration(labelText: 'total_weight_g'),
+              labelText: 'total_weight_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _caloriesController,
-              decoration: const InputDecoration(
-                labelText: 'total_calories_kcal',
-              ),
+              labelText: 'total_calories_kcal',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _proteinController,
-              decoration: const InputDecoration(labelText: 'protein_g'),
+              labelText: 'protein_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _carbsController,
-              decoration: const InputDecoration(labelText: 'carbs_g'),
+              labelText: 'carbs_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _fatController,
-              decoration: const InputDecoration(labelText: 'fat_g'),
+              labelText: 'fat_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'notes'),
+              labelText: 'notes',
               maxLines: 3,
             ),
           ],
@@ -195,16 +186,10 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined),
-            label: Text(_saving ? 'Saving...' : 'Save'),
+          child: FoodSaveButton(
+            saving: _saving,
+            label: 'Save',
+            onPressed: _save,
           ),
         ),
       ),

@@ -129,13 +129,7 @@ class WorkoutRepository {
       orderBy: 'date DESC, created_at DESC',
     );
 
-    final List<WorkoutSession> sessions = <WorkoutSession>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final sets = await getSetsBySessionId(id);
-      sessions.add(WorkoutSession.fromMap(row, sets: sets));
-    }
-    return sessions;
+    return _sessionsFromRows(rows);
   }
 
   Future<List<WorkoutSession>> getWorkoutSessionsByDate(String day) async {
@@ -147,13 +141,7 @@ class WorkoutRepository {
       orderBy: 'created_at DESC',
     );
 
-    final List<WorkoutSession> sessions = <WorkoutSession>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final sets = await getSetsBySessionId(id);
-      sessions.add(WorkoutSession.fromMap(row, sets: sets));
-    }
-    return sessions;
+    return _sessionsFromRows(rows);
   }
 
   Future<List<WorkoutSession>> getWorkoutSessionsBetween({
@@ -168,13 +156,7 @@ class WorkoutRepository {
       orderBy: 'date ASC, created_at ASC',
     );
 
-    final sessions = <WorkoutSession>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final sets = await getSetsBySessionId(id);
-      sessions.add(WorkoutSession.fromMap(row, sets: sets));
-    }
-    return sessions;
+    return _sessionsFromRows(rows);
   }
 
   Future<WorkoutSession?> getWorkoutSessionById(int id) async {
@@ -190,8 +172,7 @@ class WorkoutRepository {
       return null;
     }
 
-    final sets = await getSetsBySessionId(id);
-    return WorkoutSession.fromMap(rows.first, sets: sets);
+    return _sessionFromRow(rows.first);
   }
 
   Future<WorkoutSession?> getLatestSessionByExerciseName(
@@ -210,9 +191,7 @@ class WorkoutRepository {
       return null;
     }
 
-    final int id = rows.first['id'] as int;
-    final sets = await getSetsBySessionId(id);
-    return WorkoutSession.fromMap(rows.first, sets: sets);
+    return _sessionFromRow(rows.first);
   }
 
   Future<List<WorkoutSession>> getWorkoutSessionsByPlanId(String planId) async {
@@ -224,13 +203,7 @@ class WorkoutRepository {
       orderBy: 'created_at ASC',
     );
 
-    final List<WorkoutSession> sessions = <WorkoutSession>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final sets = await getSetsBySessionId(id);
-      sessions.add(WorkoutSession.fromMap(row, sets: sets));
-    }
-    return sessions;
+    return _sessionsFromRows(rows);
   }
 
   Future<List<WorkoutSet>> getSetsBySessionId(int sessionId) async {
@@ -307,5 +280,21 @@ class WorkoutRepository {
 
   Future<List<WorkoutSession>> getTodayWorkoutSessions() async {
     return getWorkoutSessionsByDate(DateUtilsX.todayKey());
+  }
+
+  Future<List<WorkoutSession>> _sessionsFromRows(
+    List<Map<String, Object?>> rows,
+  ) async {
+    final sessions = <WorkoutSession>[];
+    for (final row in rows) {
+      sessions.add(await _sessionFromRow(row));
+    }
+    return sessions;
+  }
+
+  Future<WorkoutSession> _sessionFromRow(Map<String, Object?> row) async {
+    final int id = row['id'] as int;
+    final sets = await getSetsBySessionId(id);
+    return WorkoutSession.fromMap(row, sets: sets);
   }
 }

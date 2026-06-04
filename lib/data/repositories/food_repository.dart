@@ -96,8 +96,7 @@ class FoodRepository {
       return null;
     }
 
-    final items = await getFoodItemsByRecordId(id);
-    return FoodRecord.fromMap(rows.first, items: items);
+    return _recordFromRow(rows.first);
   }
 
   Future<List<FoodRecord>> getAllFoodRecords() async {
@@ -107,13 +106,7 @@ class FoodRepository {
       orderBy: 'date DESC, created_at DESC',
     );
 
-    final List<FoodRecord> records = <FoodRecord>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final items = await getFoodItemsByRecordId(id);
-      records.add(FoodRecord.fromMap(row, items: items));
-    }
-    return records;
+    return _recordsFromRows(rows);
   }
 
   Future<List<FoodRecord>> getFoodRecordsByDate(String day) async {
@@ -125,13 +118,7 @@ class FoodRepository {
       orderBy: 'created_at DESC',
     );
 
-    final List<FoodRecord> records = <FoodRecord>[];
-    for (final row in rows) {
-      final int id = row['id'] as int;
-      final items = await getFoodItemsByRecordId(id);
-      records.add(FoodRecord.fromMap(row, items: items));
-    }
-    return records;
+    return _recordsFromRows(rows);
   }
 
   Future<List<FoodItem>> getFoodItemsByRecordId(int foodRecordId) async {
@@ -188,5 +175,21 @@ class FoodRepository {
 
   Future<List<FoodRecord>> getTodayFoodRecords() async {
     return getFoodRecordsByDate(DateUtilsX.todayKey());
+  }
+
+  Future<List<FoodRecord>> _recordsFromRows(
+    List<Map<String, Object?>> rows,
+  ) async {
+    final records = <FoodRecord>[];
+    for (final row in rows) {
+      records.add(await _recordFromRow(row));
+    }
+    return records;
+  }
+
+  Future<FoodRecord> _recordFromRow(Map<String, Object?> row) async {
+    final int id = row['id'] as int;
+    final items = await getFoodItemsByRecordId(id);
+    return FoodRecord.fromMap(row, items: items);
   }
 }

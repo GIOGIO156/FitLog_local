@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
-import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
+import 'food_form_support.dart';
 
 class FoodDetailPage extends StatefulWidget {
   const FoodDetailPage({super.key, required this.recordId});
@@ -30,7 +30,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
 
   String _date = DateUtilsX.todayKey();
   String _source = '';
-  List<_EditableFoodItem> _items = <_EditableFoodItem>[];
+  List<EditableFoodItemDraft> _items = <EditableFoodItemDraft>[];
   bool _loading = true;
   bool _saving = false;
 
@@ -82,20 +82,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
       _fatController.text = record.fatG.toStringAsFixed(1);
       _confidenceController.text = record.confidence?.toStringAsFixed(2) ?? '';
       _notesController.text = record.estimationNotes;
-      _items = record.items
-          .map(
-            (item) => _EditableFoodItem(
-              id: item.id,
-              name: item.name,
-              estimatedWeightG: item.estimatedWeightG.toStringAsFixed(1),
-              caloriesKcal: item.caloriesKcal.toStringAsFixed(1),
-              proteinG: item.proteinG.toStringAsFixed(1),
-              carbsG: item.carbsG.toStringAsFixed(1),
-              fatG: item.fatG.toStringAsFixed(1),
-              notes: item.notes,
-            ),
-          )
-          .toList();
+      _items = record.items.map(EditableFoodItemDraft.fromFoodItem).toList();
       _loading = false;
     });
   }
@@ -184,19 +171,11 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: <Widget>[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Date'),
-                      subtitle: Text(DateUtilsX.formatReadable(_date)),
-                      trailing: TextButton(
-                        onPressed: _pickDate,
-                        child: const Text('Change'),
-                      ),
-                    ),
+                    FoodDateTile(date: _date, onChange: _pickDate),
                     const SizedBox(height: 8),
-                    TextFormField(
+                    FoodFormField(
                       controller: _mealNameController,
-                      decoration: const InputDecoration(labelText: 'meal_name'),
+                      labelText: 'meal_name',
                       validator: (value) {
                         if ((value ?? '').trim().isEmpty) {
                           return 'Please enter meal name';
@@ -208,11 +187,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     Row(
                       children: <Widget>[
                         Expanded(
-                          child: TextFormField(
+                          child: FoodFormField(
                             controller: _weightController,
-                            decoration: const InputDecoration(
-                              labelText: 'total_weight_g',
-                            ),
+                            labelText: 'total_weight_g',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -220,11 +197,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextFormField(
+                          child: FoodFormField(
                             controller: _caloriesController,
-                            decoration: const InputDecoration(
-                              labelText: 'calories_kcal',
-                            ),
+                            labelText: 'calories_kcal',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -236,11 +211,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     Row(
                       children: <Widget>[
                         Expanded(
-                          child: TextFormField(
+                          child: FoodFormField(
                             controller: _proteinController,
-                            decoration: const InputDecoration(
-                              labelText: 'protein_g',
-                            ),
+                            labelText: 'protein_g',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -248,11 +221,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextFormField(
+                          child: FoodFormField(
                             controller: _carbsController,
-                            decoration: const InputDecoration(
-                              labelText: 'carbs_g',
-                            ),
+                            labelText: 'carbs_g',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -260,11 +231,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextFormField(
+                          child: FoodFormField(
                             controller: _fatController,
-                            decoration: const InputDecoration(
-                              labelText: 'fat_g',
-                            ),
+                            labelText: 'fat_g',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -273,21 +242,17 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    TextFormField(
+                    FoodFormField(
                       controller: _confidenceController,
-                      decoration: const InputDecoration(
-                        labelText: 'confidence',
-                      ),
+                      labelText: 'confidence',
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    TextFormField(
+                    FoodFormField(
                       controller: _notesController,
-                      decoration: const InputDecoration(
-                        labelText: 'estimation_notes',
-                      ),
+                      labelText: 'estimation_notes',
                       maxLines: 3,
                     ),
                     const SizedBox(height: 10),
@@ -322,19 +287,15 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                             padding: const EdgeInsets.all(12),
                             child: Column(
                               children: <Widget>[
-                                TextFormField(
+                                FoodFormField(
                                   initialValue: item.name,
-                                  decoration: InputDecoration(
-                                    labelText: 'Item ${index + 1} name',
-                                  ),
+                                  labelText: 'Item ${index + 1} name',
                                   onChanged: (value) => item.name = value,
                                 ),
                                 const SizedBox(height: 8),
-                                TextFormField(
+                                FoodFormField(
                                   initialValue: item.estimatedWeightG,
-                                  decoration: const InputDecoration(
-                                    labelText: 'estimated_weight_g',
-                                  ),
+                                  labelText: 'estimated_weight_g',
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
@@ -343,11 +304,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                       item.estimatedWeightG = value,
                                 ),
                                 const SizedBox(height: 8),
-                                TextFormField(
+                                FoodFormField(
                                   initialValue: item.caloriesKcal,
-                                  decoration: const InputDecoration(
-                                    labelText: 'calories_kcal',
-                                  ),
+                                  labelText: 'calories_kcal',
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
@@ -359,11 +318,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                 Row(
                                   children: <Widget>[
                                     Expanded(
-                                      child: TextFormField(
+                                      child: FoodFormField(
                                         initialValue: item.proteinG,
-                                        decoration: const InputDecoration(
-                                          labelText: 'protein_g',
-                                        ),
+                                        labelText: 'protein_g',
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -374,11 +331,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: TextFormField(
+                                      child: FoodFormField(
                                         initialValue: item.carbsG,
-                                        decoration: const InputDecoration(
-                                          labelText: 'carbs_g',
-                                        ),
+                                        labelText: 'carbs_g',
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -389,11 +344,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: TextFormField(
+                                      child: FoodFormField(
                                         initialValue: item.fatG,
-                                        decoration: const InputDecoration(
-                                          labelText: 'fat_g',
-                                        ),
+                                        labelText: 'fat_g',
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -404,11 +357,9 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                TextFormField(
+                                FoodFormField(
                                   initialValue: item.notes,
-                                  decoration: const InputDecoration(
-                                    labelText: 'notes',
-                                  ),
+                                  labelText: 'notes',
                                   onChanged: (value) => item.notes = value,
                                 ),
                               ],
@@ -426,54 +377,13 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined),
-            label: Text(_saving ? 'Saving...' : 'Save Changes'),
+          child: FoodSaveButton(
+            saving: _saving,
+            label: 'Save Changes',
+            onPressed: _save,
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EditableFoodItem {
-  _EditableFoodItem({
-    this.id,
-    required this.name,
-    required this.estimatedWeightG,
-    required this.caloriesKcal,
-    required this.proteinG,
-    required this.carbsG,
-    required this.fatG,
-    required this.notes,
-  });
-
-  final int? id;
-  String name;
-  String estimatedWeightG;
-  String caloriesKcal;
-  String proteinG;
-  String carbsG;
-  String fatG;
-  String notes;
-
-  FoodItem toFoodItem() {
-    return FoodItem(
-      id: id,
-      name: name.trim().isEmpty ? 'Unnamed item' : name.trim(),
-      estimatedWeightG: NumberUtils.toDouble(estimatedWeightG),
-      caloriesKcal: NumberUtils.toDouble(caloriesKcal),
-      proteinG: NumberUtils.toDouble(proteinG),
-      carbsG: NumberUtils.toDouble(carbsG),
-      fatG: NumberUtils.toDouble(fatG),
-      notes: notes.trim(),
     );
   }
 }

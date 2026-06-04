@@ -1,5 +1,17 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-05 Round 2 Simplification Cleanup
+
+### Changed
+- Extracted shared food-form support helpers for repeated date rows, save buttons, and editable food item draft mapping without changing food save flows.
+- Unified CSV and XLSX export row construction through a single `ExportTableBuilder` so both export formats keep the same columns from one source of truth.
+- Collapsed repeated food/workout repository row-to-model assembly into private helpers while preserving query order and child-record loading behavior.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-05 Workout Plan Save Atomicity Fix
 
 ### Fixed

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
-import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
+import 'food_form_support.dart';
 
 class FoodPreviewPage extends StatefulWidget {
   const FoodPreviewPage({super.key, required this.initialRecord});
@@ -29,7 +29,7 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
   late final TextEditingController _notesController;
 
   late String _date;
-  late List<_EditableFoodItem> _items;
+  late List<EditableFoodItemDraft> _items;
   bool _saving = false;
 
   @override
@@ -58,19 +58,7 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
       text: record.confidence?.toStringAsFixed(2) ?? '',
     );
     _notesController = TextEditingController(text: record.estimationNotes);
-    _items = record.items
-        .map(
-          (item) => _EditableFoodItem(
-            name: item.name,
-            estimatedWeightG: item.estimatedWeightG.toStringAsFixed(1),
-            caloriesKcal: item.caloriesKcal.toStringAsFixed(1),
-            proteinG: item.proteinG.toStringAsFixed(1),
-            carbsG: item.carbsG.toStringAsFixed(1),
-            fatG: item.fatG.toStringAsFixed(1),
-            notes: item.notes,
-          ),
-        )
-        .toList();
+    _items = record.items.map(EditableFoodItemDraft.fromFoodItem).toList();
   }
 
   @override
@@ -158,9 +146,9 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
-            TextFormField(
+            FoodFormField(
               controller: _mealNameController,
-              decoration: const InputDecoration(labelText: 'meal_name'),
+              labelText: 'meal_name',
               validator: (value) {
                 if ((value ?? '').trim().isEmpty) {
                   return 'Please enter meal name';
@@ -169,71 +157,61 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
               },
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _weightController,
-              decoration: const InputDecoration(labelText: 'total_weight_g'),
+              labelText: 'total_weight_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _caloriesController,
-              decoration: const InputDecoration(
-                labelText: 'total_calories_kcal',
-              ),
+              labelText: 'total_calories_kcal',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _proteinController,
-              decoration: const InputDecoration(labelText: 'protein_g'),
+              labelText: 'protein_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _carbsController,
-              decoration: const InputDecoration(labelText: 'carbs_g'),
+              labelText: 'carbs_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _fatController,
-              decoration: const InputDecoration(labelText: 'fat_g'),
+              labelText: 'fat_g',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _confidenceController,
-              decoration: const InputDecoration(labelText: 'confidence'),
+              labelText: 'confidence',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
             ),
             const SizedBox(height: 10),
-            TextFormField(
+            FoodFormField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'estimation_notes'),
+              labelText: 'estimation_notes',
               maxLines: 3,
             ),
             const SizedBox(height: 10),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(DateUtilsX.formatReadable(_date)),
-              trailing: TextButton(
-                onPressed: _pickDate,
-                child: const Text('Change'),
-              ),
-            ),
+            FoodDateTile(date: _date, onChange: _pickDate),
           ],
         ),
       ),
@@ -267,30 +245,24 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: <Widget>[
-                      TextFormField(
+                      FoodFormField(
                         initialValue: item.name,
-                        decoration: InputDecoration(
-                          labelText: 'Item ${index + 1} name',
-                        ),
+                        labelText: 'Item ${index + 1} name',
                         onChanged: (value) => item.name = value,
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      FoodFormField(
                         initialValue: item.estimatedWeightG,
-                        decoration: const InputDecoration(
-                          labelText: 'estimated_weight_g',
-                        ),
+                        labelText: 'estimated_weight_g',
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         onChanged: (value) => item.estimatedWeightG = value,
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      FoodFormField(
                         initialValue: item.caloriesKcal,
-                        decoration: const InputDecoration(
-                          labelText: 'calories_kcal',
-                        ),
+                        labelText: 'calories_kcal',
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -300,11 +272,9 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
                       Row(
                         children: <Widget>[
                           Expanded(
-                            child: TextFormField(
+                            child: FoodFormField(
                               initialValue: item.proteinG,
-                              decoration: const InputDecoration(
-                                labelText: 'protein_g',
-                              ),
+                              labelText: 'protein_g',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -314,11 +284,9 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextFormField(
+                            child: FoodFormField(
                               initialValue: item.carbsG,
-                              decoration: const InputDecoration(
-                                labelText: 'carbs_g',
-                              ),
+                              labelText: 'carbs_g',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -328,11 +296,9 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: TextFormField(
+                            child: FoodFormField(
                               initialValue: item.fatG,
-                              decoration: const InputDecoration(
-                                labelText: 'fat_g',
-                              ),
+                              labelText: 'fat_g',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -343,9 +309,9 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextFormField(
+                      FoodFormField(
                         initialValue: item.notes,
-                        decoration: const InputDecoration(labelText: 'notes'),
+                        labelText: 'notes',
                         onChanged: (value) => item.notes = value,
                       ),
                     ],
@@ -373,51 +339,13 @@ class _FoodPreviewPageState extends State<FoodPreviewPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined),
-            label: Text(_saving ? 'Saving...' : 'Save'),
+          child: FoodSaveButton(
+            saving: _saving,
+            label: 'Save',
+            onPressed: _save,
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EditableFoodItem {
-  _EditableFoodItem({
-    required this.name,
-    required this.estimatedWeightG,
-    required this.caloriesKcal,
-    required this.proteinG,
-    required this.carbsG,
-    required this.fatG,
-    required this.notes,
-  });
-
-  String name;
-  String estimatedWeightG;
-  String caloriesKcal;
-  String proteinG;
-  String carbsG;
-  String fatG;
-  String notes;
-
-  FoodItem toFoodItem() {
-    return FoodItem(
-      name: name.trim().isEmpty ? 'Unnamed item' : name.trim(),
-      estimatedWeightG: NumberUtils.toDouble(estimatedWeightG),
-      caloriesKcal: NumberUtils.toDouble(caloriesKcal),
-      proteinG: NumberUtils.toDouble(proteinG),
-      carbsG: NumberUtils.toDouble(carbsG),
-      fatG: NumberUtils.toDouble(fatG),
-      notes: notes.trim(),
     );
   }
 }
