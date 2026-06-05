@@ -1,5 +1,41 @@
 # FitLog Local
 
+## 2026-06 Cutting Diet Strategy Update
+
+FitLog Local now separates diet setup into three layers:
+
+```text
+diet_goal_phase:
+  - cutting
+  - bulking
+
+diet_calculation_mode:
+  - gram_per_kg
+  - energy_ratio
+
+diet_plan_strategy:
+  - none
+  - carb_cycling
+  - carb_tapering
+```
+
+The first two layers keep their current responsibilities:
+
+- `gram_per_kg` still uses bodyweight, sex, and training-frequency table lookup only. kcal remains auxiliary analysis.
+- `energy_ratio` still uses BMR, non-exercise lifestyle factor, `daily_energy_goal_kcal`, logged net exercise, and macro ratios.
+
+The new strategy layer only adjusts the final displayed daily target after the base target is calculated:
+
+- `carb_cycling`: redistributes weekly carbs across high / medium / low days while keeping weekly average carbs normalized.
+- `carb_tapering`: runs a local deterministic review of rolling weight trend, food-log coverage, and training stability, then suggests whether to reduce average carbs. It never auto-applies changes.
+
+Release boundaries:
+
+- This round supports `cutting` only. `bulking` hides these strategy settings for now.
+- This is a deterministic local algorithm update, not an Agent / LLM / API feature.
+- No backend, no cloud sync, no OpenAI/Gemini API, no RAG, no vector database.
+- Under-18 protection remains active: users under 18 cannot enable cutting deficit, carb cycling, or carb tapering.
+
 ## 2026-06 Diet Goal Phase Update
 
 FitLog Local now separates diet setup into two dimensions:

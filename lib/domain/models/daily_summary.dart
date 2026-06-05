@@ -21,7 +21,23 @@ class DailySummary {
     required this.remainingFatG,
     required this.dietGoalPhase,
     required this.dietCalculationMode,
+    required this.dietPlanStrategy,
+    this.carbDayType,
     required this.isEnergyTargetMode,
+    required this.baseTargetCalories,
+    required this.baseProteinTargetG,
+    required this.baseCarbsTargetG,
+    required this.baseFatTargetG,
+    required this.finalTargetCalories,
+    required this.finalProteinTargetG,
+    required this.finalCarbsTargetG,
+    required this.finalFatTargetG,
+    required this.carbAdjustmentG,
+    required this.carbTaperCurrentDeltaG,
+    required this.baseMacroEnergyEquivalentKcal,
+    required this.finalMacroEnergyEquivalentKcal,
+    required this.dietStrategyReasonCodes,
+    required this.dietStrategyConfidence,
     required this.macroEnergyEquivalentKcal,
     required this.lifestyleFactorUsed,
     required this.exerciseCaloriesNet,
@@ -39,6 +55,8 @@ class DailySummary {
     this.macroSelfCheckHasValidTrainingData = false,
     this.macroSelfCheckBelowRecommendedRange = false,
     this.calibrationUpdatedToday = false,
+    this.hasPendingDietAdjustmentReview = false,
+    this.pendingDietAdjustmentAction,
     this.foodRecords = const <FoodRecord>[],
     this.workoutSessions = const <WorkoutSession>[],
   });
@@ -61,7 +79,23 @@ class DailySummary {
   final double remainingFatG;
   final String dietGoalPhase;
   final String dietCalculationMode;
+  final String dietPlanStrategy;
+  final String? carbDayType;
   final bool isEnergyTargetMode;
+  final double baseTargetCalories;
+  final double baseProteinTargetG;
+  final double baseCarbsTargetG;
+  final double baseFatTargetG;
+  final double finalTargetCalories;
+  final double finalProteinTargetG;
+  final double finalCarbsTargetG;
+  final double finalFatTargetG;
+  final double carbAdjustmentG;
+  final double carbTaperCurrentDeltaG;
+  final double baseMacroEnergyEquivalentKcal;
+  final double finalMacroEnergyEquivalentKcal;
+  final List<String> dietStrategyReasonCodes;
+  final double dietStrategyConfidence;
   final double macroEnergyEquivalentKcal;
   final double lifestyleFactorUsed;
   final double exerciseCaloriesNet;
@@ -79,6 +113,8 @@ class DailySummary {
   final bool macroSelfCheckHasValidTrainingData;
   final bool macroSelfCheckBelowRecommendedRange;
   final bool calibrationUpdatedToday;
+  final bool hasPendingDietAdjustmentReview;
+  final String? pendingDietAdjustmentAction;
   final List<FoodRecord> foodRecords;
   final List<WorkoutSession> workoutSessions;
 }

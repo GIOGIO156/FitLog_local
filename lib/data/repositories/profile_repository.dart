@@ -1,5 +1,6 @@
 import '../../core/utils/date_utils.dart';
 import '../../domain/models/calorie_calibration_state.dart';
+import '../../domain/models/diet_adjustment_review.dart';
 import '../../domain/models/user_profile.dart';
 import '../../domain/models/weight_log.dart';
 import 'package:sqflite/sqflite.dart';
@@ -73,9 +74,90 @@ class ProfileRepository {
     );
   }
 
+  Future<void> saveCarbTaperReviewDecision({
+    required DietAdjustmentReview review,
+    required String userDecision,
+    required String reviewedAt,
+    double? carbTaperCurrentDeltaG,
+  }) async {
+    final db = await _database.database;
+    final now = DateTime.now().toIso8601String();
+    final current = await getProfile() ?? UserProfile.defaults;
+
+    await db.transaction((txn) async {
+      await txn.update(
+        'diet_adjustment_reviews',
+        <String, dynamic>{
+          'user_decision': userDecision,
+          'applied_delta_after_g': carbTaperCurrentDeltaG,
+          'updated_at': now,
+        },
+        where: 'id = ?',
+        whereArgs: <Object?>[review.id],
+      );
+
+      final updatedProfile = current.copyWith(
+        id: current.id ?? 1,
+        carbTaperCurrentDeltaG:
+            carbTaperCurrentDeltaG ?? current.carbTaperCurrentDeltaG,
+        lastCarbTaperReviewAt: reviewedAt,
+        createdAt: current.createdAt ?? now,
+        updatedAt: now,
+      );
+      await txn.insert(
+        'user_profile',
+        updatedProfile.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
+  }
+
   Future<void> clearProfile() async {
     final db = await _database.database;
     await db.delete('user_profile');
+  }
+
+  Future<DietAdjustmentReview?> getLatestDietAdjustmentReview({
+    String? userDecision,
+  }) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'diet_adjustment_reviews',
+      where: userDecision == null ? null : 'user_decision = ?',
+      whereArgs: userDecision == null ? null : <Object?>[userDecision],
+      orderBy: 'review_date DESC, id DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return DietAdjustmentReview.fromMap(rows.first);
+  }
+
+  Future<List<DietAdjustmentReview>> getAllDietAdjustmentReviews() async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'diet_adjustment_reviews',
+      orderBy: 'review_date DESC, id DESC',
+    );
+    return rows.map(DietAdjustmentReview.fromMap).toList();
+  }
+
+  Future<DietAdjustmentReview> insertDietAdjustmentReview(
+    DietAdjustmentReview review,
+  ) async {
+    final db = await _database.database;
+    final now = DateTime.now().toIso8601String();
+    final payload = review.copyWith(
+      createdAt: review.createdAt ?? now,
+      updatedAt: now,
+    );
+    final id = await db.insert(
+      'diet_adjustment_reviews',
+      payload.toMap()..remove('id'),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return payload.copyWith(id: id);
   }
 
   Future<void> upsertWeightLog({

@@ -1,6 +1,7 @@
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/workout_repository.dart';
+import '../domain/models/diet_adjustment_review.dart';
 import '../domain/models/user_profile.dart';
 import '../domain/services/daily_summary_service.dart';
 
@@ -25,6 +26,8 @@ class ExportTableBuilder {
     final workoutSessions = await _workoutRepository.getAllWorkoutSessions();
     final profile =
         await _profileRepository.getProfile() ?? UserProfile.defaults;
+    final dietAdjustmentReviews = await _profileRepository
+        .getAllDietAdjustmentReviews();
 
     final tables = <ExportTable>[
       ExportTable(
@@ -161,6 +164,16 @@ class ExportTableBuilder {
             'fat_ratio_percent',
             'diet_goal_phase',
             'diet_calculation_mode',
+            'diet_plan_strategy',
+            'carb_cycle_pattern_json',
+            'carb_cycle_high_multiplier',
+            'carb_cycle_medium_multiplier',
+            'carb_cycle_low_multiplier',
+            'carb_taper_review_period_days',
+            'carb_taper_target_loss_pct_per_week',
+            'carb_taper_step_g',
+            'carb_taper_current_delta_g',
+            'last_carb_taper_review_at',
             'training_frequency_per_week',
             'macro_self_check_period_days',
             'macro_self_check_enabled',
@@ -179,12 +192,27 @@ class ExportTableBuilder {
             profile.fatRatioPercent,
             profile.dietGoalPhase,
             profile.dietCalculationMode,
+            profile.dietPlanStrategy,
+            profile.carbCyclePatternJson ?? '',
+            profile.carbCycleHighMultiplier,
+            profile.carbCycleMediumMultiplier,
+            profile.carbCycleLowMultiplier,
+            profile.carbTaperReviewPeriodDays,
+            profile.carbTaperTargetLossPctPerWeek,
+            profile.carbTaperStepG,
+            profile.carbTaperCurrentDeltaG,
+            profile.lastCarbTaperReviewAt ?? '',
             profile.trainingFrequencyPerWeek,
             profile.macroSelfCheckPeriodDays,
             profile.macroSelfCheckEnabled ? 1 : 0,
             profile.lastMacroSelfCheckAt ?? '',
           ],
         ],
+      ),
+      ExportTable(
+        sheetName: 'Diet Adjustment Reviews',
+        fileName: 'diet_adjustment_reviews.csv',
+        rows: _buildDietAdjustmentReviewRows(dietAdjustmentReviews),
       ),
     ];
 
@@ -202,6 +230,8 @@ class ExportTableBuilder {
         'date',
         'diet_goal_phase',
         'diet_calculation_mode',
+        'diet_plan_strategy',
+        'carb_day_type',
         'is_energy_target_mode',
         'calories_in',
         'protein_g',
@@ -214,6 +244,16 @@ class ExportTableBuilder {
         'no_exercise_target_intake',
         'target_intake',
         'remaining_calories',
+        'base_target_calories',
+        'base_protein_target_g',
+        'base_carbs_target_g',
+        'base_fat_target_g',
+        'final_target_calories',
+        'final_protein_target_g',
+        'final_carbs_target_g',
+        'final_fat_target_g',
+        'carb_adjustment_g',
+        'carb_taper_current_delta_g',
         'calibration_confidence',
         'calibration_window_days',
         'calibration_valid_days',
@@ -223,7 +263,10 @@ class ExportTableBuilder {
         'remaining_protein_g',
         'remaining_carbs_g',
         'remaining_fat_g',
+        'base_macro_energy_equivalent_kcal',
+        'final_macro_energy_equivalent_kcal',
         'macro_energy_equivalent_kcal',
+        'diet_strategy_reason_codes',
         'macro_self_check_current_frequency',
         'macro_self_check_recommended_frequency',
         'macro_self_check_active_training_days',
@@ -241,6 +284,8 @@ class ExportTableBuilder {
         date,
         daily.dietGoalPhase,
         daily.dietCalculationMode,
+        daily.dietPlanStrategy,
+        daily.carbDayType ?? '',
         daily.isEnergyTargetMode ? 1 : 0,
         daily.caloriesIn,
         daily.proteinG,
@@ -253,6 +298,16 @@ class ExportTableBuilder {
         daily.noExerciseTargetIntake,
         daily.targetIntake,
         daily.remainingCalories,
+        daily.baseTargetCalories,
+        daily.baseProteinTargetG,
+        daily.baseCarbsTargetG,
+        daily.baseFatTargetG,
+        daily.finalTargetCalories,
+        daily.finalProteinTargetG,
+        daily.finalCarbsTargetG,
+        daily.finalFatTargetG,
+        daily.carbAdjustmentG,
+        daily.carbTaperCurrentDeltaG,
         daily.calibrationConfidence,
         daily.calibrationWindowDays,
         daily.calibrationValidDays,
@@ -262,7 +317,10 @@ class ExportTableBuilder {
         daily.remainingProteinG,
         daily.remainingCarbsG,
         daily.remainingFatG,
+        daily.baseMacroEnergyEquivalentKcal,
+        daily.finalMacroEnergyEquivalentKcal,
         daily.macroEnergyEquivalentKcal,
+        daily.dietStrategyReasonCodes.join('|'),
         daily.macroSelfCheckCurrentFrequency,
         daily.macroSelfCheckRecommendedFrequency,
         daily.macroSelfCheckActiveTrainingDays,
@@ -275,6 +333,55 @@ class ExportTableBuilder {
     }
 
     return rows;
+  }
+
+  List<List<dynamic>> _buildDietAdjustmentReviewRows(
+    List<DietAdjustmentReview> reviews,
+  ) {
+    return <List<dynamic>>[
+      <dynamic>[
+        'review_date',
+        'window_days',
+        'diet_goal_phase',
+        'diet_calculation_mode',
+        'diet_plan_strategy',
+        'start_avg_weight_kg',
+        'end_avg_weight_kg',
+        'weight_change_kg',
+        'loss_rate_pct_per_week',
+        'target_loss_pct_per_week',
+        'food_log_coverage',
+        'active_training_days',
+        'suggested_action',
+        'suggested_carb_delta_g',
+        'applied_delta_after_g',
+        'confidence',
+        'reason_codes_json',
+        'user_decision',
+      ],
+      ...reviews.map(
+        (review) => <dynamic>[
+          review.reviewDate,
+          review.windowDays,
+          review.dietGoalPhase,
+          review.dietCalculationMode,
+          review.dietPlanStrategy,
+          review.startAvgWeightKg,
+          review.endAvgWeightKg,
+          review.weightChangeKg,
+          review.lossRatePctPerWeek,
+          review.targetLossPctPerWeek,
+          review.foodLogCoverage,
+          review.activeTrainingDays,
+          review.suggestedAction,
+          review.suggestedCarbDeltaG,
+          review.appliedDeltaAfterG,
+          review.confidence,
+          review.reasonCodesJson,
+          review.userDecision,
+        ],
+      ),
+    ];
   }
 }
 

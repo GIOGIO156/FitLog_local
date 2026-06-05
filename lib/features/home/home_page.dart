@@ -232,6 +232,8 @@ class _OverviewHero extends StatelessWidget {
     final isGramPerKgMode =
         summary.dietCalculationMode ==
         AppConstants.dietCalculationModeGramPerKg;
+    final hasDietStrategy =
+        summary.dietPlanStrategy != AppConstants.dietPlanStrategyNone;
 
     return Container(
       width: double.infinity,
@@ -257,32 +259,63 @@ class _OverviewHero extends StatelessWidget {
               : Colors.white.withValues(alpha: 0.65),
         ),
       ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (hasDietStrategy) ...<Widget>[
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: <Widget>[
+                Text(
+                  strings.phaseLabel(summary.dietGoalPhase),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : Colors.black.withValues(alpha: 0.62),
+                  ),
+                ),
+                Text(
+                  strings.strategyLabel(summary.dietPlanStrategy),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.72)
+                        : Colors.black.withValues(alpha: 0.56),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
           Row(
             children: <Widget>[
-              Text(
-                isGramPerKgMode
-                    ? strings.macroTargetModeGramPerKg
-                    : strings.caloriesInTodayLabel,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : Colors.black.withValues(alpha: 0.7),
+              Expanded(
+                child: Text(
+                  isGramPerKgMode
+                      ? strings.macroTargetModeGramPerKg
+                      : strings.caloriesInTodayLabel,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : Colors.black.withValues(alpha: 0.7),
+                  ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                strings.phaseLabel(summary.dietGoalPhase),
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : Colors.black.withValues(alpha: 0.62),
+              if (!hasDietStrategy) ...<Widget>[
+                const SizedBox(width: 8),
+                Text(
+                  strings.phaseLabel(summary.dietGoalPhase),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : Colors.black.withValues(alpha: 0.62),
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(width: 8),
               Icon(
                 expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
@@ -354,6 +387,22 @@ class _OverviewHero extends StatelessWidget {
               ),
             ],
           ),
+          if (summary.dietPlanStrategy != AppConstants.dietPlanStrategyNone)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                summary.dietPlanStrategy ==
+                        AppConstants.dietPlanStrategyCarbCycling
+                    ? '${strings.todayCarbDayTypeLabel}: ${strings.carbDayTypeFullLabel(summary.carbDayType ?? AppConstants.carbDayMedium)} | ${strings.carbAdjustmentLabel}: ${summary.carbAdjustmentG >= 0 ? '+' : ''}${summary.carbAdjustmentG.toStringAsFixed(1)} g'
+                    : '${strings.currentTaperLabel}: ${summary.carbTaperCurrentDeltaG.toStringAsFixed(1)} g${summary.hasPendingDietAdjustmentReview ? ' | ${strings.pendingReviewHint}' : ''}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.82)
+                      : Colors.black.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -446,6 +495,10 @@ class _DashboardDetails extends StatelessWidget {
             value: strings.phaseLabel(summary.dietGoalPhase),
           ),
           _MetricLine(
+            label: strings.strategyBadgeLabel,
+            value: strings.strategyLabel(summary.dietPlanStrategy),
+          ),
+          _MetricLine(
             label: strings.caloriesInTodayLabel,
             value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
           ),
@@ -473,6 +526,20 @@ class _DashboardDetails extends StatelessWidget {
             value:
                 '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal',
           ),
+          if (summary.dietPlanStrategy ==
+              AppConstants.dietPlanStrategyCarbCycling)
+            _MetricLine(
+              label: strings.todayCarbDayTypeLabel,
+              value: strings.carbDayTypeFullLabel(
+                summary.carbDayType ?? AppConstants.carbDayMedium,
+              ),
+            ),
+          if (summary.dietPlanStrategy ==
+              AppConstants.dietPlanStrategyCarbTapering)
+            _MetricLine(
+              label: strings.currentTaperLabel,
+              value: '${summary.carbTaperCurrentDeltaG.toStringAsFixed(1)} g',
+            ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
@@ -498,6 +565,10 @@ class _DashboardDetails extends StatelessWidget {
         _MetricLine(
           label: strings.goalPhaseLabel,
           value: strings.phaseLabel(summary.dietGoalPhase),
+        ),
+        _MetricLine(
+          label: strings.strategyBadgeLabel,
+          value: strings.strategyLabel(summary.dietPlanStrategy),
         ),
         _MetricLine(
           label: strings.caloriesInTodayLabel,
@@ -541,6 +612,26 @@ class _DashboardDetails extends StatelessWidget {
           label: strings.remainingCaloriesLabel,
           value: '${summary.remainingCalories.toStringAsFixed(0)} kcal',
         ),
+        if (summary.dietPlanStrategy ==
+            AppConstants.dietPlanStrategyCarbCycling)
+          _MetricLine(
+            label: strings.todayCarbDayTypeLabel,
+            value: strings.carbDayTypeFullLabel(
+              summary.carbDayType ?? AppConstants.carbDayMedium,
+            ),
+          ),
+        if (summary.dietPlanStrategy != AppConstants.dietPlanStrategyNone)
+          _MetricLine(
+            label: strings.carbAdjustmentLabel,
+            value:
+                '${summary.carbAdjustmentG >= 0 ? '+' : ''}${summary.carbAdjustmentG.toStringAsFixed(1)} g',
+          ),
+        if (summary.dietPlanStrategy ==
+            AppConstants.dietPlanStrategyCarbTapering)
+          _MetricLine(
+            label: strings.currentTaperLabel,
+            value: '${summary.carbTaperCurrentDeltaG.toStringAsFixed(1)} g',
+          ),
         _MetricLine(
           label: '${strings.proteinLabel} (g)',
           value: summary.proteinG.toStringAsFixed(1),
@@ -567,6 +658,17 @@ class _DashboardDetails extends StatelessWidget {
           value: summary.remainingFatG.toStringAsFixed(1),
         ),
         const SizedBox(height: 10),
+        if (summary.hasPendingDietAdjustmentReview)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                strings.pendingReviewHint,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
         Align(
           alignment: Alignment.centerLeft,
           child: Text(

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,9 +13,13 @@ import '../../core/utils/number_utils.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/profile_form_fields.dart';
 import '../../domain/models/calorie_calibration_state.dart';
+import '../../domain/models/carb_taper_review_result.dart';
+import '../../domain/models/diet_adjustment_review.dart';
 import '../../domain/models/training_frequency_self_check_result.dart';
 import '../../domain/models/user_profile.dart';
+import '../../domain/services/carb_cycling_calculator.dart';
 import '../../domain/services/macro_target_calculator.dart';
+import 'diet_plan_strategy_section.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -38,6 +44,15 @@ class _ProfilePageState extends State<ProfilePage> {
   String _dailyGoalType = 'maintenance';
   String _dietGoalPhase = AppConstants.dietGoalPhaseCutting;
   String _dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio;
+  String _dietPlanStrategy = AppConstants.defaultDietPlanStrategy;
+  Map<String, String> _carbCyclePattern = AppConstants.defaultCarbCyclePattern();
+  int _carbTaperReviewPeriodDays =
+      AppConstants.defaultCarbTaperReviewPeriodDays;
+  double _carbTaperTargetLossPctPerWeek =
+      AppConstants.defaultCarbTaperTargetLossPctPerWeek;
+  double _carbTaperStepG = AppConstants.defaultCarbTaperStepG;
+  double _carbTaperCurrentDeltaG = AppConstants.defaultCarbTaperCurrentDeltaG;
+  String? _lastCarbTaperReviewAt;
   int _trainingFrequencyPerWeek = AppConstants.defaultTrainingFrequencyPerWeek;
   int _macroSelfCheckPeriodDays = AppConstants.defaultMacroSelfCheckPeriodDays;
   bool _macroSelfCheckEnabled = true;
@@ -52,9 +67,14 @@ class _ProfilePageState extends State<ProfilePage> {
   double _todayExerciseCalories = 0;
   double _todayCaloriesIn = 0;
   TrainingFrequencySelfCheckResult? _trainingSelfCheckResult;
+  CarbTaperReviewResult? _carbTaperReviewResult;
+  DietAdjustmentReview? _pendingDietAdjustmentReview;
   bool _handlingSelfCheckAction = false;
+  bool _handlingCarbTaperAction = false;
   final MacroTargetCalculator _macroTargetCalculator =
       const MacroTargetCalculator();
+  final CarbCyclingCalculator _carbCyclingCalculator =
+      const CarbCyclingCalculator();
 
   @override
   void initState() {
@@ -94,6 +114,18 @@ class _ProfilePageState extends State<ProfilePage> {
           referenceDay: DateUtilsX.todayKey(),
           respectReminderCooldown: true,
         );
+    var pendingDietAdjustmentReview = await services.profileRepository
+        .getLatestDietAdjustmentReview(
+          userDecision: AppConstants.dietAdjustmentDecisionPending,
+        );
+    final carbTaperReviewResult = await _loadCarbTaperReview(
+      profile,
+      pendingDietAdjustmentReview: pendingDietAdjustmentReview,
+    );
+    pendingDietAdjustmentReview = await services.profileRepository
+        .getLatestDietAdjustmentReview(
+          userDecision: AppConstants.dietAdjustmentDecisionPending,
+        );
 
     if (!mounted) {
       return;
@@ -114,6 +146,13 @@ class _ProfilePageState extends State<ProfilePage> {
       _dailyGoalType = profile.dailyEnergyGoalType;
       _dietGoalPhase = profile.dietGoalPhase;
       _dietCalculationMode = profile.dietCalculationMode;
+      _dietPlanStrategy = profile.dietPlanStrategy;
+      _carbCyclePattern = profile.carbCyclePattern;
+      _carbTaperReviewPeriodDays = profile.carbTaperReviewPeriodDays;
+      _carbTaperTargetLossPctPerWeek = profile.carbTaperTargetLossPctPerWeek;
+      _carbTaperStepG = profile.carbTaperStepG;
+      _carbTaperCurrentDeltaG = profile.carbTaperCurrentDeltaG;
+      _lastCarbTaperReviewAt = profile.lastCarbTaperReviewAt;
       _trainingFrequencyPerWeek = profile.trainingFrequencyPerWeek;
       _macroSelfCheckPeriodDays = profile.macroSelfCheckPeriodDays;
       _macroSelfCheckEnabled = profile.macroSelfCheckEnabled;
@@ -122,7 +161,10 @@ class _ProfilePageState extends State<ProfilePage> {
       _todayExerciseCalories = exerciseCalories;
       _todayCaloriesIn = caloriesIn;
       _trainingSelfCheckResult = trainingSelfCheckResult;
+      _pendingDietAdjustmentReview = pendingDietAdjustmentReview;
+      _carbTaperReviewResult = carbTaperReviewResult;
       _normalizeGoalByAge();
+      _normalizeStrategyByContext();
       _loading = false;
     });
   }
@@ -158,6 +200,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool get _isBulkingPhase =>
       _dietGoalPhase == AppConstants.dietGoalPhaseBulking;
 
+  bool get _canUseCuttingStrategy => !_isMinor && !_isBulkingPhase;
+
   void _onAgeChanged() {
     setState(_normalizeGoalByAge);
   }
@@ -169,6 +213,14 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _normalizeStrategyByContext() {
+    if (_canUseCuttingStrategy) {
+      return;
+    }
+    _dietPlanStrategy = AppConstants.dietPlanStrategyNone;
+    _carbTaperCurrentDeltaG = 0;
+  }
+
   String _dailyGoalTypeForPhase() {
     return _isBulkingPhase ? 'surplus' : 'deficit';
   }
@@ -177,6 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _dietGoalPhase = AppConstants.resolveDietGoalPhase(phase);
       _normalizeGoalByAge();
+      _normalizeStrategyByContext();
       final isUntouchedCuttingDefault =
           (_proteinRatioPercent - AppConstants.defaultProteinRatioPercent)
                   .abs() <
@@ -196,6 +249,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   UserProfile _buildDraftProfile() {
+    final safeStrategy = _canUseCuttingStrategy
+        ? _dietPlanStrategy
+        : AppConstants.dietPlanStrategyNone;
     return UserProfile(
       age: _age,
       heightCm: _heightCm,
@@ -209,10 +265,93 @@ class _ProfilePageState extends State<ProfilePage> {
       fatRatioPercent: _fatRatioPercent,
       dietGoalPhase: _dietGoalPhase,
       dietCalculationMode: _dietCalculationMode,
+      dietPlanStrategy: safeStrategy,
+      carbCyclePatternJson: jsonEncode(_carbCyclePattern),
+      carbCycleHighMultiplier: AppConstants.defaultCarbCycleHighMultiplier,
+      carbCycleMediumMultiplier: AppConstants.defaultCarbCycleMediumMultiplier,
+      carbCycleLowMultiplier: AppConstants.defaultCarbCycleLowMultiplier,
+      carbTaperReviewPeriodDays: _carbTaperReviewPeriodDays,
+      carbTaperTargetLossPctPerWeek: _carbTaperTargetLossPctPerWeek,
+      carbTaperStepG: _carbTaperStepG,
+      carbTaperCurrentDeltaG: safeStrategy ==
+              AppConstants.dietPlanStrategyCarbTapering
+          ? _carbTaperCurrentDeltaG
+          : 0,
+      lastCarbTaperReviewAt: _lastCarbTaperReviewAt,
       trainingFrequencyPerWeek: _trainingFrequencyPerWeek,
       macroSelfCheckPeriodDays: _macroSelfCheckPeriodDays,
       macroSelfCheckEnabled: _macroSelfCheckEnabled,
       lastMacroSelfCheckAt: _lastMacroSelfCheckAt,
+    );
+  }
+
+  Future<CarbTaperReviewResult?> _loadCarbTaperReview(
+    UserProfile profile, {
+    required DietAdjustmentReview? pendingDietAdjustmentReview,
+  }) async {
+    if (profile.dietPlanStrategy !=
+            AppConstants.dietPlanStrategyCarbTapering &&
+        pendingDietAdjustmentReview == null) {
+      return null;
+    }
+    final baseCarbsG = _resolveBaseMacroTargets(profile).carbsTargetG;
+    final services = context.read<AppServices>();
+    final result = await services.carbTaperReviewService.evaluate(
+      profile: profile,
+      referenceDay: DateUtilsX.todayKey(),
+      latestPendingReviewDate: pendingDietAdjustmentReview?.reviewDate,
+      baseCarbsGOverride: baseCarbsG,
+      respectCooldown: true,
+    );
+    if (result.isReviewDue &&
+        pendingDietAdjustmentReview == null &&
+        result.isApplicable) {
+      final createdReview = await services.profileRepository
+          .insertDietAdjustmentReview(
+            DietAdjustmentReview(
+              reviewDate: DateUtilsX.todayKey(),
+              windowDays: result.windowDays,
+              dietGoalPhase: profile.dietGoalPhase,
+              dietCalculationMode: profile.dietCalculationMode,
+              dietPlanStrategy: profile.dietPlanStrategy,
+              startAvgWeightKg: result.startAvgWeightKg,
+              endAvgWeightKg: result.endAvgWeightKg,
+              weightChangeKg: result.weightChangeKg,
+              lossRatePctPerWeek: result.lossRatePctPerWeek,
+              targetLossPctPerWeek: result.targetLossPctPerWeek,
+              foodLogCoverage: result.foodLogCoverage,
+              activeTrainingDays: result.activeTrainingDays,
+              suggestedAction: result.suggestedAction,
+              suggestedCarbDeltaG: result.suggestedCarbDeltaG,
+              confidence: result.confidence,
+              reasonCodes: result.reasonCodes,
+              userDecision: AppConstants.dietAdjustmentDecisionPending,
+            ),
+          );
+      _pendingDietAdjustmentReview = createdReview;
+    }
+    return result;
+  }
+
+  MacroTargets _resolveBaseMacroTargets(UserProfile profile) {
+    if (profile.dietCalculationMode ==
+        AppConstants.dietCalculationModeGramPerKg) {
+      return _macroTargetCalculator.calculateByGramPerKg(profile: profile);
+    }
+    final bmr = context.read<AppServices>().dailySummaryService.calculateBmr(
+      profile,
+    );
+    final baselineNoExerciseTdee = bmr * _currentLifestyleFactor();
+    final targetIntake = context
+        .read<AppServices>()
+        .dailySummaryService
+        .calculateNoExerciseTargetIntake(
+          baselineNoExerciseTdee: baselineNoExerciseTdee,
+          profile: profile,
+        );
+    return _macroTargetCalculator.calculateByEnergyRatio(
+      profile: profile,
+      targetIntakeKcal: targetIntake + _todayExerciseCalories,
     );
   }
 
@@ -271,6 +410,17 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
 
+    if (!_canUseCuttingStrategy &&
+        _dietPlanStrategy != AppConstants.dietPlanStrategyNone) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.ageMinorNoCuttingStrategy)),
+      );
+      setState(() {
+        _dietPlanStrategy = AppConstants.dietPlanStrategyNone;
+        _carbTaperCurrentDeltaG = 0;
+      });
+    }
+
     if (!_isGramPerKgMode && (_macroRatioTotal - 100).abs() > 0.01) {
       ScaffoldMessenger.of(
         context,
@@ -291,12 +441,24 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     await services.profileRepository.saveProfile(profile);
+    var pendingDietAdjustmentReview = await services.profileRepository
+        .getLatestDietAdjustmentReview(
+          userDecision: AppConstants.dietAdjustmentDecisionPending,
+        );
     final trainingSelfCheckResult = await services
         .trainingFrequencySelfCheckService
         .evaluate(
           profile: profile,
           referenceDay: DateUtilsX.todayKey(),
           respectReminderCooldown: true,
+        );
+    final carbTaperReviewResult = await _loadCarbTaperReview(
+      profile,
+      pendingDietAdjustmentReview: pendingDietAdjustmentReview,
+    );
+    pendingDietAdjustmentReview = await services.profileRepository
+        .getLatestDietAdjustmentReview(
+          userDecision: AppConstants.dietAdjustmentDecisionPending,
         );
 
     if (!mounted) {
@@ -308,6 +470,8 @@ class _ProfilePageState extends State<ProfilePage> {
       _saving = false;
       _loadedProfile = profile;
       _trainingSelfCheckResult = trainingSelfCheckResult;
+      _pendingDietAdjustmentReview = pendingDietAdjustmentReview;
+      _carbTaperReviewResult = carbTaperReviewResult;
     });
     messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
   }
@@ -465,6 +629,107 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _applyCarbTaperSuggestion() async {
+    final review = _pendingDietAdjustmentReview;
+    final result = _carbTaperReviewResult;
+    if (review == null || result == null) {
+      return;
+    }
+    final services = context.read<AppServices>();
+    final messenger = ScaffoldMessenger.of(context);
+    final strings = context.stringsRead;
+    final reviewedAt = DateTime.now().toIso8601String();
+
+    setState(() => _handlingCarbTaperAction = true);
+    try {
+      await services.profileRepository.saveCarbTaperReviewDecision(
+        review: review,
+        userDecision: AppConstants.dietAdjustmentDecisionAccepted,
+        reviewedAt: reviewedAt,
+        carbTaperCurrentDeltaG: result.projectedCarbDeltaAfterG,
+      );
+      if (!mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
+    } finally {
+      if (mounted) {
+        setState(() => _handlingCarbTaperAction = false);
+      }
+    }
+  }
+
+  Future<void> _dismissCarbTaperSuggestion() async {
+    final review = _pendingDietAdjustmentReview;
+    if (review == null) {
+      return;
+    }
+    final services = context.read<AppServices>();
+    final messenger = ScaffoldMessenger.of(context);
+    final strings = context.stringsRead;
+    final reviewedAt = DateTime.now().toIso8601String();
+
+    setState(() => _handlingCarbTaperAction = true);
+    try {
+      await services.profileRepository.saveCarbTaperReviewDecision(
+        review: review,
+        userDecision: AppConstants.dietAdjustmentDecisionDismissed,
+        reviewedAt: reviewedAt,
+        carbTaperCurrentDeltaG: _carbTaperCurrentDeltaG,
+      );
+      if (!mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(strings.profileSaved)));
+    } finally {
+      if (mounted) {
+        setState(() => _handlingCarbTaperAction = false);
+      }
+    }
+  }
+
+  List<CarbCyclePreviewRow> _buildCarbCyclePreview({
+    required UserProfile profile,
+    required MacroTargets base,
+  }) {
+    final start = DateUtilsX.parseDay(DateUtilsX.todayKey()).subtract(
+      Duration(days: DateUtilsX.parseDay(DateUtilsX.todayKey()).weekday - 1),
+    );
+    return List<CarbCyclePreviewRow>.generate(7, (index) {
+      final day = start.add(Duration(days: index));
+      final dateKey = DateUtilsX.formatDate(day);
+      final result = _carbCyclingCalculator.calculate(
+        profile: profile,
+        day: dateKey,
+        isEnergyTargetMode:
+            profile.dietCalculationMode !=
+            AppConstants.dietCalculationModeGramPerKg,
+        baseProteinG: base.proteinTargetG,
+        baseCarbsG: base.carbsTargetG,
+        baseFatG: base.fatTargetG,
+      );
+      return CarbCyclePreviewRow(
+        weekdayKey: AppConstants.weekdayKeyFromDateTime(day),
+        date: dateKey,
+        carbDayType: result.carbDayType ?? AppConstants.carbDayMedium,
+        proteinG: result.finalProteinG,
+        carbsG: result.finalCarbsG,
+        fatG: result.finalFatG,
+        macroKcal: result.finalMacroEnergyEquivalentKcal,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -484,6 +749,12 @@ class _ProfilePageState extends State<ProfilePage> {
             profile: _buildDraftProfile(),
           )
         : null;
+    final draftProfile = _buildDraftProfile();
+    final baseMacroTargets = _resolveBaseMacroTargets(draftProfile);
+    final carbCyclePreview = _dietPlanStrategy ==
+            AppConstants.dietPlanStrategyCarbCycling
+        ? _buildCarbCyclePreview(profile: draftProfile, base: baseMacroTargets)
+        : const <CarbCyclePreviewRow>[];
 
     return ListView(
       padding: EdgeInsets.only(
@@ -615,6 +886,66 @@ class _ProfilePageState extends State<ProfilePage> {
                       setState(() => _dietCalculationMode = value);
                     }
                   },
+                ),
+                const SizedBox(height: 10),
+                DietPlanStrategySection(
+                  strings: strings,
+                  canUseCuttingStrategy: _canUseCuttingStrategy,
+                  isBulkingPhase: _isBulkingPhase,
+                  dietPlanStrategy: _dietPlanStrategy,
+                  carbCyclePattern: _carbCyclePattern,
+                  carbCyclePreview: carbCyclePreview,
+                  carbTaperReviewPeriodDays: _carbTaperReviewPeriodDays,
+                  carbTaperTargetLossPctPerWeek:
+                      _carbTaperTargetLossPctPerWeek,
+                  carbTaperStepG: _carbTaperStepG,
+                  carbTaperCurrentDeltaG: _carbTaperCurrentDeltaG,
+                  carbTaperReviewResult: _carbTaperReviewResult,
+                  hasPendingDietAdjustmentReview:
+                      _pendingDietAdjustmentReview != null,
+                  handlingCarbTaperAction: _handlingCarbTaperAction,
+                  onStrategyChanged: _canUseCuttingStrategy
+                      ? (value) {
+                          if (value != null) {
+                            setState(() => _dietPlanStrategy = value);
+                          }
+                        }
+                      : null,
+                  onCarbCycleDayTypeChanged: (key, value) {
+                    setState(() {
+                      _carbCyclePattern = <String, String>{
+                        ..._carbCyclePattern,
+                        key: value,
+                      };
+                    });
+                  },
+                  onCarbTaperReviewPeriodChanged: (value) {
+                    if (value != null) {
+                      setState(() => _carbTaperReviewPeriodDays = value);
+                    }
+                  },
+                  onCarbTaperTargetLossChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _carbTaperTargetLossPctPerWeek = value;
+                      });
+                    }
+                  },
+                  onCarbTaperStepChanged: (value) {
+                    if (value != null) {
+                      setState(() => _carbTaperStepG = value);
+                    }
+                  },
+                  onApplyCarbTaperSuggestion:
+                      _pendingDietAdjustmentReview != null &&
+                          _carbTaperReviewResult?.suggestedAction ==
+                              AppConstants.dietAdjustmentActionDecreaseCarbs
+                      ? _applyCarbTaperSuggestion
+                      : null,
+                  onDismissCarbTaperSuggestion:
+                      _pendingDietAdjustmentReview != null
+                      ? _dismissCarbTaperSuggestion
+                      : null,
                 ),
                 const SizedBox(height: 10),
                 if (!_isGramPerKgMode) ...<Widget>[

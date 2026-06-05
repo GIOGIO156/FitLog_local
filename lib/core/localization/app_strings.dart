@@ -126,6 +126,49 @@ class AppStrings {
   String get goalPhaseLabel => _t('Goal phase', '目标阶段');
   String get cuttingLabel => _t('Cutting', '减脂期');
   String get bulkingLabel => _t('Bulking', '增肌期');
+  String get dietPlanStrategyLabel => _t('Diet plan strategy', '饮食计划策略');
+  String get strategyNoneLabel => _t('None', '不使用');
+  String get carbCyclingLabel => _t('Carb Cycling', '碳循环');
+  String get carbTaperingLabel => _t('Carb Tapering', '碳水渐降');
+  String get cuttingOnlyStrategyNotice => _t(
+    'This release supports carb cycling and carb tapering only in the cutting phase.',
+    '本轮仅在减脂期支持碳循环和碳水渐降。',
+  );
+  String get minorStrategyBlockedNotice => _t(
+    'For users under 18, cutting strategies are disabled and only general logging is available.',
+    '未满 18 岁时会禁用减脂策略，仅保留普通记录功能。',
+  );
+  String get carbCyclingIntro => _t(
+    'Carb cycling redistributes weekly carbs across high, medium, and low days. It does not guarantee fat loss.',
+    '碳循环只是把一周碳水重新分配到高、中、低日，不保证自动减脂。',
+  );
+  String get carbTaperingIntro => _t(
+    'Carb tapering reviews weight trend, food coverage, and training stability locally. Suggestions never apply automatically.',
+    '碳水渐降会在本地检查体重趋势、饮食覆盖率和训练稳定性，建议不会自动应用。',
+  );
+  String get weeklyCarbPatternLabel => _t('Weekly carb pattern', '每周碳水模式');
+  String get carbCyclePreviewLabel => _t('Current week preview', '本周预览');
+  String get carbCycleMultiplierLabel => _t('Multiplier preview', '倍率预览');
+  String get carbTaperReviewTitle => _t('Carb Taper Review', '碳水渐降复核');
+  String get carbTaperCurrentOffsetLabel =>
+      _t('Current carb offset', '当前碳水偏移');
+  String get carbTaperReviewPeriodLabel => _t('Review period', '复核周期');
+  String get carbTaperTargetLossLabel => _t('Target loss rate', '目标减重速度');
+  String get carbTaperStepLabel => _t('Taper step', '每次渐降步长');
+  String get carbTaperApplyLabel => _t('Apply', '应用');
+  String get dismissLabel => _t('Dismiss', '忽略');
+  String get strategyBadgeLabel => _t('Strategy', '策略');
+  String get todayCarbDayTypeLabel => _t('Today carb day', '今日碳日类型');
+  String get carbAdjustmentLabel => _t('Carb adjustment', '碳水调整');
+  String get currentTaperLabel => _t('Current taper', '当前渐降');
+  String get pendingReviewHint => _t(
+    'A carb taper review is waiting in Profile.',
+    'Profile 中有一条待处理的碳水渐降复核。',
+  );
+  String get strategyDisabledForBulking => _t(
+    'Diet plan strategy is hidden in bulking for this release.',
+    '本轮增肌期暂不开放饮食计划策略。',
+  );
   String get dailyGoalTypeLabel => _t('Daily Goal Type', '每日目标类型');
   String dailyGoalKcalLabelForPhase(String phase) => phase == 'bulking'
       ? _t('Daily Calorie Surplus (kcal)', '每日热量盈余 (kcal)')
@@ -223,6 +266,10 @@ class AppStrings {
   String get ageMinorNoDeficit => _t(
     'Age under 18 cannot use deficit target. Switched to maintenance.',
     '18 岁以下不支持赤字目标，已切换为维持。',
+  );
+  String get ageMinorNoCuttingStrategy => _t(
+    'Age under 18 cannot use cutting carb strategies. Strategy reset to None.',
+    '18 岁以下不能启用减脂碳策略，已重置为不使用。',
   );
 
   String get aggressiveGoalWarning => _t(
@@ -441,6 +488,135 @@ class AppStrings {
       _t('Today exercise calories', '今日运动消耗');
   String get targetIntakeTodayLabel => _t('Target intake today', '今日目标摄入');
   String get remainingTodayLabel => _t('Remaining today', '今日剩余');
+
+  String strategyLabel(String strategy) {
+    switch (strategy) {
+      case 'carb_cycling':
+        return carbCyclingLabel;
+      case 'carb_tapering':
+        return carbTaperingLabel;
+      case 'none':
+      default:
+        return strategyNoneLabel;
+    }
+  }
+
+  String carbDayTypeLabel(String value) {
+    switch (value) {
+      case 'high':
+        return _t('High', '高');
+      case 'low':
+        return _t('Low', '低');
+      case 'medium':
+      default:
+        return _t('Medium', '中');
+    }
+  }
+
+  String carbDayTypeFullLabel(String value) =>
+      _t('${carbDayTypeLabel(value)} carb day', '${carbDayTypeLabel(value)}碳日');
+
+  String weekdayShortLabel(String key) {
+    switch (key) {
+      case 'mon':
+        return _t('Mon', '周一');
+      case 'tue':
+        return _t('Tue', '周二');
+      case 'wed':
+        return _t('Wed', '周三');
+      case 'thu':
+        return _t('Thu', '周四');
+      case 'fri':
+        return _t('Fri', '周五');
+      case 'sat':
+        return _t('Sat', '周六');
+      case 'sun':
+      default:
+        return _t('Sun', '周日');
+    }
+  }
+
+  String carbTaperReviewActionLabel(String action) {
+    switch (action) {
+      case 'decrease_carbs':
+        return _t('Decrease carbs', '降低碳水');
+      case 'pause_taper':
+        return _t('Pause taper', '暂停渐降');
+      case 'increase_carbs_small':
+        return _t('Increase carbs a little', '小幅增加碳水');
+      case 'blocked_by_safety_floor':
+        return _t('Blocked by carb floor', '已触及碳水下限');
+      case 'no_data':
+        return _t('Need more data', '数据不足');
+      case 'keep':
+      default:
+        return _t('Keep current target', '保持当前目标');
+    }
+  }
+
+  String carbTaperReasonLabel(String reasonCode) {
+    switch (reasonCode) {
+      case 'insufficient_weight_logs':
+        return _t(
+          'Not enough weight logs in this review window yet.',
+          '当前复核周期内体重记录还不够。',
+        );
+      case 'insufficient_food_coverage':
+        return _t(
+          'Food logging coverage is too low for a reliable adjustment.',
+          '饮食记录覆盖率偏低，暂时不适合调整。',
+        );
+      case 'missing_weight_edges':
+        return _t(
+          'The start or end of the review window is missing enough weight data.',
+          '复核周期起点或终点附近缺少足够体重数据。',
+        );
+      case 'training_drop_detected':
+        return _t(
+          'Recent training frequency dropped, so the app keeps the current target for now.',
+          '最近训练频率下降，当前先保持目标不变。',
+        );
+      case 'carb_floor_applied':
+        return _t(
+          'The carb safety floor is active, so carbs will not be pushed lower.',
+          '已触发碳水安全下限，不会继续下调。',
+        );
+      case 'review_not_due':
+        return _t('This review window is not due yet.', '当前还没到下一次复核时间。');
+      case 'review_cooldown_active':
+        return '';
+      default:
+        return reasonCode;
+    }
+  }
+
+  String foodCoverageText(double coverage) => _t(
+    'Food log coverage: ${(coverage * 100).toStringAsFixed(0)}%',
+    '饮食记录覆盖率：${(coverage * 100).toStringAsFixed(0)}%',
+  );
+
+  String trainingDaysText(int days) =>
+      _t('Active training days: $days', '有效训练日：$days');
+
+  String targetLossRateText(double rate) => _t(
+    'Target: ${rate.toStringAsFixed(2)}% / week',
+    '目标：${rate.toStringAsFixed(2)}% / 周',
+  );
+
+  String weightTrendText(double rate) => _t(
+    'Weight trend: ${rate.toStringAsFixed(2)}% / week',
+    '体重趋势：${rate.toStringAsFixed(2)}% / 周',
+  );
+
+  String carbOffsetText(double grams) => _t(
+    '${grams.toStringAsFixed(0)} g carbs/day',
+    '${grams.toStringAsFixed(0)} g 碳水/天',
+  );
+
+  String applyCarbDeltaButton(double grams) => _t(
+    'Apply ${grams.toStringAsFixed(0)}g carbs/day',
+    '应用 ${grams.toStringAsFixed(0)}g 碳水/天',
+  );
 
   String get noSummaryData => _t('No summary data.', '暂无汇总数据。');
   String summaryError(Object error) =>

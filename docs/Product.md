@@ -1,5 +1,32 @@
 # Product.md
 
+## 2026-06 Cutting Diet Strategy Product Update
+
+Profile now presents three diet layers in order:
+
+1. `diet_goal_phase`
+2. `diet_calculation_mode`
+3. `diet_plan_strategy`
+
+This release adds a cutting-only strategy layer:
+
+- `none`: keep the current base target behavior.
+- `carb_cycling`: show weekly high / medium / low day selectors, multiplier preview, and current-week P/C/F preview.
+- `carb_tapering`: show review period, target loss rate, taper step, current carb offset, and a local review card with Apply / Dismiss actions.
+
+Home now shows:
+
+- strategy badge
+- final displayed target values
+- carb day type and carb adjustment for `carb_cycling`
+- current taper offset and pending review hint for `carb_tapering`
+
+Current release boundaries:
+
+- only `cutting` supports `carb_cycling` and `carb_tapering`
+- under-18 users cannot enable cutting carb strategies
+- no AI explanation, no Agent auto-adjustment, no backend automation
+
 ## 2026-06 Diet Goal Phase Product Design
 
 Profile presents diet setup as:

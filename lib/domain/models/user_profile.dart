@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/number_utils.dart';
 
@@ -16,6 +18,16 @@ class UserProfile {
     required this.fatRatioPercent,
     required this.dietGoalPhase,
     required this.dietCalculationMode,
+    required this.dietPlanStrategy,
+    this.carbCyclePatternJson,
+    required this.carbCycleHighMultiplier,
+    required this.carbCycleMediumMultiplier,
+    required this.carbCycleLowMultiplier,
+    required this.carbTaperReviewPeriodDays,
+    required this.carbTaperTargetLossPctPerWeek,
+    required this.carbTaperStepG,
+    required this.carbTaperCurrentDeltaG,
+    this.lastCarbTaperReviewAt,
     required this.trainingFrequencyPerWeek,
     required this.macroSelfCheckPeriodDays,
     required this.macroSelfCheckEnabled,
@@ -37,6 +49,16 @@ class UserProfile {
   final double fatRatioPercent;
   final String dietGoalPhase;
   final String dietCalculationMode;
+  final String dietPlanStrategy;
+  final String? carbCyclePatternJson;
+  final double carbCycleHighMultiplier;
+  final double carbCycleMediumMultiplier;
+  final double carbCycleLowMultiplier;
+  final int carbTaperReviewPeriodDays;
+  final double carbTaperTargetLossPctPerWeek;
+  final double carbTaperStepG;
+  final double carbTaperCurrentDeltaG;
+  final String? lastCarbTaperReviewAt;
   final int trainingFrequencyPerWeek;
   final int macroSelfCheckPeriodDays;
   final bool macroSelfCheckEnabled;
@@ -58,6 +80,15 @@ class UserProfile {
     fatRatioPercent: AppConstants.defaultFatRatioPercent,
     dietGoalPhase: AppConstants.dietGoalPhaseCutting,
     dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+    dietPlanStrategy: AppConstants.defaultDietPlanStrategy,
+    carbCycleHighMultiplier: AppConstants.defaultCarbCycleHighMultiplier,
+    carbCycleMediumMultiplier: AppConstants.defaultCarbCycleMediumMultiplier,
+    carbCycleLowMultiplier: AppConstants.defaultCarbCycleLowMultiplier,
+    carbTaperReviewPeriodDays: AppConstants.defaultCarbTaperReviewPeriodDays,
+    carbTaperTargetLossPctPerWeek:
+        AppConstants.defaultCarbTaperTargetLossPctPerWeek,
+    carbTaperStepG: AppConstants.defaultCarbTaperStepG,
+    carbTaperCurrentDeltaG: AppConstants.defaultCarbTaperCurrentDeltaG,
     trainingFrequencyPerWeek: AppConstants.defaultTrainingFrequencyPerWeek,
     macroSelfCheckPeriodDays: AppConstants.defaultMacroSelfCheckPeriodDays,
     macroSelfCheckEnabled: true,
@@ -69,6 +100,26 @@ class UserProfile {
       proteinRatioPercent + carbsRatioPercent + fatRatioPercent;
 
   bool get hasValidMacroRatio => macroRatioTotal > 0;
+
+  Map<String, String> get carbCyclePattern {
+    final fallback = AppConstants.defaultCarbCyclePattern();
+    final raw = carbCyclePatternJson;
+    if (raw == null || raw.trim().isEmpty) {
+      return fallback;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        return fallback;
+      }
+      return <String, String>{
+        for (final key in AppConstants.carbCycleWeekdayKeys)
+          key: AppConstants.resolveCarbDayType(decoded[key]?.toString()),
+      };
+    } catch (_) {
+      return fallback;
+    }
+  }
 
   UserProfile copyWith({
     int? id,
@@ -84,6 +135,16 @@ class UserProfile {
     double? fatRatioPercent,
     String? dietGoalPhase,
     String? dietCalculationMode,
+    String? dietPlanStrategy,
+    String? carbCyclePatternJson,
+    double? carbCycleHighMultiplier,
+    double? carbCycleMediumMultiplier,
+    double? carbCycleLowMultiplier,
+    int? carbTaperReviewPeriodDays,
+    double? carbTaperTargetLossPctPerWeek,
+    double? carbTaperStepG,
+    double? carbTaperCurrentDeltaG,
+    String? lastCarbTaperReviewAt,
     int? trainingFrequencyPerWeek,
     int? macroSelfCheckPeriodDays,
     bool? macroSelfCheckEnabled,
@@ -121,6 +182,31 @@ class UserProfile {
       dietCalculationMode: AppConstants.resolveDietCalculationMode(
         dietCalculationMode ?? this.dietCalculationMode,
       ),
+      dietPlanStrategy: AppConstants.resolveDietPlanStrategy(
+        dietPlanStrategy ?? this.dietPlanStrategy,
+      ),
+      carbCyclePatternJson: carbCyclePatternJson ?? this.carbCyclePatternJson,
+      carbCycleHighMultiplier:
+          carbCycleHighMultiplier ?? this.carbCycleHighMultiplier,
+      carbCycleMediumMultiplier:
+          carbCycleMediumMultiplier ?? this.carbCycleMediumMultiplier,
+      carbCycleLowMultiplier:
+          carbCycleLowMultiplier ?? this.carbCycleLowMultiplier,
+      carbTaperReviewPeriodDays: AppConstants.resolveCarbTaperReviewPeriodDays(
+        carbTaperReviewPeriodDays ?? this.carbTaperReviewPeriodDays,
+      ),
+      carbTaperTargetLossPctPerWeek:
+          AppConstants.resolveCarbTaperTargetLossPctPerWeek(
+            carbTaperTargetLossPctPerWeek ??
+                this.carbTaperTargetLossPctPerWeek,
+          ),
+      carbTaperStepG: AppConstants.resolveCarbTaperStepG(
+        carbTaperStepG ?? this.carbTaperStepG,
+      ),
+      carbTaperCurrentDeltaG:
+          carbTaperCurrentDeltaG ?? this.carbTaperCurrentDeltaG,
+      lastCarbTaperReviewAt:
+          lastCarbTaperReviewAt ?? this.lastCarbTaperReviewAt,
       trainingFrequencyPerWeek: AppConstants.resolveTrainingFrequencyPerWeek(
         trainingFrequencyPerWeek ?? this.trainingFrequencyPerWeek,
       ),
@@ -150,6 +236,16 @@ class UserProfile {
       'fat_ratio_percent': fatRatioPercent,
       'diet_goal_phase': dietGoalPhase,
       'diet_calculation_mode': dietCalculationMode,
+      'diet_plan_strategy': dietPlanStrategy,
+      'carb_cycle_pattern_json': carbCyclePatternJson,
+      'carb_cycle_high_multiplier': carbCycleHighMultiplier,
+      'carb_cycle_medium_multiplier': carbCycleMediumMultiplier,
+      'carb_cycle_low_multiplier': carbCycleLowMultiplier,
+      'carb_taper_review_period_days': carbTaperReviewPeriodDays,
+      'carb_taper_target_loss_pct_per_week': carbTaperTargetLossPctPerWeek,
+      'carb_taper_step_g': carbTaperStepG,
+      'carb_taper_current_delta_g': carbTaperCurrentDeltaG,
+      'last_carb_taper_review_at': lastCarbTaperReviewAt,
       'training_frequency_per_week': trainingFrequencyPerWeek,
       'macro_self_check_period_days': macroSelfCheckPeriodDays,
       'macro_self_check_enabled': macroSelfCheckEnabled ? 1 : 0,
@@ -196,6 +292,47 @@ class UserProfile {
                 AppConstants.dietCalculationModeEnergyRatio)
             .toString(),
       ),
+      dietPlanStrategy: AppConstants.resolveDietPlanStrategy(
+        (map['diet_plan_strategy'] ?? AppConstants.defaultDietPlanStrategy)
+            .toString(),
+      ),
+      carbCyclePatternJson: map['carb_cycle_pattern_json']?.toString(),
+      carbCycleHighMultiplier: NumberUtils.toDouble(
+        map['carb_cycle_high_multiplier'],
+        fallback: AppConstants.defaultCarbCycleHighMultiplier,
+      ),
+      carbCycleMediumMultiplier: NumberUtils.toDouble(
+        map['carb_cycle_medium_multiplier'],
+        fallback: AppConstants.defaultCarbCycleMediumMultiplier,
+      ),
+      carbCycleLowMultiplier: NumberUtils.toDouble(
+        map['carb_cycle_low_multiplier'],
+        fallback: AppConstants.defaultCarbCycleLowMultiplier,
+      ),
+      carbTaperReviewPeriodDays: AppConstants.resolveCarbTaperReviewPeriodDays(
+        NumberUtils.toInt(
+          map['carb_taper_review_period_days'],
+          fallback: AppConstants.defaultCarbTaperReviewPeriodDays,
+        ),
+      ),
+      carbTaperTargetLossPctPerWeek:
+          AppConstants.resolveCarbTaperTargetLossPctPerWeek(
+            NumberUtils.toDouble(
+              map['carb_taper_target_loss_pct_per_week'],
+              fallback: AppConstants.defaultCarbTaperTargetLossPctPerWeek,
+            ),
+          ),
+      carbTaperStepG: AppConstants.resolveCarbTaperStepG(
+        NumberUtils.toDouble(
+          map['carb_taper_step_g'],
+          fallback: AppConstants.defaultCarbTaperStepG,
+        ),
+      ),
+      carbTaperCurrentDeltaG: NumberUtils.toDouble(
+        map['carb_taper_current_delta_g'],
+        fallback: AppConstants.defaultCarbTaperCurrentDeltaG,
+      ),
+      lastCarbTaperReviewAt: map['last_carb_taper_review_at']?.toString(),
       trainingFrequencyPerWeek: AppConstants.resolveTrainingFrequencyPerWeek(
         NumberUtils.toInt(
           map['training_frequency_per_week'],

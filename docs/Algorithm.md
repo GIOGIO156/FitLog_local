@@ -1,5 +1,107 @@
 # Algorithm.md
 
+## 2026-06 Diet Plan Strategy Layer
+
+The diet algorithm is now intentionally split into:
+
+1. Base target layer
+2. Diet plan strategy layer
+
+Base target layer remains the source of truth for `diet_goal_phase x diet_calculation_mode`:
+
+- `DailySummaryService`
+- `MacroTargetCalculator`
+- `WorkoutCalorieCalculator`
+- `TrainingFrequencySelfCheckService`
+
+Strategy layer is applied only after base targets are computed:
+
+- `DietPlanStrategyService`
+- `CarbCyclingCalculator`
+- `CarbTaperReviewService`
+
+### Carb Cycling
+
+Applicability:
+
+- cutting only
+- adult users only
+- local deterministic redistribution, not a new calorie algorithm
+
+Formula:
+
+```text
+rawMultiplier(day) = high / medium / low
+sumRaw = sum(rawMultiplier over 7 days)
+normalizer = 7 / sumRaw
+normalizedMultiplier(day) = rawMultiplier(day) * normalizer
+
+finalCarbsG(day) = baseCarbsG * normalizedMultiplier(day)
+finalProteinG(day) = baseProteinG
+finalFatG(day) = baseFatG
+finalMacroEnergyEquivalentKcal = P*4 + C*4 + F*9
+```
+
+Safety floor:
+
+```text
+minCarbsG = max(weightKg * 1.2, 100)
+```
+
+If the computed carb target falls below that floor, FitLog clamps the final carb target and adds `carb_floor_applied` as a local product-protection reason code.
+
+Boundary by base mode:
+
+- `energy_ratio`: final displayed kcal target becomes the strategy-adjusted macro-equivalent kcal.
+- `gram_per_kg`: final displayed macro target changes, but kcal remains auxiliary only.
+
+### Carb Tapering
+
+Applicability:
+
+- cutting only
+- adult users only
+- never auto-applies
+- default review cadence is every 14 days, with optional 21 / 28 / 7 day windows
+
+Review inputs:
+
+- rolling weight trend
+- food log coverage
+- active training days / training-drop check
+
+Trend formula:
+
+```text
+startAvgWeight = first 7-day average in window
+endAvgWeight = last 7-day average in window
+weightChangeKg = endAvgWeight - startAvgWeight
+lossRatePctPerWeek = (-weightChangeKg / startAvgWeight) * 100 * 7 / windowDays
+```
+
+Data floor:
+
+- at least 7 weight logs in the window
+- food log coverage >= 0.70
+- both the early and late window segments must have weight data
+
+Decision logic:
+
+- slower than target minus tolerance: consider `decrease_carbs`
+- within target band: `keep`
+- faster than target plus tolerance: `pause_taper`
+- insufficient data: `no_data`
+- if training drops materially: prefer `keep`
+- if the next carb decrease would cross the carb floor: `blocked_by_safety_floor`
+
+Application formula:
+
+```text
+taperedCarbsG = max(baseCarbsG + carb_taper_current_delta_g, minCarbsG)
+```
+
+`carb_taper_current_delta_g` is cumulative relative to base carbs and only changes after user confirmation.
+
 ## 2026-06 Diet Goal Phase Matrix
 
 The diet algorithm is selected by two dimensions:

@@ -9,6 +9,8 @@ import 'data/repositories/food_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/workout_repository.dart';
 import 'domain/services/daily_summary_service.dart';
+import 'domain/services/diet_plan_strategy_service.dart';
+import 'domain/services/carb_taper_review_service.dart';
 import 'domain/services/training_frequency_self_check_service.dart';
 import 'export/csv_export_service.dart';
 import 'export/xlsx_export_service.dart';
@@ -39,12 +41,21 @@ class _FitLogAppState extends State<FitLogApp> {
     final trainingFrequencySelfCheckService = TrainingFrequencySelfCheckService(
       workoutRepository: workoutRepository,
     );
+    final carbTaperReviewService = CarbTaperReviewService(
+      foodRepository: foodRepository,
+      workoutRepository: workoutRepository,
+      profileRepository: profileRepository,
+    );
+    final dietPlanStrategyService = DietPlanStrategyService(
+      carbTaperReviewService: carbTaperReviewService,
+    );
 
     final dailySummaryService = DailySummaryService(
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
       profileRepository: profileRepository,
       trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,
+      dietPlanStrategyService: dietPlanStrategyService,
     );
 
     _services = AppServices(
@@ -64,6 +75,8 @@ class _FitLogAppState extends State<FitLogApp> {
         profileRepository: profileRepository,
         dailySummaryService: dailySummaryService,
       ),
+      carbTaperReviewService: carbTaperReviewService,
+      dietPlanStrategyService: dietPlanStrategyService,
       trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,
       database: database,
     );
@@ -302,6 +315,8 @@ class AppServices {
     required this.dailySummaryService,
     required this.xlsxExportService,
     required this.csvExportService,
+    required this.carbTaperReviewService,
+    required this.dietPlanStrategyService,
     required this.trainingFrequencySelfCheckService,
     required this.database,
   });
@@ -312,6 +327,8 @@ class AppServices {
   final DailySummaryService dailySummaryService;
   final XlsxExportService xlsxExportService;
   final CsvExportService csvExportService;
+  final CarbTaperReviewService carbTaperReviewService;
+  final DietPlanStrategyService dietPlanStrategyService;
   final TrainingFrequencySelfCheckService trainingFrequencySelfCheckService;
   final AppDatabase database;
 }

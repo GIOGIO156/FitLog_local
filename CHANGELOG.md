@@ -1,5 +1,37 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-06 Diet Strategy UI Follow-up
+
+### Fixed
+- Home dashboard hero now shows goal phase and diet plan strategy on their own line above the macro title to avoid overflow on narrow mobile screens.
+- Home dashboard hero now keeps the original single-line title layout when `diet_plan_strategy = none`, showing only the current phase on the right and hiding the `None` label.
+- Carb cycling weekly preview now breaks the carb day label and the `P / C / F / kcal` values into two lines for better readability.
+- Carb taper review cards no longer expose raw internal reason codes like `review_cooldown_active`; visible review reasons are now shown as user-facing text only.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+- `flutter build apk --debug`: success.
+
+## 2026-06-05 Cutting Diet Strategy Layer
+
+### Added
+- Added `diet_plan_strategy` with `none`, `carb_cycling`, and `carb_tapering`.
+- Added cutting-only local deterministic carb cycling and carb tapering services.
+- Added schema v7 fields on `user_profile` and the new `diet_adjustment_reviews` table.
+- Added export coverage for strategy fields, base/final target columns, and diet adjustment review history.
+- Added tests for carb cycling, carb taper review logic, daily summary integration, and migration compatibility.
+
+### Changed
+- `DailySummaryService` now computes base targets first and then applies a separate strategy layer to produce final displayed targets.
+- Home now shows strategy badge and strategy-specific target context.
+- Profile now exposes cutting-only strategy settings, weekly carb cycling preview, and carb taper review/apply/dismiss flow.
+- Under-18 protection now blocks cutting carb strategies in addition to deficit handling.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+
 ## 2026-06-05 Round 2 Simplification Cleanup
 
 ### Changed

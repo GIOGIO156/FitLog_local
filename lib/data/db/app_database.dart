@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int _dbVersion = 6;
+  static const int dbVersion = 7;
 
   Database? _database;
 
@@ -26,7 +26,7 @@ class AppDatabase {
 
     return openDatabase(
       dbPath,
-      version: _dbVersion,
+      version: dbVersion,
       onConfigure: (Database db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -75,6 +75,39 @@ class AppDatabase {
             "ALTER TABLE user_profile ADD COLUMN diet_goal_phase TEXT NOT NULL DEFAULT 'cutting'",
           );
         }
+        if (oldVersion < 7) {
+          await db.execute(
+            "ALTER TABLE user_profile ADD COLUMN diet_plan_strategy TEXT NOT NULL DEFAULT 'none'",
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_cycle_pattern_json TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_cycle_high_multiplier REAL NOT NULL DEFAULT 1.20',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_cycle_medium_multiplier REAL NOT NULL DEFAULT 1.00',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_cycle_low_multiplier REAL NOT NULL DEFAULT 0.80',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_taper_review_period_days INTEGER NOT NULL DEFAULT 14',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_taper_target_loss_pct_per_week REAL NOT NULL DEFAULT 0.50',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_taper_step_g REAL NOT NULL DEFAULT 10.0',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN carb_taper_current_delta_g REAL NOT NULL DEFAULT 0.0',
+          );
+          await db.execute(
+            'ALTER TABLE user_profile ADD COLUMN last_carb_taper_review_at TEXT',
+          );
+          await _createDietAdjustmentReviewTable(db);
+        }
       },
     );
   }
@@ -95,6 +128,16 @@ class AppDatabase {
         fat_ratio_percent REAL NOT NULL,
         diet_goal_phase TEXT NOT NULL DEFAULT 'cutting',
         diet_calculation_mode TEXT NOT NULL DEFAULT 'energy_ratio',
+        diet_plan_strategy TEXT NOT NULL DEFAULT 'none',
+        carb_cycle_pattern_json TEXT,
+        carb_cycle_high_multiplier REAL NOT NULL DEFAULT 1.20,
+        carb_cycle_medium_multiplier REAL NOT NULL DEFAULT 1.00,
+        carb_cycle_low_multiplier REAL NOT NULL DEFAULT 0.80,
+        carb_taper_review_period_days INTEGER NOT NULL DEFAULT 14,
+        carb_taper_target_loss_pct_per_week REAL NOT NULL DEFAULT 0.50,
+        carb_taper_step_g REAL NOT NULL DEFAULT 10.0,
+        carb_taper_current_delta_g REAL NOT NULL DEFAULT 0.0,
+        last_carb_taper_review_at TEXT,
         training_frequency_per_week INTEGER NOT NULL DEFAULT 3,
         macro_self_check_period_days INTEGER NOT NULL DEFAULT 14,
         macro_self_check_enabled INTEGER NOT NULL DEFAULT 1,
@@ -168,6 +211,7 @@ class AppDatabase {
     ''');
 
     await _createWeightAndCalibrationTables(db);
+    await _createDietAdjustmentReviewTable(db);
   }
 
   Future<void> _createWeightAndCalibrationTables(Database db) async {
@@ -196,6 +240,34 @@ class AppDatabase {
     ''');
   }
 
+  Future<void> _createDietAdjustmentReviewTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS diet_adjustment_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        review_date TEXT NOT NULL,
+        window_days INTEGER NOT NULL,
+        diet_goal_phase TEXT NOT NULL,
+        diet_calculation_mode TEXT NOT NULL,
+        diet_plan_strategy TEXT NOT NULL,
+        start_avg_weight_kg REAL,
+        end_avg_weight_kg REAL,
+        weight_change_kg REAL,
+        loss_rate_pct_per_week REAL,
+        target_loss_pct_per_week REAL,
+        food_log_coverage REAL,
+        active_training_days INTEGER,
+        suggested_action TEXT NOT NULL,
+        suggested_carb_delta_g REAL NOT NULL DEFAULT 0,
+        applied_delta_after_g REAL,
+        confidence REAL NOT NULL DEFAULT 0,
+        reason_codes_json TEXT,
+        user_decision TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
   Future<void> clearAllLocalData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -205,6 +277,7 @@ class AppDatabase {
       await txn.delete('workout_sessions');
       await txn.delete('user_weight_logs');
       await txn.delete('calorie_calibration_state');
+      await txn.delete('diet_adjustment_reviews');
       await txn.delete('user_profile');
     });
   }

@@ -35,14 +35,14 @@ class ProfileOptionField<T> extends StatelessWidget {
     required this.labelText,
     required this.options,
     required this.labelBuilder,
-    required this.onChanged,
+    this.onChanged,
   });
 
   final T value;
   final String labelText;
   final List<T> options;
   final String Function(T value) labelBuilder;
-  final ValueChanged<T?> onChanged;
+  final ValueChanged<T?>? onChanged;
 
   @override
   Widget build(BuildContext context) {

@@ -7,8 +7,10 @@ import '../../data/repositories/profile_repository.dart';
 import '../../data/repositories/workout_repository.dart';
 import '../models/calorie_calibration_state.dart';
 import '../models/daily_summary.dart';
+import '../models/diet_adjustment_review.dart';
 import '../models/training_frequency_self_check_result.dart';
 import '../models/user_profile.dart';
+import 'diet_plan_strategy_service.dart';
 import 'macro_target_calculator.dart';
 import 'nutrition_calculator.dart';
 import 'training_frequency_self_check_service.dart';
@@ -20,11 +22,13 @@ class DailySummaryService {
     required ProfileRepository profileRepository,
     MacroTargetCalculator? macroTargetCalculator,
     TrainingFrequencySelfCheckService? trainingFrequencySelfCheckService,
+    required DietPlanStrategyService dietPlanStrategyService,
   }) : _foodRepository = foodRepository,
        _workoutRepository = workoutRepository,
        _profileRepository = profileRepository,
        _macroTargetCalculator =
            macroTargetCalculator ?? const MacroTargetCalculator(),
+       _dietPlanStrategyService = dietPlanStrategyService,
        _trainingFrequencySelfCheckService =
            trainingFrequencySelfCheckService ??
            TrainingFrequencySelfCheckService(
@@ -35,6 +39,7 @@ class DailySummaryService {
   final WorkoutRepository _workoutRepository;
   final ProfileRepository _profileRepository;
   final MacroTargetCalculator _macroTargetCalculator;
+  final DietPlanStrategyService _dietPlanStrategyService;
   final TrainingFrequencySelfCheckService _trainingFrequencySelfCheckService;
 
   static const Map<String, double> _defaultNoExerciseLifestyleFactor =
@@ -77,6 +82,10 @@ class DailySummaryService {
 
     final bmr = calculateBmr(profile);
     final baselineNoExerciseTdee = bmr * calibration.lifestyleFactorUsed;
+    final latestPendingDietAdjustmentReview = await _profileRepository
+        .getLatestDietAdjustmentReview(
+          userDecision: AppConstants.dietAdjustmentDecisionPending,
+        );
 
     final isEnergyTargetMode =
         profile.dietCalculationMode !=
@@ -98,13 +107,27 @@ class DailySummaryService {
           )
         : _macroTargetCalculator.calculateByGramPerKg(profile: profile);
 
-    final targetIntake = isEnergyTargetMode ? energyModeTargetIntake : 0.0;
-    final remaining = isEnergyTargetMode
-        ? energyModeTargetIntake - caloriesIn
-        : 0.0;
-    final targetProteinG = macroTargets.proteinTargetG;
-    final targetCarbsG = macroTargets.carbsTargetG;
-    final targetFatG = macroTargets.fatTargetG;
+    final baseTargetIntake = isEnergyTargetMode ? energyModeTargetIntake : 0.0;
+    final strategyResult = await _dietPlanStrategyService.apply(
+      profile: profile,
+      day: day,
+      isEnergyTargetMode: isEnergyTargetMode,
+      baseProteinG: macroTargets.proteinTargetG,
+      baseCarbsG: macroTargets.carbsTargetG,
+      baseFatG: macroTargets.fatTargetG,
+      latestPendingDietAdjustmentAction:
+          _resolvePendingDietAdjustmentAction(
+            latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
+            day: day,
+            profile: profile,
+          ),
+    );
+
+    final targetIntake = strategyResult.finalTargetIntakeKcal;
+    final remaining = isEnergyTargetMode ? targetIntake - caloriesIn : 0.0;
+    final targetProteinG = strategyResult.finalProteinG;
+    final targetCarbsG = strategyResult.finalCarbsG;
+    final targetFatG = strategyResult.finalFatG;
     final remainingProteinG = targetProteinG - protein;
     final remainingCarbsG = targetCarbsG - carbs;
     final remainingFatG = targetFatG - fat;
@@ -133,8 +156,25 @@ class DailySummaryService {
       remainingFatG: remainingFatG,
       dietGoalPhase: profile.dietGoalPhase,
       dietCalculationMode: profile.dietCalculationMode,
+      dietPlanStrategy: strategyResult.dietPlanStrategy,
+      carbDayType: strategyResult.carbDayType,
       isEnergyTargetMode: isEnergyTargetMode,
-      macroEnergyEquivalentKcal: macroTargets.macroEnergyEquivalentKcal,
+      baseTargetCalories: baseTargetIntake,
+      baseProteinTargetG: macroTargets.proteinTargetG,
+      baseCarbsTargetG: macroTargets.carbsTargetG,
+      baseFatTargetG: macroTargets.fatTargetG,
+      finalTargetCalories: strategyResult.finalTargetIntakeKcal,
+      finalProteinTargetG: strategyResult.finalProteinG,
+      finalCarbsTargetG: strategyResult.finalCarbsG,
+      finalFatTargetG: strategyResult.finalFatG,
+      carbAdjustmentG: strategyResult.carbAdjustmentG,
+      carbTaperCurrentDeltaG: strategyResult.carbTaperCurrentDeltaG,
+      baseMacroEnergyEquivalentKcal: macroTargets.macroEnergyEquivalentKcal,
+      finalMacroEnergyEquivalentKcal:
+          strategyResult.finalMacroEnergyEquivalentKcal,
+      dietStrategyReasonCodes: strategyResult.reasonCodes,
+      dietStrategyConfidence: strategyResult.confidence,
+      macroEnergyEquivalentKcal: strategyResult.finalMacroEnergyEquivalentKcal,
       lifestyleFactorUsed: calibration.lifestyleFactorUsed,
       exerciseCaloriesNet: exerciseCaloriesNet,
       noExerciseBaselineTdee: baselineNoExerciseTdee,
@@ -156,6 +196,14 @@ class DailySummaryService {
       macroSelfCheckBelowRecommendedRange:
           macroSelfCheck?.belowRecommendedRange ?? false,
       calibrationUpdatedToday: calibration.updatedToday,
+      hasPendingDietAdjustmentReview:
+          _isPendingReviewRelevant(
+            latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
+            day: day,
+            profile: profile,
+          ),
+      pendingDietAdjustmentAction:
+          latestPendingDietAdjustmentReview?.suggestedAction,
       foodRecords: foodRecords,
       workoutSessions: workoutSessions,
     );
@@ -454,6 +502,39 @@ class DailySummaryService {
       return lower;
     }
     return math.max(lower, math.min(upper, value));
+  }
+
+  String? _resolvePendingDietAdjustmentAction({
+    required DietAdjustmentReview? latestPendingDietAdjustmentReview,
+    required String day,
+    required UserProfile profile,
+  }) {
+    if (!_isPendingReviewRelevant(
+      latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
+      day: day,
+      profile: profile,
+    )) {
+      return null;
+    }
+    return latestPendingDietAdjustmentReview?.suggestedAction;
+  }
+
+  bool _isPendingReviewRelevant({
+    required DietAdjustmentReview? latestPendingDietAdjustmentReview,
+    required String day,
+    required UserProfile profile,
+  }) {
+    if (latestPendingDietAdjustmentReview == null) {
+      return false;
+    }
+    if (profile.dietPlanStrategy != AppConstants.dietPlanStrategyCarbTapering) {
+      return false;
+    }
+    if (latestPendingDietAdjustmentReview.userDecision !=
+        AppConstants.dietAdjustmentDecisionPending) {
+      return false;
+    }
+    return latestPendingDietAdjustmentReview.reviewDate == day;
   }
 }
 

@@ -1,5 +1,64 @@
 # Database.md
 
+## 2026-06 Schema v7 Diet Strategy Update
+
+Database version is now `7`.
+
+Additive migration on `user_profile`:
+
+```sql
+ALTER TABLE user_profile ADD COLUMN diet_plan_strategy TEXT NOT NULL DEFAULT 'none';
+ALTER TABLE user_profile ADD COLUMN carb_cycle_pattern_json TEXT;
+ALTER TABLE user_profile ADD COLUMN carb_cycle_high_multiplier REAL NOT NULL DEFAULT 1.20;
+ALTER TABLE user_profile ADD COLUMN carb_cycle_medium_multiplier REAL NOT NULL DEFAULT 1.00;
+ALTER TABLE user_profile ADD COLUMN carb_cycle_low_multiplier REAL NOT NULL DEFAULT 0.80;
+ALTER TABLE user_profile ADD COLUMN carb_taper_review_period_days INTEGER NOT NULL DEFAULT 14;
+ALTER TABLE user_profile ADD COLUMN carb_taper_target_loss_pct_per_week REAL NOT NULL DEFAULT 0.50;
+ALTER TABLE user_profile ADD COLUMN carb_taper_step_g REAL NOT NULL DEFAULT 10.0;
+ALTER TABLE user_profile ADD COLUMN carb_taper_current_delta_g REAL NOT NULL DEFAULT 0.0;
+ALTER TABLE user_profile ADD COLUMN last_carb_taper_review_at TEXT;
+```
+
+New table:
+
+```sql
+CREATE TABLE IF NOT EXISTS diet_adjustment_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  review_date TEXT NOT NULL,
+  window_days INTEGER NOT NULL,
+  diet_goal_phase TEXT NOT NULL,
+  diet_calculation_mode TEXT NOT NULL,
+  diet_plan_strategy TEXT NOT NULL,
+  start_avg_weight_kg REAL,
+  end_avg_weight_kg REAL,
+  weight_change_kg REAL,
+  loss_rate_pct_per_week REAL,
+  target_loss_pct_per_week REAL,
+  food_log_coverage REAL,
+  active_training_days INTEGER,
+  suggested_action TEXT NOT NULL,
+  suggested_carb_delta_g REAL NOT NULL DEFAULT 0,
+  applied_delta_after_g REAL,
+  confidence REAL NOT NULL DEFAULT 0,
+  reason_codes_json TEXT,
+  user_decision TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+```
+
+Compatibility notes:
+
+- existing users default to `diet_plan_strategy = none`
+- current phase, mode, macro ratio, and g/kg settings are preserved
+- migration remains additive only
+
+Export update:
+
+- `user_profile` export now includes all diet-plan strategy fields
+- `daily_summary` export now includes base targets, final targets, strategy metadata, and reason codes
+- `diet_adjustment_reviews` is exported as a separate sheet / csv
+
 ## 2026-06 Schema v6 Update
 
 Database version is now `6`.
