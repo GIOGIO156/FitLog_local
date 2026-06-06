@@ -1,5 +1,29 @@
 # FitLog Local
 
+## 2026-06 Workout Record Update
+
+Workout logging now uses the user-facing term `Workout Record` instead of `Workout Plan` for saved entries.
+
+This release adds:
+
+- record naming before save
+- a summary header on saved workout records showing total duration, total volume, total sets, and estimated calories
+- full record editing after save, using the same page as record creation
+- completed-set row highlighting during creation/editing
+- completed-only save behavior for strength exercises: unchecked sets are removed before persistence
+- read-only post-save exercise detail rows, so saved records no longer use the detail page to toggle set completion
+
+Behavior notes:
+
+- the database still groups one multi-exercise saved record by shared `plan_id`
+- each saved session in the same record now also stores the same `record_name`
+- total sets are counted as the number of saved strength sets across all exercises in the record
+- total volume is calculated as `sum(weight_kg * reps)` across all saved strength sets
+
+Migration note:
+
+- schema v8 adds `workout_sessions.record_name`
+
 ## 2026-06 Cutting Diet Strategy Update
 
 FitLog Local now separates diet setup into three layers:

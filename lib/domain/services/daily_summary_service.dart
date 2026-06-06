@@ -115,12 +115,11 @@ class DailySummaryService {
       baseProteinG: macroTargets.proteinTargetG,
       baseCarbsG: macroTargets.carbsTargetG,
       baseFatG: macroTargets.fatTargetG,
-      latestPendingDietAdjustmentAction:
-          _resolvePendingDietAdjustmentAction(
-            latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
-            day: day,
-            profile: profile,
-          ),
+      latestPendingDietAdjustmentAction: _resolvePendingDietAdjustmentAction(
+        latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
+        day: day,
+        profile: profile,
+      ),
     );
 
     final targetIntake = strategyResult.finalTargetIntakeKcal;
@@ -196,12 +195,11 @@ class DailySummaryService {
       macroSelfCheckBelowRecommendedRange:
           macroSelfCheck?.belowRecommendedRange ?? false,
       calibrationUpdatedToday: calibration.updatedToday,
-      hasPendingDietAdjustmentReview:
-          _isPendingReviewRelevant(
-            latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
-            day: day,
-            profile: profile,
-          ),
+      hasPendingDietAdjustmentReview: _isPendingReviewRelevant(
+        latestPendingDietAdjustmentReview: latestPendingDietAdjustmentReview,
+        day: day,
+        profile: profile,
+      ),
       pendingDietAdjustmentAction:
           latestPendingDietAdjustmentReview?.suggestedAction,
       foodRecords: foodRecords,

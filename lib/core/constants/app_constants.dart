@@ -181,12 +181,7 @@ class AppConstants {
   static const double defaultCarbCycleMediumMultiplier = 1.00;
   static const double defaultCarbCycleLowMultiplier = 0.80;
   static const int defaultCarbTaperReviewPeriodDays = 14;
-  static const List<int> carbTaperReviewPeriodDayOptions = <int>[
-    14,
-    21,
-    28,
-    7,
-  ];
+  static const List<int> carbTaperReviewPeriodDayOptions = <int>[14, 21, 28, 7];
   static const double defaultCarbTaperTargetLossPctPerWeek = 0.50;
   static const double minCarbTaperTargetLossPctPerWeek = 0.25;
   static const double maxCarbTaperTargetLossPctPerWeek = 1.00;

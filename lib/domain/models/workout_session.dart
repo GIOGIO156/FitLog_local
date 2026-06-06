@@ -5,6 +5,7 @@ class WorkoutSession {
   const WorkoutSession({
     this.id,
     this.planId,
+    this.recordName,
     required this.date,
     required this.bodyPart,
     required this.exerciseName,
@@ -20,6 +21,7 @@ class WorkoutSession {
 
   final int? id;
   final String? planId;
+  final String? recordName;
   final String date;
   final String bodyPart;
   final String exerciseName;
@@ -35,6 +37,7 @@ class WorkoutSession {
   WorkoutSession copyWith({
     int? id,
     String? planId,
+    String? recordName,
     String? date,
     String? bodyPart,
     String? exerciseName,
@@ -50,6 +53,7 @@ class WorkoutSession {
     return WorkoutSession(
       id: id ?? this.id,
       planId: planId ?? this.planId,
+      recordName: recordName ?? this.recordName,
       date: date ?? this.date,
       bodyPart: bodyPart ?? this.bodyPart,
       exerciseName: exerciseName ?? this.exerciseName,
@@ -68,6 +72,7 @@ class WorkoutSession {
     return <String, dynamic>{
       'id': id,
       'plan_id': planId,
+      'record_name': recordName,
       'date': date,
       'body_part': bodyPart,
       'exercise_name': exerciseName,
@@ -90,6 +95,7 @@ class WorkoutSession {
           ? null
           : NumberUtils.toInt(map['id']),
       planId: map['plan_id']?.toString(),
+      recordName: map['record_name']?.toString(),
       date: (map['date'] ?? '').toString(),
       bodyPart: (map['body_part'] ?? '').toString(),
       exerciseName: (map['exercise_name'] ?? '').toString(),

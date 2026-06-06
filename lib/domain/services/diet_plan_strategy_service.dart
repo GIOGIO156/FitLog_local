@@ -91,7 +91,9 @@ class DietPlanStrategyService {
       fatG: baseFatG,
     );
     return DietPlanStrategyResult(
-      finalTargetIntakeKcal: isEnergyTargetMode ? finalMacroEnergyEquivalentKcal : 0,
+      finalTargetIntakeKcal: isEnergyTargetMode
+          ? finalMacroEnergyEquivalentKcal
+          : 0,
       finalProteinG: baseProteinG,
       finalCarbsG: finalCarbsG,
       finalFatG: baseFatG,

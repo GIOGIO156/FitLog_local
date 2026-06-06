@@ -334,7 +334,10 @@ void main() {
         baseCarbsGOverride: _reviewBaseCarbsG,
       );
 
-      expect(result.suggestedAction, AppConstants.dietAdjustmentActionPauseTaper);
+      expect(
+        result.suggestedAction,
+        AppConstants.dietAdjustmentActionPauseTaper,
+      );
     });
 
     test('training drop prevents aggressive decrease', () async {
@@ -365,7 +368,10 @@ void main() {
       final result = await _evaluateTaperReview(service);
 
       expect(result.trainingDropDetected, isTrue);
-      expect(result.suggestedAction, isNot(AppConstants.dietAdjustmentActionDecreaseCarbs));
+      expect(
+        result.suggestedAction,
+        isNot(AppConstants.dietAdjustmentActionDecreaseCarbs),
+      );
     });
 
     test('safety floor blocks further decrease', () async {
@@ -431,9 +437,7 @@ void main() {
           carbTaperReviewService: carbTaperReviewService,
         ),
       );
-      foodRepository.recordsByDate[_referenceDay] = <FoodRecord>[
-        _foodRecord(),
-      ];
+      foodRepository.recordsByDate[_referenceDay] = <FoodRecord>[_foodRecord()];
       workoutRepository.sessionsByDate[_referenceDay] = <WorkoutSession>[
         _workoutSession(date: _referenceDay, estimatedCalories: 250),
       ];
@@ -445,7 +449,10 @@ void main() {
       final summary = await service.getSummaryForDate(_referenceDay);
 
       expect(summary.dietPlanStrategy, AppConstants.dietPlanStrategyNone);
-      expect(summary.baseCarbsTargetG, closeTo(summary.finalCarbsTargetG, 0.001));
+      expect(
+        summary.baseCarbsTargetG,
+        closeTo(summary.finalCarbsTargetG, 0.001),
+      );
       expect(summary.targetCarbsG, closeTo(summary.finalCarbsTargetG, 0.001));
     });
 
@@ -465,8 +472,14 @@ void main() {
 
       final summary = await service.getSummaryForDate(_referenceDay);
 
-      expect(summary.dietPlanStrategy, AppConstants.dietPlanStrategyCarbCycling);
-      expect(summary.finalTargetCalories, closeTo(summary.finalMacroEnergyEquivalentKcal, 0.001));
+      expect(
+        summary.dietPlanStrategy,
+        AppConstants.dietPlanStrategyCarbCycling,
+      );
+      expect(
+        summary.finalTargetCalories,
+        closeTo(summary.finalMacroEnergyEquivalentKcal, 0.001),
+      );
       expect(summary.finalCarbsTargetG, greaterThan(summary.baseCarbsTargetG));
     });
 
@@ -491,7 +504,10 @@ void main() {
 
       final summary = await service.getSummaryForDate(_referenceDay);
 
-      expect(summary.dietPlanStrategy, AppConstants.dietPlanStrategyCarbTapering);
+      expect(
+        summary.dietPlanStrategy,
+        AppConstants.dietPlanStrategyCarbTapering,
+      );
       expect(summary.baseCarbsTargetG, isNot(summary.finalCarbsTargetG));
       expect(
         summary.finalCarbsTargetG,
@@ -563,7 +579,9 @@ UserProfile _profile({
     dietGoalPhase: dietGoalPhase,
     dietCalculationMode: dietCalculationMode,
     dietPlanStrategy: dietPlanStrategy,
-    carbCyclePatternJson: carbCyclePattern == null ? null : _encode(carbCyclePattern),
+    carbCyclePatternJson: carbCyclePattern == null
+        ? null
+        : _encode(carbCyclePattern),
     carbTaperCurrentDeltaG: carbTaperCurrentDeltaG,
   );
 }
@@ -580,9 +598,7 @@ Future<CarbTaperReviewResult> _evaluateTaperReview(
   return service.evaluate(
     profile:
         profile ??
-        _profile(
-          dietPlanStrategy: AppConstants.dietPlanStrategyCarbTapering,
-        ),
+        _profile(dietPlanStrategy: AppConstants.dietPlanStrategyCarbTapering),
     referenceDay: _referenceDay,
     baseCarbsGOverride: baseCarbsGOverride,
   );
@@ -638,7 +654,10 @@ void _seedReviewData({
   };
 }
 
-Map<String, List<WorkoutSession>> _workoutsForDays(DateTime start, List<int> days) {
+Map<String, List<WorkoutSession>> _workoutsForDays(
+  DateTime start,
+  List<int> days,
+) {
   return <String, List<WorkoutSession>>{
     for (final offset in days)
       _dayKey(start.add(Duration(days: offset - 1))): <WorkoutSession>[
@@ -725,7 +744,11 @@ class _FakeWorkoutRepository extends WorkoutRepository {
     required String endDate,
   }) async {
     return sessionsByDate.entries
-        .where((entry) => entry.key.compareTo(startDate) >= 0 && entry.key.compareTo(endDate) <= 0)
+        .where(
+          (entry) =>
+              entry.key.compareTo(startDate) >= 0 &&
+              entry.key.compareTo(endDate) <= 0,
+        )
         .expand((entry) => entry.value)
         .toList();
   }
@@ -770,7 +793,9 @@ class _FakeProfileRepository extends ProfileRepository {
       calibrationState;
 
   @override
-  Future<void> saveCalorieCalibrationState(CalorieCalibrationState state) async {
+  Future<void> saveCalorieCalibrationState(
+    CalorieCalibrationState state,
+  ) async {
     calibrationState = state;
   }
 
@@ -780,7 +805,11 @@ class _FakeProfileRepository extends ProfileRepository {
     required String endDate,
   }) async {
     return weightLogs
-        .where((log) => log.date.compareTo(startDate) >= 0 && log.date.compareTo(endDate) <= 0)
+        .where(
+          (log) =>
+              log.date.compareTo(startDate) >= 0 &&
+              log.date.compareTo(endDate) <= 0,
+        )
         .toList();
   }
 
@@ -791,7 +820,8 @@ class _FakeProfileRepository extends ProfileRepository {
     if (latestPendingReview == null) {
       return null;
     }
-    if (userDecision == null || latestPendingReview!.userDecision == userDecision) {
+    if (userDecision == null ||
+        latestPendingReview!.userDecision == userDecision) {
       return latestPendingReview;
     }
     return null;

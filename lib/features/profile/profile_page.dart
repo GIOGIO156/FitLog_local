@@ -45,7 +45,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String _dietGoalPhase = AppConstants.dietGoalPhaseCutting;
   String _dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio;
   String _dietPlanStrategy = AppConstants.defaultDietPlanStrategy;
-  Map<String, String> _carbCyclePattern = AppConstants.defaultCarbCyclePattern();
+  Map<String, String> _carbCyclePattern =
+      AppConstants.defaultCarbCyclePattern();
   int _carbTaperReviewPeriodDays =
       AppConstants.defaultCarbTaperReviewPeriodDays;
   double _carbTaperTargetLossPctPerWeek =
@@ -273,8 +274,8 @@ class _ProfilePageState extends State<ProfilePage> {
       carbTaperReviewPeriodDays: _carbTaperReviewPeriodDays,
       carbTaperTargetLossPctPerWeek: _carbTaperTargetLossPctPerWeek,
       carbTaperStepG: _carbTaperStepG,
-      carbTaperCurrentDeltaG: safeStrategy ==
-              AppConstants.dietPlanStrategyCarbTapering
+      carbTaperCurrentDeltaG:
+          safeStrategy == AppConstants.dietPlanStrategyCarbTapering
           ? _carbTaperCurrentDeltaG
           : 0,
       lastCarbTaperReviewAt: _lastCarbTaperReviewAt,
@@ -289,8 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
     UserProfile profile, {
     required DietAdjustmentReview? pendingDietAdjustmentReview,
   }) async {
-    if (profile.dietPlanStrategy !=
-            AppConstants.dietPlanStrategyCarbTapering &&
+    if (profile.dietPlanStrategy != AppConstants.dietPlanStrategyCarbTapering &&
         pendingDietAdjustmentReview == null) {
       return null;
     }
@@ -751,8 +751,8 @@ class _ProfilePageState extends State<ProfilePage> {
         : null;
     final draftProfile = _buildDraftProfile();
     final baseMacroTargets = _resolveBaseMacroTargets(draftProfile);
-    final carbCyclePreview = _dietPlanStrategy ==
-            AppConstants.dietPlanStrategyCarbCycling
+    final carbCyclePreview =
+        _dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
         ? _buildCarbCyclePreview(profile: draftProfile, base: baseMacroTargets)
         : const <CarbCyclePreviewRow>[];
 
@@ -896,8 +896,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   carbCyclePattern: _carbCyclePattern,
                   carbCyclePreview: carbCyclePreview,
                   carbTaperReviewPeriodDays: _carbTaperReviewPeriodDays,
-                  carbTaperTargetLossPctPerWeek:
-                      _carbTaperTargetLossPctPerWeek,
+                  carbTaperTargetLossPctPerWeek: _carbTaperTargetLossPctPerWeek,
                   carbTaperStepG: _carbTaperStepG,
                   carbTaperCurrentDeltaG: _carbTaperCurrentDeltaG,
                   carbTaperReviewResult: _carbTaperReviewResult,

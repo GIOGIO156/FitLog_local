@@ -1,5 +1,38 @@
 # Database.md
 
+## 2026-06 Schema v8 Workout Record Update
+
+Database version is now `8`.
+
+Additive migration on `workout_sessions`:
+
+```sql
+ALTER TABLE workout_sessions ADD COLUMN record_name TEXT;
+```
+
+Storage model notes:
+
+- one saved multi-exercise workout record is still grouped by shared `plan_id`
+- `record_name` is duplicated across all sessions in the same saved record
+- this keeps migration additive and avoids introducing a separate parent record table in this release
+
+Persistence behavior update:
+
+- when saving a strength workout record, only sets marked completed are persisted
+- unchecked sets are discarded before insert/update
+- saved strength sets are renumbered from `1..n` after filtering
+- if a strength exercise has zero completed sets after filtering, that exercise is not persisted
+
+Read/update notes:
+
+- editing a saved workout record now replaces the full `plan_id` group transactionally
+- summary metrics such as total volume and total sets are derived from persisted sets only
+- `workout_sets.is_completed` remains stored for compatibility, but saved strength sets are expected to be completed sets
+
+Export implication:
+
+- any export reading `workout_sessions` should include `record_name` when needed for user-facing workout-record labels
+
 ## 2026-06 Schema v7 Diet Strategy Update
 
 Database version is now `7`.

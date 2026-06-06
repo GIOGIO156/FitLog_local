@@ -44,7 +44,8 @@ class DietPlanStrategySection extends StatelessWidget {
   final bool hasPendingDietAdjustmentReview;
   final bool handlingCarbTaperAction;
   final ValueChanged<String?>? onStrategyChanged;
-  final void Function(String weekdayKey, String value) onCarbCycleDayTypeChanged;
+  final void Function(String weekdayKey, String value)
+  onCarbCycleDayTypeChanged;
   final ValueChanged<int?> onCarbTaperReviewPeriodChanged;
   final ValueChanged<double?> onCarbTaperTargetLossChanged;
   final ValueChanged<double?> onCarbTaperStepChanged;
@@ -80,9 +81,8 @@ class DietPlanStrategySection extends StatelessWidget {
               : strings.minorStrategyBlockedNotice,
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        if (dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling) ...<
-          Widget
-        >[
+        if (dietPlanStrategy ==
+            AppConstants.dietPlanStrategyCarbCycling) ...<Widget>[
           const SizedBox(height: 12),
           _CarbCyclingSection(
             strings: strings,
@@ -91,9 +91,8 @@ class DietPlanStrategySection extends StatelessWidget {
             onCarbCycleDayTypeChanged: onCarbCycleDayTypeChanged,
           ),
         ],
-        if (dietPlanStrategy == AppConstants.dietPlanStrategyCarbTapering) ...<
-          Widget
-        >[
+        if (dietPlanStrategy ==
+            AppConstants.dietPlanStrategyCarbTapering) ...<Widget>[
           const SizedBox(height: 12),
           _CarbTaperingSection(
             strings: strings,
@@ -147,7 +146,8 @@ class _CarbCyclingSection extends StatelessWidget {
   final AppStrings strings;
   final Map<String, String> carbCyclePattern;
   final List<CarbCyclePreviewRow> carbCyclePreview;
-  final void Function(String weekdayKey, String value) onCarbCycleDayTypeChanged;
+  final void Function(String weekdayKey, String value)
+  onCarbCycleDayTypeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -327,8 +327,9 @@ class CarbTaperReviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest
-            .withValues(alpha: 0.55),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

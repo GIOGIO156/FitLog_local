@@ -1,5 +1,32 @@
 # Product.md
 
+## 2026-06 Workout Record Product Update
+
+Workout saved entries are now presented to users as `Workout Records`.
+
+Product behavior in this release:
+
+1. Before saving, the user can name a workout record.
+2. After saving, the record detail header shows:
+   - record name
+   - date and start time
+   - total duration
+   - total volume
+   - total sets
+   - estimated calories
+3. Saved workout records can be edited through the same page used for creation, including adding new exercises.
+4. During create/edit, completed strength sets are highlighted at the row level.
+5. The saved single-exercise detail page is now read-only for set completion state.
+6. Strength sets must be marked completed before save; unchecked sets are removed from the saved record.
+
+Scope boundaries:
+
+- this change does not introduce a new top-level workout-record table
+- one multi-exercise record is still represented by multiple `workout_sessions` linked by shared `plan_id`
+- `record_name` is stored on each session in the same record for low-risk additive compatibility
+- cardio behavior remains duration-based and has no set checklist
+- no backend, no sync, no agent logic, no automatic post-save completion workflow
+
 ## 2026-06 Cutting Diet Strategy Product Update
 
 Profile now presents three diet layers in order:

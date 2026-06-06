@@ -86,8 +86,7 @@ class DietAdjustmentReview {
       endAvgWeightKg: endAvgWeightKg ?? this.endAvgWeightKg,
       weightChangeKg: weightChangeKg ?? this.weightChangeKg,
       lossRatePctPerWeek: lossRatePctPerWeek ?? this.lossRatePctPerWeek,
-      targetLossPctPerWeek:
-          targetLossPctPerWeek ?? this.targetLossPctPerWeek,
+      targetLossPctPerWeek: targetLossPctPerWeek ?? this.targetLossPctPerWeek,
       foodLogCoverage: foodLogCoverage ?? this.foodLogCoverage,
       activeTrainingDays: activeTrainingDays ?? this.activeTrainingDays,
       suggestedAction: suggestedAction ?? this.suggestedAction,
@@ -146,9 +145,10 @@ class DietAdjustmentReview {
       windowDays: NumberUtils.toInt(map['window_days']),
       dietGoalPhase: (map['diet_goal_phase'] ?? '').toString(),
       dietCalculationMode: (map['diet_calculation_mode'] ?? '').toString(),
-      dietPlanStrategy: (map['diet_plan_strategy'] ??
-              AppConstants.dietPlanStrategyCarbTapering)
-          .toString(),
+      dietPlanStrategy:
+          (map['diet_plan_strategy'] ??
+                  AppConstants.dietPlanStrategyCarbTapering)
+              .toString(),
       startAvgWeightKg: map['start_avg_weight_kg'] == null
           ? null
           : NumberUtils.toDouble(map['start_avg_weight_kg']),
@@ -166,18 +166,18 @@ class DietAdjustmentReview {
           : NumberUtils.toDouble(map['target_loss_pct_per_week']),
       foodLogCoverage: NumberUtils.toDouble(map['food_log_coverage']),
       activeTrainingDays: NumberUtils.toInt(map['active_training_days']),
-      suggestedAction: (map['suggested_action'] ??
-              AppConstants.dietAdjustmentActionKeep)
-          .toString(),
+      suggestedAction:
+          (map['suggested_action'] ?? AppConstants.dietAdjustmentActionKeep)
+              .toString(),
       suggestedCarbDeltaG: NumberUtils.toDouble(map['suggested_carb_delta_g']),
       appliedDeltaAfterG: map['applied_delta_after_g'] == null
           ? null
           : NumberUtils.toDouble(map['applied_delta_after_g']),
       confidence: NumberUtils.toDouble(map['confidence']),
       reasonCodes: decodedReasons,
-      userDecision: (map['user_decision'] ??
-              AppConstants.dietAdjustmentDecisionPending)
-          .toString(),
+      userDecision:
+          (map['user_decision'] ?? AppConstants.dietAdjustmentDecisionPending)
+              .toString(),
       createdAt: map['created_at']?.toString(),
       updatedAt: map['updated_at']?.toString(),
     );

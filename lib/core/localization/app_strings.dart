@@ -25,7 +25,7 @@ class AppStrings {
   String get quickActions => _t('Quick Actions', '快捷操作');
   String get addFood => _t('Add Food', '添加食物');
   String get addWorkout => _t('Add Workout', '添加训练');
-  String get saveWorkoutPlan => _t('Save Workout Plan', '保存训练计划');
+  String get saveWorkoutPlan => _t('Save Workout Record', '保存训练记录');
 
   String get copyAiFoodPrompt => _t('Copy AI Food Prompt', '复制 AI 食物提示词');
   String get promptCopied => _t(
@@ -150,8 +150,7 @@ class AppStrings {
   String get carbCyclePreviewLabel => _t('Current week preview', '本周预览');
   String get carbCycleMultiplierLabel => _t('Multiplier preview', '倍率预览');
   String get carbTaperReviewTitle => _t('Carb Taper Review', '碳水渐降复核');
-  String get carbTaperCurrentOffsetLabel =>
-      _t('Current carb offset', '当前碳水偏移');
+  String get carbTaperCurrentOffsetLabel => _t('Current carb offset', '当前碳水偏移');
   String get carbTaperReviewPeriodLabel => _t('Review period', '复核周期');
   String get carbTaperTargetLossLabel => _t('Target loss rate', '目标减重速度');
   String get carbTaperStepLabel => _t('Taper step', '每次渐降步长');
@@ -308,20 +307,20 @@ class AppStrings {
       _t('Failed to load workout records: $error', '加载训练记录失败：$error');
 
   String get workoutDeleted => _t('Workout deleted.', '训练记录已删除。');
-  String get workoutPlan => _t('Workout Plan', '训练计划');
-  String get workoutPlanList => _t('Workout Plans', '训练计划');
+  String get workoutPlan => _t('Workout Record', '训练记录');
+  String get workoutPlanList => _t('Workout Records', '训练记录');
   String get startTimeLabel => _t('Start time', '开始时间');
   String get totalDurationLabel => _t('Total duration', '总时长');
-  String get exerciseNamesLabel => _t('Exercises', '计划动作');
-  String get actionsInPlan => _t('Actions in this plan', '本计划动作');
-  String get noActionsInPlan => _t('No actions in this plan.', '该计划暂无动作。');
+  String get exerciseNamesLabel => _t('Exercises', '记录动作');
+  String get actionsInPlan => _t('Exercises in this record', '本记录动作');
+  String get noActionsInPlan => _t('No exercises in this record.', '该记录暂无动作。');
 
   String deleteWorkoutConfirm(String exerciseName, String date) =>
       _t('Delete $exerciseName on $date?', '确认删除 $date 的“$exerciseName”？');
 
   String deleteWorkoutPlanConfirm(int count, String date) => _t(
-    'Delete this workout plan on $date? ($count exercises)',
-    '确认删除 $date 这条训练计划？（共 $count 个动作）',
+    'Delete this workout record on $date? ($count exercises)',
+    '确认删除 $date 这条训练记录？（共 $count 个动作）',
   );
 
   String get searchExercise => _t('Search exercise', '搜索动作');
@@ -334,7 +333,7 @@ class AppStrings {
   String addExercisesWithCount(int count) =>
       _t('Add selected exercises ($count)', '添加已选动作（$count）');
   String get addExercises => _t('Add Exercises', '添加运动');
-  String get exercisePlanDetails => _t('Exercise Plan Details', '动作计划详情');
+  String get exercisePlanDetails => _t('Exercise Record Details', '动作记录详情');
   String get exercisePickerCollapsedHint => _t(
     'Exercise library is hidden by default. Tap the button to select multiple exercises.',
     '动作库默认折叠，点击按钮后可进入动作库一次多选。',
@@ -342,15 +341,15 @@ class AppStrings {
   String get noExerciseSelectedYet =>
       _t('No exercise selected yet.', '还没有选择动作。');
   String get tapAddExerciseToBuildPlan => _t(
-    'Tap Add Exercises to build your workout plan first.',
+    'Tap Add Exercises to build your workout record first.',
     '先点击“添加运动”，再填写每个动作的详细信息。',
   );
   String get tapExerciseToBuildPlan => _t(
-    'Tap exercises above to build a multi-exercise workout plan.',
-    '在上方点选动作，即可建立一个包含多个动作的训练计划。',
+    'Tap exercises above to build a multi-exercise workout record.',
+    '在上方点选动作，即可建立一个包含多个动作的训练记录。',
   );
   String get workoutDetails => _t('Workout Details', '训练参数');
-  String get setsPlan => _t('Sets Plan', '组数计划');
+  String get setsPlan => _t('Sets', '组数');
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
   String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
@@ -363,8 +362,8 @@ class AppStrings {
     '自重动作中“重量”表示额外加重；填 0 表示仅自重。',
   );
   String get completeBeforeSaveHint => _t(
-    'You can mark completed sets before saving this plan.',
-    '保存前可先勾选已完成组，便于训练中直接记录。',
+    'Mark completed sets before saving. Unchecked sets will not be saved.',
+    '保存前请勾选已完成组，未勾选的组不会被保存。',
   );
   String get cardioNoSetPlan =>
       _t('Cardio does not require set planning.', '有氧训练不需要设置组数。');
@@ -386,10 +385,26 @@ class AppStrings {
   );
   String get saveWorkout => _t('Save Workout', '保存训练');
   String workoutPlanSavedCount(int count) => _t(
-    'Saved $count exercises in this workout plan.',
-    '已保存本次计划中的 $count 个动作。',
+    'Saved $count exercises in this workout record.',
+    '已保存本次训练记录中的 $count 个动作。',
+  );
+  String workoutRecordSavedCount(int count) => _t(
+    'Saved $count exercises in this workout record.',
+    '已保存本次训练记录中的 $count 个动作。',
   );
   String get workoutSaved => _t('Workout session saved.', '训练记录已保存。');
+  String get editWorkoutRecord => _t('Edit Workout Record', '编辑训练记录');
+  String get workoutRecordDetails => _t('Workout Record Details', '训练记录详情');
+  String get workoutRecordMeta => _t('Training Parameters', '训练参数');
+  String get workoutRecordNameLabel => _t('Record Name', '训练记录名称');
+  String get workoutRecordNameHint =>
+      _t('Example: Cycle 3 Week 4 Chest / Shoulder B', '例如：循环3 周4 胸肩二');
+  String get workoutRecordNameRequired =>
+      _t('Please enter a workout record name.', '请输入训练记录名称。');
+  String get noCompletedSetsToSave =>
+      _t('Please complete at least one set before saving.', '请至少完成一组后再保存。');
+  String get totalVolumeLabel => _t('Volume', '运动量');
+  String get totalSetsLabel => _t('Sets', '组数');
   String get chooseExercise => _t('Please choose an exercise.', '请选择一个动作。');
   String get chooseAtLeastOneExercise =>
       _t('Please select at least one exercise.', '请至少选择一个动作。');

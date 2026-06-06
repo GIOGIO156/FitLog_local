@@ -45,21 +45,6 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     });
   }
 
-  Future<void> _toggleSetCompletion(int setId, bool newValue) async {
-    await context.read<AppServices>().workoutRepository.completeSet(
-      setId: setId,
-      completed: newValue,
-    );
-
-    await _load();
-
-    if (!mounted) {
-      return;
-    }
-
-    context.read<RefreshNotifier>().markDataChanged();
-  }
-
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
@@ -76,7 +61,6 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
       );
     }
 
-    final completedSets = session.sets.where((set) => set.isCompleted).length;
     final isBodyweightExercise = AppConstants.isBodyweightExercise(
       session.exerciseName,
     );
@@ -134,35 +118,51 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '${strings.setsPlan}: $completedSets/${session.sets.length}',
+                    '${strings.totalSetsLabel}: ${session.sets.length}',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
-                  ...session.sets.map((set) {
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Text('Set ${set.setNumber}'),
-                        subtitle: Text(
-                          strings.setPerformanceLabel(
-                            weightKg: set.weightKg,
-                            reps: set.reps,
-                            isBodyweightExercise: isBodyweightExercise,
-                          ),
-                        ),
-                        trailing: set.id == null
-                            ? null
-                            : FilledButton.tonal(
-                                onPressed: () => _toggleSetCompletion(
-                                  set.id!,
-                                  !set.isCompleted,
-                                ),
-                                child: Text(
-                                  set.isCompleted
-                                      ? strings.completed
-                                      : strings.completeSet,
-                                ),
+                  ...session.sets.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final set = entry.value;
+                    final isStriped = index.isOdd;
+                    return Container(
+                      color: isStriped
+                          ? Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.32)
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              '${set.setNumber}',
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
                               ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              strings.setPerformanceLabel(
+                                weightKg: set.weightKg,
+                                reps: set.reps,
+                                isBodyweightExercise: isBodyweightExercise,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }),
@@ -170,9 +170,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
               ),
             )
           else
-            GlassPanel(
-              child: const Text('Cardio session has no set checklist.'),
-            ),
+            GlassPanel(child: Text(strings.cardioNoSetPlan)),
         ],
       ),
     );

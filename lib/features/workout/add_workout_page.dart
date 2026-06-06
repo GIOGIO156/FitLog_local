@@ -15,9 +15,16 @@ import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
 
 class AddWorkoutPage extends StatefulWidget {
-  const AddWorkoutPage({super.key, this.initialDate});
+  const AddWorkoutPage({
+    super.key,
+    this.initialDate,
+    this.editingPlanId,
+    this.seedSessionId,
+  });
 
   final String? initialDate;
+  final String? editingPlanId;
+  final int? seedSessionId;
 
   @override
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
@@ -25,6 +32,7 @@ class AddWorkoutPage extends StatefulWidget {
 
 class _AddWorkoutPageState extends State<AddWorkoutPage> {
   final _formKey = GlobalKey<FormState>();
+  final _recordNameController = TextEditingController();
   final _notesController = TextEditingController();
 
   final Map<String, _ExercisePlanDraft> _selectedPlans =
@@ -35,8 +43,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
   late String _date;
   double _profileWeightKg = 65;
+  bool _loadingExistingRecord = false;
   bool _saving = false;
   bool _updatingExerciseSelection = false;
+
+  bool get _isEditing =>
+      (widget.editingPlanId ?? '').trim().isNotEmpty ||
+      widget.seedSessionId != null;
 
   @override
   void initState() {
@@ -54,10 +67,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         _exerciseKey(option.bodyPart, option.name): option,
     };
     _loadProfileWeight();
+    if (_isEditing) {
+      _loadExistingRecord();
+    }
   }
 
   @override
   void dispose() {
+    _recordNameController.dispose();
     _notesController.dispose();
     for (final draft in _selectedPlans.values) {
       draft.dispose();
@@ -80,6 +97,63 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     setState(() {
       _profileWeightKg = profile.weightKg;
     });
+  }
+
+  Future<void> _loadExistingRecord() async {
+    setState(() => _loadingExistingRecord = true);
+
+    final repository = context.read<AppServices>().workoutRepository;
+    List<WorkoutSession> sessions;
+    final planId = (widget.editingPlanId ?? '').trim();
+    if (planId.isNotEmpty) {
+      sessions = await repository.getWorkoutSessionsByPlanId(planId);
+    } else if (widget.seedSessionId != null) {
+      final session = await repository.getWorkoutSessionById(
+        widget.seedSessionId!,
+      );
+      sessions = session == null
+          ? <WorkoutSession>[]
+          : <WorkoutSession>[session];
+    } else {
+      sessions = <WorkoutSession>[];
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    sessions.sort((a, b) => _createdAtRaw(a).compareTo(_createdAtRaw(b)));
+    if (sessions.isEmpty) {
+      setState(() => _loadingExistingRecord = false);
+      return;
+    }
+
+    final reordered = <String, _ExercisePlanDraft>{};
+    for (final session in sessions) {
+      final optionKey = _exerciseKey(session.bodyPart, session.exerciseName);
+      reordered[optionKey] = _ExercisePlanDraft.fromSession(session);
+    }
+
+    setState(() {
+      _date = sessions.first.date;
+      _recordNameController.text = sessions.first.recordName?.trim() ?? '';
+      _notesController.text = sessions.first.notes;
+      for (final draft in _selectedPlans.values) {
+        draft.dispose();
+      }
+      _selectedPlans
+        ..clear()
+        ..addAll(reordered);
+      _loadingExistingRecord = false;
+    });
+  }
+
+  DateTime _createdAtRaw(WorkoutSession session) {
+    final created = DateTime.tryParse(session.createdAt ?? '');
+    if (created != null) {
+      return created;
+    }
+    return DateUtilsX.parseDay(session.date);
   }
 
   Future<void> _pickDate() async {
@@ -218,6 +292,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     final sets = <WorkoutSet>[];
     for (var i = 0; i < draft.sets.length; i++) {
       final setDraft = draft.sets[i];
+      if (!setDraft.isCompleted) {
+        continue;
+      }
       final reps = NumberUtils.toInt(setDraft.effectiveRepsText, fallback: 0);
       final weight = NumberUtils.toDouble(
         setDraft.effectiveWeightText,
@@ -333,8 +410,18 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       return;
     }
 
+    final recordName = _recordNameController.text.trim();
+    if (recordName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.workoutRecordNameRequired)),
+      );
+      return;
+    }
+
     final now = DateTime.now().toIso8601String();
-    final planId = _createPlanId();
+    final planId = (widget.editingPlanId ?? '').trim().isNotEmpty
+        ? widget.editingPlanId!.trim()
+        : _createPlanId();
     final notes = _notesController.text.trim();
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
@@ -363,20 +450,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           continue;
         }
 
-        if (draft.sets.isEmpty) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                strings.noSetsForExercise(
-                  strings.exerciseDisplayName(draft.exerciseName),
-                ),
-              ),
-            ),
-          );
-          return;
-        }
-
-        for (final setDraft in draft.sets) {
+        for (final setDraft in draft.completedSets) {
           final reps = NumberUtils.toInt(
             setDraft.effectiveRepsText,
             fallback: -1,
@@ -405,8 +479,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         final durationMinutes = _durationForDraft(draft);
         final sets = <WorkoutSet>[];
         if (!draft.isCardio) {
-          for (var i = 0; i < draft.sets.length; i++) {
-            final setDraft = draft.sets[i];
+          final completedSets = draft.completedSets;
+          for (var i = 0; i < completedSets.length; i++) {
+            final setDraft = completedSets[i];
             sets.add(
               WorkoutSet(
                 setNumber: i + 1,
@@ -419,9 +494,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
           }
         }
 
+        if (!draft.isCardio && sets.isEmpty) {
+          continue;
+        }
+
         sessions.add(
           WorkoutSession(
             planId: planId,
+            recordName: recordName,
             date: _date,
             bodyPart: draft.bodyPart,
             exerciseName: draft.exerciseName,
@@ -446,7 +526,27 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         );
       }
 
-      await services.workoutRepository.insertWorkoutPlan(sessions);
+      if (sessions.isEmpty) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(strings.noCompletedSetsToSave)),
+        );
+        return;
+      }
+
+      if (_isEditing) {
+        await services.workoutRepository.replaceWorkoutPlan(
+          planId: planId,
+          sessions: sessions,
+        );
+      } else {
+        await services.workoutRepository.insertWorkoutPlan(sessions);
+      }
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(strings.workoutRecordSavedCount(sessions.length)),
+        ),
+      );
     } catch (error) {
       if (mounted) {
         messenger.showSnackBar(
@@ -465,9 +565,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     }
 
     refreshNotifier.markDataChanged();
-    messenger.showSnackBar(
-      SnackBar(content: Text(strings.workoutPlanSavedCount(drafts.length))),
-    );
     Navigator.of(context).pop(true);
   }
 
@@ -475,8 +572,23 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   Widget build(BuildContext context) {
     final strings = context.strings;
 
+    if (_loadingExistingRecord) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            _isEditing ? strings.editWorkoutRecord : strings.addWorkout,
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(strings.addWorkout)),
+      appBar: AppBar(
+        title: Text(
+          _isEditing ? strings.editWorkoutRecord : strings.addWorkout,
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -549,7 +661,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    strings.exercisePlanDetails,
+                    strings.workoutRecordDetails,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -739,113 +851,131 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                           padding: const EdgeInsets.symmetric(
                                             vertical: 3,
                                           ),
-                                          child: Row(
-                                            children: <Widget>[
-                                              SizedBox(
-                                                width: 30,
-                                                child: Text(
-                                                  '${index + 1}',
-                                                  style: const TextStyle(
-                                                    fontSize: 17,
-                                                    fontWeight: FontWeight.w700,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: setDraft.isCompleted
+                                                  ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withValues(alpha: 0.18)
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
+                                            child: Row(
+                                              children: <Widget>[
+                                                SizedBox(
+                                                  width: 30,
+                                                  child: Text(
+                                                    '${index + 1}',
+                                                    style: const TextStyle(
+                                                      fontSize: 17,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              Expanded(
-                                                flex: 6,
-                                                child: _buildSetValueInput(
-                                                  context: context,
-                                                  controller:
-                                                      setDraft.weightController,
-                                                  keyboardType:
-                                                      const TextInputType.numberWithOptions(
-                                                        decimal: true,
+                                                Expanded(
+                                                  flex: 6,
+                                                  child: _buildSetValueInput(
+                                                    context: context,
+                                                    controller: setDraft
+                                                        .weightController,
+                                                    keyboardType:
+                                                        const TextInputType.numberWithOptions(
+                                                          decimal: true,
+                                                        ),
+                                                    hintText: setDraft
+                                                        .defaultWeightHint,
+                                                    showAsDefaultValue: setDraft
+                                                        .showWeightAsDefault,
+                                                    enabled: !_saving,
+                                                    onInputTap: setDraft
+                                                        .prepareWeightForEditing,
+                                                    onValueChanged: setDraft
+                                                        .markWeightInput,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  flex: 3,
+                                                  child: _buildSetValueInput(
+                                                    context: context,
+                                                    controller:
+                                                        setDraft.repsController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    hintText: setDraft
+                                                        .defaultRepsHint,
+                                                    showAsDefaultValue: setDraft
+                                                        .showRepsAsDefault,
+                                                    enabled: !_saving,
+                                                    onInputTap: setDraft
+                                                        .prepareRepsForEditing,
+                                                    onValueChanged:
+                                                        setDraft.markRepsInput,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                IconButton(
+                                                  onPressed: _saving
+                                                      ? null
+                                                      : () =>
+                                                            _toggleSetCompleted(
+                                                              setDraft,
+                                                            ),
+                                                  icon: Icon(
+                                                    setDraft.isCompleted
+                                                        ? Icons.check_circle
+                                                        : Icons
+                                                              .radio_button_unchecked,
+                                                  ),
+                                                  color: setDraft.isCompleted
+                                                      ? Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary
+                                                      : null,
+                                                  tooltip: setDraft.isCompleted
+                                                      ? strings.completed
+                                                      : strings.completeSet,
+                                                  iconSize: 24,
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints.tightFor(
+                                                        width: 32,
+                                                        height: 32,
                                                       ),
-                                                  hintText: setDraft
-                                                      .defaultWeightHint,
-                                                  showAsDefaultValue: setDraft
-                                                      .showWeightAsDefault,
-                                                  enabled: !_saving,
-                                                  onInputTap: setDraft
-                                                      .prepareWeightForEditing,
-                                                  onValueChanged:
-                                                      setDraft.markWeightInput,
                                                 ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                flex: 3,
-                                                child: _buildSetValueInput(
-                                                  context: context,
-                                                  controller:
-                                                      setDraft.repsController,
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                  hintText:
-                                                      setDraft.defaultRepsHint,
-                                                  showAsDefaultValue: setDraft
-                                                      .showRepsAsDefault,
-                                                  enabled: !_saving,
-                                                  onInputTap: setDraft
-                                                      .prepareRepsForEditing,
-                                                  onValueChanged:
-                                                      setDraft.markRepsInput,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              IconButton(
-                                                onPressed: _saving
-                                                    ? null
-                                                    : () => _toggleSetCompleted(
-                                                        setDraft,
+                                                const SizedBox(width: 2),
+                                                IconButton(
+                                                  onPressed: _saving
+                                                      ? null
+                                                      : () => _removeSet(
+                                                          draft,
+                                                          index,
+                                                        ),
+                                                  icon: const Icon(
+                                                    Icons.remove_circle_outline,
+                                                  ),
+                                                  tooltip: strings.removeSet,
+                                                  iconSize: 24,
+                                                  padding: EdgeInsets.zero,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  constraints:
+                                                      const BoxConstraints.tightFor(
+                                                        width: 32,
+                                                        height: 32,
                                                       ),
-                                                icon: Icon(
-                                                  setDraft.isCompleted
-                                                      ? Icons.check_circle
-                                                      : Icons
-                                                            .radio_button_unchecked,
                                                 ),
-                                                color: setDraft.isCompleted
-                                                    ? Theme.of(
-                                                        context,
-                                                      ).colorScheme.primary
-                                                    : null,
-                                                tooltip: setDraft.isCompleted
-                                                    ? strings.completed
-                                                    : strings.completeSet,
-                                                iconSize: 24,
-                                                padding: EdgeInsets.zero,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                constraints:
-                                                    const BoxConstraints.tightFor(
-                                                      width: 32,
-                                                      height: 32,
-                                                    ),
-                                              ),
-                                              const SizedBox(width: 2),
-                                              IconButton(
-                                                onPressed: _saving
-                                                    ? null
-                                                    : () => _removeSet(
-                                                        draft,
-                                                        index,
-                                                      ),
-                                                icon: const Icon(
-                                                  Icons.remove_circle_outline,
-                                                ),
-                                                tooltip: strings.removeSet,
-                                                iconSize: 24,
-                                                padding: EdgeInsets.zero,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                constraints:
-                                                    const BoxConstraints.tightFor(
-                                                      width: 32,
-                                                      height: 32,
-                                                    ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
                                         if (!isLast)
@@ -881,11 +1011,20 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    strings.workoutDetails,
+                    strings.workoutRecordMeta,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _recordNameController,
+                    decoration: InputDecoration(
+                      labelText: strings.workoutRecordNameLabel,
+                      hintText: strings.workoutRecordNameHint,
+                    ),
+                    textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 8),
                   ListTile(
@@ -952,6 +1091,17 @@ class _SetDraft {
       repsController = TextEditingController(text: defaultReps.trim()),
       _showWeightAsDefault = defaultWeight.trim().isNotEmpty,
       _showRepsAsDefault = defaultReps.trim().isNotEmpty;
+
+  _SetDraft.existing({
+    required String weight,
+    required String reps,
+    required this.isCompleted,
+  }) : _defaultWeight = '',
+       _defaultReps = '',
+       weightController = TextEditingController(text: weight.trim()),
+       repsController = TextEditingController(text: reps.trim()),
+       _showWeightAsDefault = false,
+       _showRepsAsDefault = false;
 
   final String _defaultWeight;
   final String _defaultReps;
@@ -1068,6 +1218,27 @@ class _ExercisePlanDraft {
     );
   }
 
+  factory _ExercisePlanDraft.fromSession(WorkoutSession session) {
+    final draft = _ExercisePlanDraft(
+      bodyPart: session.bodyPart,
+      exerciseName: session.exerciseName,
+      sets: session.exerciseType == 'cardio'
+          ? <_SetDraft>[]
+          : session.sets
+                .map(
+                  (set) => _SetDraft.existing(
+                    weight: _formatWeight(set.weightKg),
+                    reps: set.reps.toString(),
+                    isCompleted: set.isCompleted,
+                  ),
+                )
+                .toList(),
+      defaultDuration: '',
+    );
+    draft.durationController.text = session.durationMinutes.toString();
+    return draft;
+  }
+
   final String bodyPart;
   final String exerciseName;
   final List<_SetDraft> sets;
@@ -1076,6 +1247,8 @@ class _ExercisePlanDraft {
 
   bool get isCardio => bodyPart == 'Cardio';
   bool get isBodyweight => AppConstants.isBodyweightExercise(exerciseName);
+  List<_SetDraft> get completedSets =>
+      sets.where((set) => set.isCompleted).toList();
 
   String get defaultDurationHint => _defaultDuration;
   String get effectiveDurationText {

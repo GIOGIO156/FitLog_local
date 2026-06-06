@@ -1,5 +1,26 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-06 Workout Record Flow Update
+
+### Added
+- Added `record_name` to saved workout sessions so one multi-exercise workout record can carry a user-defined name across the whole saved group.
+- Added create-time naming for workout records.
+- Added saved workout record summary metrics: total duration, total volume, total sets, and estimated calories.
+- Added full-record edit re-entry through the same page used for workout creation.
+
+### Changed
+- User-facing workout copy now uses `Workout Record` instead of `Workout Plan` for saved entries.
+- Saved workout records still use shared `plan_id` internally, but now behave as editable named records in the UI.
+- Saving a strength workout record now persists completed sets only.
+- Unchecked strength sets are removed before save and remaining saved sets are renumbered from `1..n`.
+- Create/edit workout rows now show a row-level highlight after a set is marked completed.
+- Saved single-exercise detail pages are now read-only for completion state and focus on clearer weight/reps display.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-06 Diet Strategy UI Follow-up
 
 ### Fixed

@@ -164,8 +164,9 @@ class CarbTaperReviewService {
     final baseCarbsG = baseCarbsGOverride ?? 0;
     final minCarbsG = _minimumCarbsG(profile.weightKg);
     final maxStepG = math.min(20, profile.weightKg * 0.25);
-    final requestedStepG =
-        math.min(profile.carbTaperStepG, maxStepG).toDouble();
+    final requestedStepG = math
+        .min(profile.carbTaperStepG, maxStepG)
+        .toDouble();
     var suggestedAction = AppConstants.dietAdjustmentActionKeep;
     var suggestedCarbDeltaG = 0.0;
 
@@ -248,7 +249,9 @@ class CarbTaperReviewService {
     required int currentActiveTrainingDays,
     required int windowDays,
   }) async {
-    final previousWindowEnd = currentWindowStart.subtract(const Duration(days: 1));
+    final previousWindowEnd = currentWindowStart.subtract(
+      const Duration(days: 1),
+    );
     final previousWindowStart = previousWindowEnd.subtract(
       Duration(days: windowDays - 1),
     );
@@ -259,7 +262,9 @@ class CarbTaperReviewService {
     if (previousSessions.isEmpty) {
       return false;
     }
-    final previousActiveTrainingDays = _countActiveTrainingDays(previousSessions);
+    final previousActiveTrainingDays = _countActiveTrainingDays(
+      previousSessions,
+    );
     return previousActiveTrainingDays >= 2 &&
         currentActiveTrainingDays + 2 <= previousActiveTrainingDays;
   }
@@ -278,9 +283,9 @@ class CarbTaperReviewService {
     if (parsed == null) {
       return true;
     }
-    final diff = DateUtilsX.parseDay(referenceDay)
-        .difference(DateUtilsX.parseDay(DateUtilsX.formatDate(parsed)))
-        .inDays;
+    final diff = DateUtilsX.parseDay(
+      referenceDay,
+    ).difference(DateUtilsX.parseDay(DateUtilsX.formatDate(parsed))).inDays;
     return diff >= windowDays;
   }
 

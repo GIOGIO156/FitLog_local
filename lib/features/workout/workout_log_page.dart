@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/glass_panel.dart';
@@ -281,7 +282,27 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
+                                plan.displayName(strings),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
                                 '${strings.totalDurationLabel}: ${plan.totalDurationMinutes} min',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${strings.totalVolumeLabel}: ${plan.totalVolumeKg.toStringAsFixed(1)} kg',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${strings.totalSetsLabel}: ${plan.totalSets}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -331,7 +352,10 @@ class _WorkoutPlanGroup {
     required this.date,
     required this.totalCalories,
     required this.totalDurationMinutes,
+    required this.totalVolumeKg,
+    required this.totalSets,
     required this.exerciseNames,
+    required this.recordName,
   });
 
   factory _WorkoutPlanGroup.fromSessions(List<WorkoutSession> rawSessions) {
@@ -360,7 +384,21 @@ class _WorkoutPlanGroup {
         0,
         (sum, session) => sum + session.durationMinutes,
       ),
+      totalVolumeKg: sessions.fold<double>(
+        0,
+        (sum, session) =>
+            sum +
+            session.sets.fold<double>(
+              0,
+              (setSum, set) => setSum + (set.weightKg * set.reps),
+            ),
+      ),
+      totalSets: sessions.fold<int>(
+        0,
+        (sum, session) => sum + session.sets.length,
+      ),
       exerciseNames: names,
+      recordName: sessions.first.recordName?.trim() ?? '',
     );
   }
 
@@ -371,7 +409,23 @@ class _WorkoutPlanGroup {
   final String date;
   final double totalCalories;
   final int totalDurationMinutes;
+  final double totalVolumeKg;
+  final int totalSets;
   final List<String> exerciseNames;
+  final String recordName;
+
+  String displayName(AppStrings strings) {
+    if (recordName.isNotEmpty) {
+      return recordName;
+    }
+    if (exerciseNames.length == 1) {
+      return strings.exerciseDisplayName(exerciseNames.first);
+    }
+    if (exerciseNames.isEmpty) {
+      return strings.workoutPlan;
+    }
+    return '${strings.exerciseDisplayName(exerciseNames.first)} +${exerciseNames.length - 1}';
+  }
 
   static DateTime _createdAt(WorkoutSession session) {
     final created = DateTime.tryParse(session.createdAt ?? '');

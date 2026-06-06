@@ -197,8 +197,7 @@ class UserProfile {
       ),
       carbTaperTargetLossPctPerWeek:
           AppConstants.resolveCarbTaperTargetLossPctPerWeek(
-            carbTaperTargetLossPctPerWeek ??
-                this.carbTaperTargetLossPctPerWeek,
+            carbTaperTargetLossPctPerWeek ?? this.carbTaperTargetLossPctPerWeek,
           ),
       carbTaperStepG: AppConstants.resolveCarbTaperStepG(
         carbTaperStepG ?? this.carbTaperStepG,

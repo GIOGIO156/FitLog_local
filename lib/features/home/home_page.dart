@@ -259,7 +259,7 @@ class _OverviewHero extends StatelessWidget {
               : Colors.white.withValues(alpha: 0.65),
         ),
       ),
-        child: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (hasDietStrategy) ...<Widget>[

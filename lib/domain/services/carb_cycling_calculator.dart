@@ -16,8 +16,7 @@ class CarbCyclingCalculator {
   }) {
     if (profile.isMinor ||
         profile.dietGoalPhase != AppConstants.dietGoalPhaseCutting ||
-        profile.dietPlanStrategy !=
-            AppConstants.dietPlanStrategyCarbCycling) {
+        profile.dietPlanStrategy != AppConstants.dietPlanStrategyCarbCycling) {
       return _baseResult(
         profile: profile,
         isEnergyTargetMode: isEnergyTargetMode,
@@ -44,7 +43,9 @@ class CarbCyclingCalculator {
     );
     final normalizer = rawSum <= 0 ? 1.0 : 7 / rawSum;
     final dayType =
-        pattern[AppConstants.weekdayKeyFromDateTime(DateUtilsX.parseDay(day))] ??
+        pattern[AppConstants.weekdayKeyFromDateTime(
+          DateUtilsX.parseDay(day),
+        )] ??
         AppConstants.carbDayMedium;
     final normalizedMultiplier = (multipliers[dayType] ?? 1.0) * normalizer;
     var finalCarbsG = baseCarbsG * normalizedMultiplier;
@@ -61,7 +62,9 @@ class CarbCyclingCalculator {
     );
 
     return DietPlanStrategyResult(
-      finalTargetIntakeKcal: isEnergyTargetMode ? finalMacroEnergyEquivalentKcal : 0,
+      finalTargetIntakeKcal: isEnergyTargetMode
+          ? finalMacroEnergyEquivalentKcal
+          : 0,
       finalProteinG: baseProteinG,
       finalCarbsG: finalCarbsG,
       finalFatG: baseFatG,
