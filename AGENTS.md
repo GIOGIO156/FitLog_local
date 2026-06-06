@@ -89,12 +89,14 @@ CHANGELOG.md
 docs/
   en/
     Product.md
+    Methodology.md
     Algorithm.md
     Database.md
     Agent.md
     References.md
   zh/
     Product.md
+    Methodology.md
     Algorithm.md
     Database.md
     Agent.md
@@ -106,6 +108,7 @@ File responsibilities:
 - `README.md`: project face and quick-start overview. Keep English first and Chinese second in the same file. The two language sections must match in facts, scope, commands, and links. Do not append date-based update sections.
 - `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Do not store product design, architecture explanations, future notes, or agent memory here.
 - `docs/en/Product.md` and `docs/zh/Product.md`: stable product design. Cover purpose, product principles, modules, workflows, UX behavior, implemented scope, non-goals, and code references. Do not write release notes here.
+- `docs/en/Methodology.md` and `docs/zh/Methodology.md`: user-facing method explanation. Explain why the app uses `energy_ratio`, `gram_per_kg`, carb cycling, carb tapering, net exercise calories, and strength calorie heuristics. Keep it understandable, evidence-aware, and honest about limitations.
 - `docs/en/Algorithm.md` and `docs/zh/Algorithm.md`: stable algorithm design. Cover inputs, formulas, diet phase/mode/strategy separation, workout calorie logic, calibration, self-check, boundaries, and code references. Do not merge `gram_per_kg` and `energy_ratio`.
 - `docs/en/Database.md` and `docs/zh/Database.md`: stable database design. Cover current schema version, additive migrations, tables, fields, runtime aggregates, data flows, export coverage, non-implemented storage capabilities, and code references. Preserve migration compatibility.
 - `docs/en/Agent.md` and `docs/zh/Agent.md`: current AI/Agent boundary. State clearly that the local app has no internal LLM/API/Agent loop unless code actually adds one. External AI prompt copy and JSON paste are not app-internal AI.

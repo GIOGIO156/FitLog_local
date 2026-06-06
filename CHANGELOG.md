@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-07 Methodology Documentation
+
+### Added
+- Added bilingual `docs/en/Methodology.md` and `docs/zh/Methodology.md` to explain user-facing reasoning behind FitLog's diet modes, carb strategies, and exercise calorie methods.
+- Added README method-summary sections that point users to Methodology, Algorithm, and References.
+
+### Changed
+- Updated the README documentation map into a design-document table and included Methodology.
+- Updated `AGENTS.md` documentation rules so Methodology is part of the required design documentation set.
+
+### Validation
+- Documentation-only change; Flutter analysis and tests were not required.
+
 ## 2026-06-07 Documentation Structure Cleanup
 
 ### Changed

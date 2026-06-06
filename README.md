@@ -104,6 +104,16 @@ Important boundaries:
 - `carb_cycling` and `carb_tapering` are local deterministic strategy layers applied after the base target is calculated.
 - `carb_tapering` can suggest a review action, but it never applies a change without user confirmation.
 
+### Why These Methods
+
+FitLog keeps its methods separated so users can tell which number is the source of truth. `energy_ratio` is kcal-first: it starts from estimated baseline energy, applies a cutting deficit or bulking surplus, adds logged net exercise, and then converts the result into macro grams. `gram_per_kg` is macro-first: it sets protein, carbs, and fat from bodyweight and a coarse training-frequency tier, so kcal is auxiliary instead of the main counter.
+
+Carb strategies are also deliberately limited. `carb_cycling` redistributes weekly carbs across high/medium/low days; it is not a magic fat-loss rule. `carb_tapering` reviews rolling weight trend, food-log coverage, and training stability, then waits for user confirmation before applying any carb reduction.
+
+Exercise calories use net additional burn. The daily baseline already includes resting energy use, so cardio subtracts the resting part of the activity window (`MET - 1`) to avoid counting the same resting calories twice. Strength training is volume-driven rather than minute-driven because rest time, load, reps, and movement type matter more than duration alone.
+
+For the user-facing explanation, see [Methodology](docs/en/Methodology.md). For implementation formulas, see [Algorithm](docs/en/Algorithm.md). For source boundaries, see [References](docs/en/References.md).
+
 ### Tech Stack
 
 - Flutter + Dart
@@ -132,14 +142,18 @@ flutter test
 flutter build apk --debug
 ```
 
-### Documentation Map
+### Design Documents
 
-- [Changelog](CHANGELOG.md): English-only history of user-facing, data, algorithm, and documentation changes.
-- [Product design](docs/en/Product.md): product scope, modules, workflows, and current boundaries.
-- [Algorithm design](docs/en/Algorithm.md): diet calculations, workout calorie estimates, calibration, and self-check logic.
-- [Database design](docs/en/Database.md): SQLite schema, migrations, storage boundaries, and data flows.
-- [Agent boundary](docs/en/Agent.md): current AI/Agent status and deterministic local workflow boundaries.
-- [References](docs/en/References.md): external references and evidence boundaries.
+| File | Purpose |
+| --- | --- |
+| [README.md](README.md) | Project overview, current scope, method entry points, quick start, and documentation map. |
+| [CHANGELOG.md](CHANGELOG.md) | English-only dated history of user-facing, data, algorithm, and documentation changes. |
+| [docs/en/Product.md](docs/en/Product.md) / [docs/zh/Product.md](docs/zh/Product.md) | Product scope, modules, workflows, UX behavior, implemented boundaries, and non-goals. |
+| [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | User-facing explanation of why FitLog uses these diet, carb strategy, and workout calorie methods. |
+| [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | Engineering-level formulas, diet modes, workout calorie logic, calibration, self-check, and algorithm boundaries. |
+| [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema, migrations, tables, fields, runtime aggregates, data flows, and export coverage. |
+| [docs/en/Agent.md](docs/en/Agent.md) / [docs/zh/Agent.md](docs/zh/Agent.md) | Current AI/Agent boundary: external AI-assisted input versus app-internal deterministic logic. |
+| [docs/en/References.md](docs/en/References.md) / [docs/zh/References.md](docs/zh/References.md) | External evidence, citation boundaries, and what each source supports. |
 
 Chinese design documents mirror the same content under `docs/zh/`.
 
@@ -255,6 +269,16 @@ diet_plan_strategy:
 - `carb_cycling` 和 `carb_tapering` 是本地确定性策略层，只在基础目标算出后应用。
 - `carb_tapering` 可以提出复盘建议，但不会在没有用户确认的情况下自动应用。
 
+### 为什么这样计算
+
+FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来源。`energy_ratio` 是 kcal 优先：它从估算的基础能量开始，应用减脂赤字或增肌盈余，加上已记录净运动消耗，再把结果换算成宏量克数。`gram_per_kg` 是宏量优先：它用体重和粗略训练频率档位设定蛋白质、碳水和脂肪，所以 kcal 是辅助信息，不是主计数器。
+
+碳水策略也被有意限制。`carb_cycling` 只是在 high/medium/low 日之间重新分配一周碳水；它不是神奇燃脂规则。`carb_tapering` 会复盘滚动体重趋势、饮食记录覆盖率和训练稳定性，然后等待用户确认，才会应用任何碳水下调。
+
+运动消耗使用额外净消耗。每日基线已经包含静息能量消耗，所以有氧会减去运动时间里的静息部分（`MET - 1`），避免把同一份静息热量算两次。力量训练以训练量为主，而不是单纯按分钟计算，因为休息时间、负荷、次数和动作类型都比时长本身更重要。
+
+面向用户的完整解释见 [Methodology](docs/zh/Methodology.md)。实现公式见 [Algorithm](docs/zh/Algorithm.md)。证据来源和边界见 [References](docs/zh/References.md)。
+
 ### 技术栈
 
 - Flutter + Dart
@@ -283,14 +307,18 @@ flutter test
 flutter build apk --debug
 ```
 
-### 文档地图
+### 设计文档
 
-- [Changelog](CHANGELOG.md)：纯英文历史变更记录，覆盖用户可见行为、数据、算法和文档变更。
-- [产品设计](docs/zh/Product.md)：产品范围、模块、流程和当前边界。
-- [算法设计](docs/zh/Algorithm.md)：饮食计算、运动消耗估算、校准和自检逻辑。
-- [数据库设计](docs/zh/Database.md)：SQLite schema、迁移、存储边界和数据流。
-- [Agent 边界](docs/zh/Agent.md)：当前 AI/Agent 状态和本地确定性流程边界。
-- [References](docs/zh/References.md)：外部引用和证据边界。
+| 文件 | 用途 |
+| --- | --- |
+| [README.md](README.md) | 项目概览、当前范围、方法入口说明、快速开始和文档地图。 |
+| [CHANGELOG.md](CHANGELOG.md) | 纯英文按日期记录用户可见行为、数据、算法和文档变更。 |
+| [docs/en/Product.md](docs/en/Product.md) / [docs/zh/Product.md](docs/zh/Product.md) | 产品范围、模块、流程、UX 行为、已实现边界和非目标。 |
+| [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | 面向用户解释 FitLog 为什么使用这些饮食、碳水策略和运动消耗方法。 |
+| [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | 工程级公式、饮食模式、运动消耗逻辑、校准、自检和算法边界。 |
+| [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema、迁移、表、字段、运行时聚合、数据流和导出覆盖。 |
+| [docs/en/Agent.md](docs/en/Agent.md) / [docs/zh/Agent.md](docs/zh/Agent.md) | 当前 AI/Agent 边界：外部 AI 辅助输入和 App 内本地确定性逻辑的区别。 |
+| [docs/en/References.md](docs/en/References.md) / [docs/zh/References.md](docs/zh/References.md) | 外部证据、引用边界和每个来源支持的具体内容。 |
 
 英文设计文档在 `docs/en/` 下保持同等内容。
 
