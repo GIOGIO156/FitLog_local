@@ -1,5 +1,18 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-07 Workout Record Summary Layout Follow-up
+
+### Changed
+- Rebalanced saved workout-record summary columns so the volume value keeps `kg` on the same line more reliably.
+- Pushed the sets metric farther right to free more horizontal space for the volume column.
+- Kept kcal on the body-part row for collapsed exercise cards and left set count out of the collapsed state.
+- Kept the `#` column fixed in saved single-exercise strength tables while shifting the `weight + reps` block to the right.
+
+### Validation
+- `flutter analyze`: no issues found.
+- `flutter test`: all tests passed.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-06 Workout Record UI Refinement
 
 ### Changed

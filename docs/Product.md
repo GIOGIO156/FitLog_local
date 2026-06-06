@@ -1,5 +1,14 @@
 # Product.md
 
+## 2026-06 Workout Record Summary Layout Follow-up
+
+This round further refines the saved workout-record presentation:
+
+1. The summary header gives the volume metric a wider dedicated column so the numeric value and `kg` remain on one line more reliably.
+2. The sets metric is pushed farther right to preserve horizontal space for volume.
+3. Collapsed exercise cards keep kcal on the body-part row and do not show set count in the collapsed state.
+4. Saved single-exercise strength tables keep the `#` column fixed while shifting the `weight + reps` block to the right.
+
 ## 2026-06 Workout Record Product Update
 
 Workout saved entries are now presented to users as `Workout Records`.

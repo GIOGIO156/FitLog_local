@@ -1,5 +1,14 @@
 # FitLog Local
 
+## 2026-06 Workout Record Summary Layout Follow-up
+
+This follow-up refines the saved workout-record summary and exercise cards:
+
+- the summary now uses a wider dedicated volume column so `volume + kg` stay on one line more reliably
+- the sets metric is pushed farther right to preserve horizontal space for volume
+- collapsed exercise cards keep kcal on the body-part row and keep set count out of the collapsed view
+- saved single-exercise strength tables keep the `#` column fixed while shifting the `weight + reps` block to the right
+
 ## 2026-06 Workout Record Update
 
 Workout logging now uses the user-facing term `Workout Record` instead of `Workout Plan` for saved entries.

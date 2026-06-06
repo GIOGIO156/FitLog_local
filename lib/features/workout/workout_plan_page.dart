@@ -138,6 +138,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
             (setSum, set) => setSum + (set.weightKg * set.reps),
           ),
     );
+
     final totalSets = _sessions.fold<int>(
       0,
       (sum, session) => sum + session.sets.length,
@@ -178,20 +179,23 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Expanded(
+                      flex: 9,
                       child: _MetricBlock(
                         label: strings.totalDurationLabel,
                         value: '$totalDuration min',
                       ),
                     ),
-                    const SizedBox(width: 18),
+                    const SizedBox(width: 16),
                     Expanded(
+                      flex: 12,
                       child: _MetricBlock(
                         label: strings.totalVolumeLabel,
                         value: '${totalVolume.toStringAsFixed(1)} kg',
                       ),
                     ),
-                    const SizedBox(width: 28),
+                    const SizedBox(width: 36),
                     Expanded(
+                      flex: 5,
                       child: _MetricBlock(
                         label: strings.totalSetsLabel,
                         value: '$totalSets',
@@ -320,9 +324,13 @@ class _MetricBlock extends StatelessWidget {
       children: <Widget>[
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
         ),
       ],
     );
