@@ -77,4 +77,61 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
   - flutter test
 - For audit/refactor tasks, report risks before modifying code.
 
+## FitLog Design Documentation Rules
+
+Design docs are maintained as finished source-of-truth documents, not as running notes.
+
+Required structure:
+
+```text
+README.md
+CHANGELOG.md
+docs/
+  en/
+    Product.md
+    Algorithm.md
+    Database.md
+    Agent.md
+    References.md
+  zh/
+    Product.md
+    Algorithm.md
+    Database.md
+    Agent.md
+    References.md
+```
+
+File responsibilities:
+
+- `README.md`: project face and quick-start overview. Keep English first and Chinese second in the same file. The two language sections must match in facts, scope, commands, and links. Do not append date-based update sections.
+- `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Do not store product design, architecture explanations, future notes, or agent memory here.
+- `docs/en/Product.md` and `docs/zh/Product.md`: stable product design. Cover purpose, product principles, modules, workflows, UX behavior, implemented scope, non-goals, and code references. Do not write release notes here.
+- `docs/en/Algorithm.md` and `docs/zh/Algorithm.md`: stable algorithm design. Cover inputs, formulas, diet phase/mode/strategy separation, workout calorie logic, calibration, self-check, boundaries, and code references. Do not merge `gram_per_kg` and `energy_ratio`.
+- `docs/en/Database.md` and `docs/zh/Database.md`: stable database design. Cover current schema version, additive migrations, tables, fields, runtime aggregates, data flows, export coverage, non-implemented storage capabilities, and code references. Preserve migration compatibility.
+- `docs/en/Agent.md` and `docs/zh/Agent.md`: current AI/Agent boundary. State clearly that the local app has no internal LLM/API/Agent loop unless code actually adds one. External AI prompt copy and JSON paste are not app-internal AI.
+- `docs/en/References.md` and `docs/zh/References.md`: evidence and citation boundaries. Keep reference IDs stable. Cite narrow claims only. Do not turn this file into a literature review or changelog.
+
+Language and sync rules:
+
+- `CHANGELOG.md` stays English only.
+- `README.md` is bilingual in one file: English first, Chinese second, with matching content.
+- All other design docs live in both `docs/en` and `docs/zh`; when one changes, update the other in the same task.
+- Keep docs concise but complete: every important field, mode, formula, boundary, and non-goal must appear exactly where it belongs.
+- New feature details should be integrated into the stable section they affect, not appended as "2026-xx update" blocks.
+- Historical implementation details belong in `CHANGELOG.md`; durable design facts belong in `README.md` or `docs/*`.
+
+Encoding and terminal-output rules:
+
+- Markdown files are UTF-8.
+- PowerShell or terminal output may display valid UTF-8 Chinese or symbols as mojibake. Do not treat terminal display mojibake as file corruption.
+- Before changing text for suspected encoding issues, verify the actual file content by reading it as UTF-8, checking Unicode code points, or inspecting it in an editor that correctly renders UTF-8.
+- Do not record a "garbled text fix" in `CHANGELOG.md` unless the source file or rendered app/docs are actually corrupted.
+- Prefer ASCII punctuation in English docs when it does not reduce clarity; Chinese docs may use normal Chinese punctuation.
+
+Validation for documentation-only changes:
+
+- Confirm the required documentation tree exists.
+- Run text searches for old root-level design docs, date-appended headings in stable docs, stale paths, and obvious replacement characters.
+- Flutter analysis/tests are required after code changes; for documentation-only edits, do not run them unless the task also touched code.
+
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
