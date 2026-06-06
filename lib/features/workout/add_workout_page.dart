@@ -175,7 +175,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   String _createPlanId() => DateTime.now().microsecondsSinceEpoch.toString();
 
   Future<void> _openExerciseLibraryPicker() async {
-    final selectedKeys = _selectedPlans.keys.toSet();
+    final selectedKeys = _selectedPlans.keys.toList();
     final pickedKeys = await Navigator.of(context).push<List<String>>(
       MaterialPageRoute<List<String>>(
         builder: (_) => _ExerciseLibraryPickerPage(
@@ -343,6 +343,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       (sum, draft) => sum + _estimateCaloriesForDraft(draft),
     );
   }
+
+  bool get _hasSelectedStrengthExercise =>
+      _selectedDrafts.any((draft) => !draft.isCardio);
 
   Widget _buildSetValueInput({
     required BuildContext context,
@@ -770,11 +773,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                 Text(
                                   strings.cardioDurationHint,
                                   style: Theme.of(context).textTheme.bodySmall,
-                                )
-                              else
-                                Text(
-                                  strings.strengthDurationNotice,
-                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               if (!draft.isCardio) ...<Widget>[
                                 const SizedBox(height: 10),
@@ -1017,16 +1015,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: _recordNameController,
                     decoration: InputDecoration(
                       labelText: strings.workoutRecordNameLabel,
-                      hintText: strings.workoutRecordNameHint,
                     ),
                     textInputAction: TextInputAction.next,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(strings.date),
@@ -1036,11 +1033,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                       child: Text(strings.change),
                     ),
                   ),
-                  TextFormField(
-                    controller: _notesController,
-                    decoration: InputDecoration(labelText: strings.notesLabel),
-                    maxLines: 1,
-                  ),
+                  if (_hasSelectedStrengthExercise) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(
+                      strings.strengthDurationNotice,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   Text(
                     strings.usingProfileWeight(_profileWeightKg),
@@ -1050,6 +1049,26 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                   Text(
                     '${strings.estimatedTotalCaloriesLabel}: ${_estimatedTotalCalories.toStringAsFixed(0)} kcal',
                     style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+            GlassPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    strings.notesLabel,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _notesController,
+                    decoration: InputDecoration(labelText: strings.notesLabel),
+                    maxLines: 2,
                   ),
                 ],
               ),
@@ -1287,7 +1306,7 @@ class _ExerciseLibraryPickerPage extends StatefulWidget {
   });
 
   final List<_ExerciseOption> options;
-  final Set<String> initiallySelectedKeys;
+  final List<String> initiallySelectedKeys;
 
   @override
   State<_ExerciseLibraryPickerPage> createState() =>
@@ -1298,12 +1317,12 @@ class _ExerciseLibraryPickerPageState
     extends State<_ExerciseLibraryPickerPage> {
   final _searchController = TextEditingController();
   String? _selectedBodyPartFilter;
-  late final Set<String> _selectedKeys;
+  late final List<String> _selectedKeysInOrder;
 
   @override
   void initState() {
     super.initState();
-    _selectedKeys = Set<String>.from(widget.initiallySelectedKeys);
+    _selectedKeysInOrder = List<String>.from(widget.initiallySelectedKeys);
   }
 
   @override
@@ -1337,20 +1356,16 @@ class _ExerciseLibraryPickerPageState
   void _toggleOption(_ExerciseOption option) {
     final key = option.key();
     setState(() {
-      if (_selectedKeys.contains(key)) {
-        _selectedKeys.remove(key);
+      if (_selectedKeysInOrder.contains(key)) {
+        _selectedKeysInOrder.remove(key);
       } else {
-        _selectedKeys.add(key);
+        _selectedKeysInOrder.add(key);
       }
     });
   }
 
   void _submitSelection() {
-    final orderedKeys = widget.options
-        .map((option) => option.key())
-        .where(_selectedKeys.contains)
-        .toList();
-    Navigator.of(context).pop(orderedKeys);
+    Navigator.of(context).pop(List<String>.from(_selectedKeysInOrder));
   }
 
   @override
@@ -1418,7 +1433,8 @@ class _ExerciseLibraryPickerPageState
               itemBuilder: (context, index) {
                 final option = filtered[index];
                 final key = option.key();
-                final selected = _selectedKeys.contains(key);
+                final selectedIndex = _selectedKeysInOrder.indexOf(key);
+                final selected = selectedIndex >= 0;
                 final color = ExerciseVisuals.colorForBodyPart(
                   option.bodyPart,
                   context,
@@ -1464,12 +1480,24 @@ class _ExerciseLibraryPickerPageState
                             ],
                           ),
                         ),
-                        Icon(
-                          selected
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: selected ? color : null,
-                        ),
+                        selected
+                            ? Container(
+                                width: 28,
+                                height: 28,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: color,
+                                ),
+                                child: Text(
+                                  '${selectedIndex + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              )
+                            : const Icon(Icons.radio_button_unchecked),
                       ],
                     ),
                   ),
@@ -1484,7 +1512,9 @@ class _ExerciseLibraryPickerPageState
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           child: FilledButton(
             onPressed: _submitSelection,
-            child: Text(strings.addExercisesWithCount(_selectedKeys.length)),
+            child: Text(
+              strings.addExercisesWithCount(_selectedKeysInOrder.length),
+            ),
           ),
         ),
       ),

@@ -27,6 +27,20 @@ Scope boundaries:
 - cardio behavior remains duration-based and has no set checklist
 - no backend, no sync, no agent logic, no automatic post-save completion workflow
 
+## 2026-06 Workout Record UI Refinement
+
+This round refines the existing workout-record UX without changing persistence rules:
+
+1. The strength-calorie estimation note is shown once in training parameters when a record contains at least one strength exercise.
+2. Workout notes now live in a separate optional card below training parameters.
+3. The saved record summary gives the sets metric more horizontal space to avoid crowding the volume metric.
+4. Saved strength exercise detail uses a table header row for weight and reps instead of repeating those labels inside every row.
+5. Saved strength set rows now use `weight` and `× reps` as separate columns for clearer scanning.
+6. The workout-record name field no longer includes a sample naming hint.
+7. Spacing around the workout-record name field inside training parameters has been rebalanced.
+8. Workout records now preserve the user's exercise selection order instead of falling back to exercise-library order.
+9. When selecting multiple exercises in one pass, the exercise library shows selection order as `1 / 2 / 3...`.
+
 ## 2026-06 Cutting Diet Strategy Product Update
 
 Profile now presents three diet layers in order:

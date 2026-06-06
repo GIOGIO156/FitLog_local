@@ -122,6 +122,40 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 44,
+                          child: Text(
+                            '#',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 6,
+                          child: Text(
+                            strings.weightKgShortLabel,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 4,
+                          child: Text(
+                            strings.repsLabel,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   ...session.sets.asMap().entries.map((entry) {
                     final index = entry.key;
                     final set = entry.value;
@@ -150,12 +184,23 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             ),
                           ),
                           Expanded(
+                            flex: 6,
                             child: Text(
-                              strings.setPerformanceLabel(
-                                weightKg: set.weightKg,
-                                reps: set.reps,
-                                isBodyweightExercise: isBodyweightExercise,
+                              isBodyweightExercise && set.weightKg <= 0
+                                  ? (strings.isChinese
+                                        ? '自重'
+                                        : 'Bodyweight')
+                                  : '${set.weightKg.toStringAsFixed(1)} kg',
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
                               ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 4,
+                            child: Text(
+                              '× ${set.reps}',
                               style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w700,

@@ -44,9 +44,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
       final session = await repository.getWorkoutSessionById(
         widget.seedSessionId,
       );
-      sessions = session == null
-          ? <WorkoutSession>[]
-          : <WorkoutSession>[session];
+      sessions = session == null ? <WorkoutSession>[] : <WorkoutSession>[session];
     }
 
     if (!mounted) {
@@ -190,10 +188,12 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                         value: '${totalVolume.toStringAsFixed(1)} kg',
                       ),
                     ),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: _MetricBlock(
                         label: strings.totalSetsLabel,
                         value: '$totalSets',
+                        horizontalPadding: 10,
                       ),
                     ),
                   ],
@@ -294,23 +294,31 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
 }
 
 class _MetricBlock extends StatelessWidget {
-  const _MetricBlock({required this.label, required this.value});
+  const _MetricBlock({
+    required this.label,
+    required this.value,
+    this.horizontalPadding = 0,
+  });
 
   final String label;
   final String value;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-        ),
-      ],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
     );
   }
 }

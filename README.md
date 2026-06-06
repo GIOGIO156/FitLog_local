@@ -24,6 +24,20 @@ Migration note:
 
 - schema v8 adds `workout_sessions.record_name`
 
+## 2026-06 Workout Record UI Refinement
+
+This follow-up keeps the same workout-record data flow while refining the training UI:
+
+- the strength-calorie estimation notice is now shown once in the training-parameters area when at least one strength exercise is selected, instead of repeating under every strength exercise
+- workout notes now use their own optional card below training parameters
+- the saved workout-record summary gives the total-sets metric more breathing room so it no longer crowds the volume metric
+- saved single-exercise strength details now use table-style headers for weight and reps
+- set rows now display weight and reps as separate columns, with reps shown as `× reps`
+- the workout-record name field no longer suggests a sample naming style
+- the workout-record name field spacing inside training parameters has been rebalanced for better visual rhythm
+- workout records now preserve the user's exercise selection order instead of falling back to the exercise-library order
+- when selecting multiple exercises in one pass, the exercise library now shows selection order as `1 / 2 / 3...`
+
 ## 2026-06 Cutting Diet Strategy Update
 
 FitLog Local now separates diet setup into three layers:

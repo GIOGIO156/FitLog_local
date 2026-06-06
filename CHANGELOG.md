@@ -1,5 +1,21 @@
 # FitLog Local - Agent Memory
 
+## 2026-06-06 Workout Record UI Refinement
+
+### Changed
+- Moved the strength-calorie estimation note out of each individual strength exercise card and into the shared training-parameters area when strength exercises are present.
+- Split workout notes into a separate optional card below training parameters.
+- Increased spacing for the total-sets metric in saved workout-record summaries to reduce crowding with total volume.
+- Changed saved strength exercise detail to use table-style weight and reps headers.
+- Changed saved strength set rows to display weight and reps as separate columns, using `×` before reps.
+- Removed the sample naming hint from the workout-record name field.
+- Rebalanced vertical spacing around the workout-record name field inside training parameters.
+- Workout records now preserve the user's exercise selection order instead of falling back to exercise-library order.
+- Exercise-library multi-select now shows selection order as `1 / 2 / 3...` for chosen exercises.
+
+### Validation
+- `flutter build apk --debug`: success.
+
 ## 2026-06-06 Workout Record Flow Update
 
 ### Added
