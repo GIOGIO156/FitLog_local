@@ -139,18 +139,24 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                         ),
                         Expanded(
                           flex: 6,
-                          child: Text(
-                            strings.weightKgShortLabel,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 18),
+                            child: Text(
+                              strings.weightKgShortLabel,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                           ),
                         ),
                         Expanded(
                           flex: 4,
-                          child: Text(
-                            strings.repsLabel,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 18),
+                            child: Text(
+                              strings.repsLabel,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
                           ),
                         ),
                       ],
@@ -185,25 +191,31 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           ),
                           Expanded(
                             flex: 6,
-                            child: Text(
-                              isBodyweightExercise && set.weightKg <= 0
-                                  ? (strings.isChinese
-                                        ? '自重'
-                                        : 'Bodyweight')
-                                  : '${set.weightKg.toStringAsFixed(1)} kg',
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 18),
+                              child: Text(
+                                isBodyweightExercise && set.weightKg <= 0
+                                    ? (strings.isChinese
+                                          ? '自重'
+                                          : 'Bodyweight')
+                                    : '${set.weightKg.toStringAsFixed(1)} kg',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
                           Expanded(
                             flex: 4,
-                            child: Text(
-                              '× ${set.reps}',
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 18),
+                              child: Text(
+                                '× ${set.reps}',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),

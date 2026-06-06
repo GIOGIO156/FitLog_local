@@ -175,6 +175,7 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                 ),
                 const SizedBox(height: 14),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Expanded(
                       child: _MetricBlock(
@@ -182,18 +183,18 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                         value: '$totalDuration min',
                       ),
                     ),
+                    const SizedBox(width: 18),
                     Expanded(
                       child: _MetricBlock(
                         label: strings.totalVolumeLabel,
                         value: '${totalVolume.toStringAsFixed(1)} kg',
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 28),
                     Expanded(
                       child: _MetricBlock(
                         label: strings.totalSetsLabel,
                         value: '$totalSets',
-                        horizontalPadding: 10,
                       ),
                     ),
                   ],
@@ -267,13 +268,26 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(strings.bodyPartLabel(session.bodyPart)),
+                                Row(
+                                  children: <Widget>[
+                                    Flexible(
+                                      child: Text(
+                                        strings.bodyPartLabel(session.bodyPart),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Text(
+                                      '${session.estimatedCalories.toStringAsFixed(0)} kcal',
+                                    ),
+                                  ],
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${strings.totalSetsLabel}: ${session.sets.length} · ${strings.totalVolumeLabel}: ${volume.toStringAsFixed(1)} kg',
+                                  '${strings.totalVolumeLabel}: ${volume.toStringAsFixed(1)} kg',
                                 ),
                                 Text(
-                                  '${strings.durationMinutesLabel}: ${session.durationMinutes} · ${session.estimatedCalories.toStringAsFixed(0)} kcal',
+                                  '${strings.durationMinutesLabel}: ${session.durationMinutes}',
                                 ),
                               ],
                             ),
@@ -294,31 +308,23 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
 }
 
 class _MetricBlock extends StatelessWidget {
-  const _MetricBlock({
-    required this.label,
-    required this.value,
-    this.horizontalPadding = 0,
-  });
+  const _MetricBlock({required this.label, required this.value});
 
   final String label;
   final String value;
-  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+      ],
     );
   }
 }

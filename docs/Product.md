@@ -40,6 +40,9 @@ This round refines the existing workout-record UX without changing persistence r
 7. Spacing around the workout-record name field inside training parameters has been rebalanced.
 8. Workout records now preserve the user's exercise selection order instead of falling back to exercise-library order.
 9. When selecting multiple exercises in one pass, the exercise library shows selection order as `1 / 2 / 3...`.
+10. The saved workout-record summary keeps duration, volume, and sets aligned on one row without wrapping `kg` below the volume value.
+11. Saved exercise cards place kcal beside the body-part line and no longer show set count in the collapsed card view.
+12. Saved single-exercise strength tables shift the `weight + reps` block to the right while keeping the `#` column fixed.
 
 ## 2026-06 Cutting Diet Strategy Product Update
 

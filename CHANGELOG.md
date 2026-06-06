@@ -12,6 +12,9 @@
 - Rebalanced vertical spacing around the workout-record name field inside training parameters.
 - Workout records now preserve the user's exercise selection order instead of falling back to exercise-library order.
 - Exercise-library multi-select now shows selection order as `1 / 2 / 3...` for chosen exercises.
+- Saved workout-record summary metrics now stay aligned on one row and keep `kg` on the same line as the volume value.
+- Collapsed exercise cards now place kcal beside the body-part line and remove the set-count line.
+- Saved single-exercise strength tables now shift the `weight + reps` block to the right while keeping the `#` column fixed.
 
 ### Validation
 - `flutter build apk --debug`: success.
