@@ -64,21 +64,30 @@ Phase semantics:
 
 Database note: schema v6 adds `user_profile.diet_goal_phase` with default `cutting` for existing local users.
 
+FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的重点不是在 App 内做 AI 推理，而是把复杂食物估算、每日记录、目标与剩余量查看、饮食策略执行与复盘，组织成一个可长期使用的本地数据工作流。
+
 ## 这个 App 解决什么问题？怎么解决？
 **解决的问题**  
-很多人会用 ChatGPT / Gemini 拍照估算食物热量和三大营养素，但结果常常散落在聊天记录里，最后还要手动抄到 Excel，记录成本高、容易漏记。
+FitLog Local 解决的不只是“记一顿饭”这件事，而是三个经常被低估的高学习成本问题：
+
+1. 现实食物本身就很难估算营养。很多人吃的不是有包装标签的标准食品，而是外卖、食堂、混合菜、汤粉面、便当、非包装食物，或者只吃了一部分、去皮、剩余、份量不确定的餐食，单靠手工很难估出真实 kcal 和 protein / carbs / fat。
+2. AI 估算结果很难沉淀成长线记录。很多人会把复杂餐食先交给外部多模态大模型估算，但如果结果只留在聊天记录里，后续复盘、按天汇总和长期追踪都很麻烦。
+3. 剩余量和饮食计划都不容易直接转成行动。即使用户已经看到当天剩余 kcal、protein、carbs、fat，也不一定马上知道下一餐应该往哪个方向调；而 cutting / bulking、`energy_ratio`、`gram_per_kg`、`carb_cycling`、`carb_tapering` 这些方法本身也有不低的理解和执行门槛。
 
 **解决方式**  
-FitLog Local 把“AI 估算”和“本地记录”串成一个完整流程：
-1. 在 ChatGPT / Gemini 上传食物照片并拿到标准 JSON。
+FitLog Local 把“外部 AI 辅助估算”和“本地结构化追踪”串成一个完整流程：
+1. 用户可在任意外部多模态大模型中上传食物照片或描述餐食，按 Prompt 拿到结构化 JSON。
 2. 把 JSON 粘贴进 App，一键解析、预览、可手动修正。
 3. 保存到手机本地 SQLite，按天汇总饮食 + 运动。
-4. 自动计算 BMR / 目标摄入 / 剩余热量。
-5. 随时导出 XLSX / CSV（zip）。
+4. App 本地计算每日目标、已摄入、剩余 kcal / protein / carbs / fat，帮助用户理解当天还剩多少空间、当前缺口主要在哪。
+5. App 用本地确定性算法承载饮食策略层，让 `energy_ratio`、`gram_per_kg`、`carb_cycling`、`carb_tapering` 这些方法变成可设置、可展示、可复盘的规则，而不是只停留在概念。
+6. 随时导出 XLSX / CSV（zip）。
+
+它的定位不是在 App 内做 AI 推理，也不是自动替用户决定下一餐吃什么。Local 版当前提供的是可保存、可修正、可追踪的数据工作流，以及目标与剩余量的结构化依据；不内置 OpenAI / Gemini API，不自动配餐，不自动修改目标。
 
 简单说就是：  
-**ChatGPT / Gemini 负责“看图估算食物”**，  
-**FitLog Local 负责“保存、统计、训练记录和导出”。**
+**外部多模态大模型负责“看图或看描述估算食物”**，  
+**FitLog Local 负责“把结果落成可修正、可统计、可复盘、可导出的本地记录”。**
 
 ---
 
@@ -87,6 +96,7 @@ FitLog Local 把“AI 估算”和“本地记录”串成一个完整流程：
 - 不商业化、不依赖后端
 - 不需要注册登录
 - 所有数据仅保存在本机
+- 不内置多模态模型，不接入云端 AI API
 
 ---
 
@@ -103,7 +113,7 @@ FitLog Local 把“AI 估算”和“本地记录”串成一个完整流程：
 
 ### 2) AI Prompt 模板与双语提示
 - App 内可一键复制 AI Prompt（中/英文随语言切换）。
-- Add Food 与 Paste 页面会显示推荐 GPT 提示文案。
+- Add Food 与 Paste 页面会显示推荐 Prompt，也提供现成 GPT 文案入口。
 - 即使粘贴的是不同语言 JSON，记录仍可互通（解析层兼容中英文字段别名）。
 
 ### 3) Workout Log（训练记录）
@@ -123,6 +133,7 @@ FitLog Local 把“AI 估算”和“本地记录”串成一个完整流程：
 - 剩余热量
 - 今日三大营养素（蛋白/碳水/脂肪）
 - 今日饮食记录与训练记录列表
+- 用结构化的目标 / 已摄入 / 剩余量展示，降低用户自己判断下一餐方向的成本，但当前版本不自动配餐
 
 ### 5) Profile & Settings（资料与设置）
 - 身体资料与目标管理
@@ -138,7 +149,8 @@ FitLog Local 把“AI 估算”和“本地记录”串成一个完整流程：
 - 中文助手：[FitLog 中文助手](https://chatgpt.com/g/g-69ebe98d5cec819181a79003f6298695-fitlog-zhong-wen-zhu-shou)
 
 说明：
-- 你也可以不用以上 GPT，直接在 App 里复制内置 Prompt 到任意大模型。
+- 以上 GPT 只是现成可用的 ChatGPT 入口，不是唯一支持方式。
+- 你也可以不用以上 GPT，直接在 App 里复制内置 Prompt 到任意支持图像或文本理解的外部多模态大模型。
 - 本 App 不接入任何真实 AI API，只做本地记录和计算。
 
 ---
@@ -301,7 +313,7 @@ flutter build apk --debug
 ---
 
 ## 推荐使用流程（食物记录）
-1. 打开 ChatGPT 或 Gemini。
+1. 打开任意你想用的外部多模态大模型。
 2. 上传/拍摄食物照片。
 3. 使用你自己的 FitLog GPT，或先从 App 复制 Prompt。
 4. 获取标准 JSON 输出。
@@ -318,8 +330,10 @@ flutter build apk --debug
 ---
 
 ## 当前阶段
-当前版本是可用的 MVP，目标是把“AI 食物估算结果落地记录”这件事做顺手：  
-低摩擦录入、按天汇总、训练联动、本地可导出。
+当前版本仍是 local MVP。它的核心目标是把外部 AI 食物估算结果落地为本地记录，并把饮食目标、已摄入、剩余量和计划策略用可理解的方式展示出来：  
+低摩擦录入、按天汇总、训练联动、本地可导出、可复盘。
+
+当前版本不包含 App 内 AI API、不自动配餐、不提供 Meal Decision Agent、不自动生成饮食计划，也不自动替用户调整目标。`Photo AI Analysis` 仍然只是 Coming soon 占位入口。
 
 ---
 
