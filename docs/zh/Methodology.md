@@ -6,6 +6,8 @@
 
 FitLog 是记录与估算工具。它不提供医疗建议，不诊断疾病，不开饮食处方，也不能替代专业人士。
 
+文中的 [REF-ALG-01](References.md) 这类标记，对应 [References](References.md) 中的条目；那里记录完整来源和证据边界。
+
 ## 核心思想
 
 FitLog 把三件经常被混在一起的事拆开：
@@ -32,8 +34,8 @@ BMR 估算
 
 为什么需要这个方法：
 
-- 很多饮食计划从能量平衡开始：减脂低于维持，增肌高于维持。
-- 当主目标是 kcal 时，宏量百分比容易理解。
+- 很多饮食计划从能量平衡开始：减脂低于维持，增肌高于维持 [REF-ALG-07](References.md)。
+- 当主目标是 kcal 时，宏量百分比容易理解；按热量百分比分配宏量也是常见营养规划框架 [REF-ALG-04](References.md)。
 - 因为基线有意设定为“非运动日常基线”，所以已记录运动可以作为额外可摄入量加回去。
 
 用户需要知道：
@@ -42,13 +44,13 @@ BMR 估算
 - `diet_goal_phase = bulking` 时，`daily_energy_goal_kcal` 被视为盈余。
 - 在这个模式下，kcal 目标/摄入/剩余是主计数器。
 - 宏量克数由 kcal 目标和宏量百分比换算而来。
-- BMR 和活动系数是估算，不是精确测量。
+- BMR 和活动系数是估算，不是精确测量 [REF-ALG-01](References.md)、[REF-ALG-02](References.md)。
 
 主要证据背景：
 
-- BMR/RMR 估算：`REF-ALG-01`、`REF-ALG-02`。
-- 宏量热量换算：`REF-ALG-03`。
-- 按热量百分比分配宏量的框架：`REF-ALG-04`。
+- BMR/RMR 估算：[REF-ALG-01](References.md)、[REF-ALG-02](References.md)。
+- 宏量热量换算：[REF-ALG-03](References.md)。
+- 按热量百分比分配宏量的框架：[REF-ALG-04](References.md)。
 
 来源细节和边界见 [References](References.md)。
 
@@ -69,8 +71,8 @@ BMR 估算
 
 为什么需要这个方法：
 
-- 许多训练导向用户会用每 kg 体重多少克来理解蛋白质、碳水和脂肪。
-- 蛋白质和碳水需求通常更自然地跟体型和训练背景相关，而不是只跟一个 kcal 数字相关。
+- 许多训练导向用户会用每 kg 体重多少克来理解蛋白质、碳水和脂肪 [REF-ALG-05](References.md)、[REF-ALG-06](References.md)。
+- 蛋白质和碳水需求通常更自然地跟体型和训练背景相关，而不是只跟一个 kcal 数字相关 [REF-ALG-06](References.md)、[REF-ALG-15](References.md)。
 - 当用户关心直接吃到多少蛋白质/碳水/脂肪时，宏量优先的显示更容易执行。
 
 用户需要知道：
@@ -80,7 +82,7 @@ BMR 估算
 - 这个档位不代表训练强度、训练年限、总训练容量或运动表现需求。
 - `prefer_not_to_say` 使用同档位男女平均值。
 - 在这个模式下，宏量克数是主目标。
-- kcal 是辅助信息，因为 `protein*4 + carbs*4 + fat*9` 只是宏量目标的能量等价值，不是驱动计划的计数器。
+- kcal 是辅助信息，因为 `protein*4 + carbs*4 + fat*9` 只是宏量目标的能量等价值，不是驱动计划的计数器 [REF-ALG-03](References.md)。
 
 为什么这里 kcal 是辅助：
 
@@ -88,9 +90,9 @@ BMR 估算
 
 主要证据背景：
 
-- 宏量热量换算：`REF-ALG-03`。
-- 蛋白质 g/kg 范围和运动营养背景：`REF-ALG-05`、`REF-ALG-06`。
-- 饮食与身体成分框架：`REF-ALG-07`。
+- 宏量热量换算：[REF-ALG-03](References.md)。
+- 蛋白质 g/kg 范围和运动营养背景：[REF-ALG-05](References.md)、[REF-ALG-06](References.md)。
+- 饮食与身体成分框架：[REF-ALG-07](References.md)。
 
 ## 为什么两种饮食模式不能混算
 
@@ -127,12 +129,12 @@ BMR 估算
 为什么需要这个方法：
 
 - 有些用户希望训练较难的日子多吃碳水，轻松日或休息日少吃碳水。
-- 碳水需求会随训练需求变化。
+- 碳水需求会随训练需求变化 [REF-ALG-15](References.md)。
 - 每周归一化能避免“看似循环，实际偷偷整体吃多”或“整体压得过低”。
 
 用户需要知道：
 
-- 碳循环不是神奇燃脂算法。
+- 碳循环不是神奇燃脂算法；周期化碳水限制的证据不应被过度夸大 [REF-ALG-14](References.md)。
 - 如果每周总摄入和执行度不好，它不会自动带来更好结果。
 - 它保持蛋白质和脂肪稳定，主要调整碳水。
 - 它有安全下限：碳水不应低于 `max(weightKg * 1.2, 100)`。
@@ -140,9 +142,9 @@ BMR 估算
 
 主要证据背景：
 
-- 周期化碳水可用性：`REF-ALG-13`。
-- 周期化碳水限制证据边界：`REF-ALG-14`。
-- 碳水需求随训练需求变化：`REF-ALG-15`。
+- 周期化碳水可用性：[REF-ALG-13](References.md)。
+- 周期化碳水限制证据边界：[REF-ALG-14](References.md)。
+- 碳水需求随训练需求变化：[REF-ALG-15](References.md)。
 
 ## 碳水渐降
 
@@ -161,9 +163,9 @@ BMR 估算
 
 为什么需要这个方法：
 
-- 减脂过程中常常需要小幅调整。
+- 减脂过程中常常需要小幅调整，但静态体重变化规则有明显局限 [REF-ALG-11](References.md)、[REF-ALG-19](References.md)。
 - 体重会受到水分、食物体积、钠、消化和训练压力影响。
-- 滚动复盘比根据单日体重反应更稳妥。
+- 滚动复盘比根据单日体重反应更稳妥，因为它能降低短期噪声的影响 [REF-ALG-19](References.md)。
 - 用户确认可以避免 App 悄悄把计划越收越紧。
 
 用户需要知道：
@@ -173,15 +175,15 @@ BMR 估算
 - 训练稳定性很重要，因为训练明显下降时，激进减碳可能不合适。
 - 建议的碳水变化是小步调整，不是自动惩罚。
 - 如果数据不足，App 应该给出 `no_data`，而不是假装知道。
-- 如果减重过快，App 可以建议 `pause_taper`。
+- 如果减重过快，App 可以建议 `pause_taper`，这符合 App 对减重速度的保守处理 [REF-ALG-17](References.md)。
 - 如果碳水会低于安全下限，App 会阻止继续下降。
 
 主要证据背景：
 
-- 训练阶段的蛋白质保留：`REF-ALG-16`。
-- 保守减重速度框架：`REF-ALG-17`。
-- 备赛宏量变化观察：`REF-ALG-18`。
-- 动态体重变化限制：`REF-ALG-19`。
+- 训练阶段的蛋白质保留：[REF-ALG-16](References.md)。
+- 保守减重速度框架：[REF-ALG-17](References.md)。
+- 备赛宏量变化观察：[REF-ALG-18](References.md)。
+- 动态体重变化限制：[REF-ALG-19](References.md)。
 
 ## 为什么运动消耗使用净消耗
 
@@ -200,7 +202,7 @@ netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 
 为什么减去 1 MET：
 
-- 1 MET 大致代表静息能量消耗。
+- 1 MET 大致代表静息能量消耗 [REF-ALG-09](References.md)。
 - 非运动基线已经包含静息代谢。
 - 减去 1 MET 是为了估算“做这个活动相比休息多消耗了多少”。
 
@@ -210,7 +212,7 @@ netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 
 主要证据背景：
 
-- MET 数值和换算：`REF-ALG-08`、`REF-ALG-09`。
+- MET 数值和换算：[REF-ALG-08](References.md)、[REF-ALG-09](References.md)。
 
 ## 为什么力量训练不简单按分钟计算
 
@@ -219,7 +221,7 @@ netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 原因：
 
 - 60 分钟力量训练可能包含重组、轻组、热身和很长的组间休息。
-- 两次时长相同的训练，负荷、次数和总训练量可能完全不同。
+- 两次时长相同的训练，负荷、次数和总训练量可能完全不同；训练需求本来就会因情境而大幅变化 [REF-ALG-06](References.md)。
 - 线性按分钟计算会高估休息时间，也会低估真正的训练工作。
 
 FitLog 使用训练量和动作类型：
@@ -237,7 +239,7 @@ FitLog 使用训练量和动作类型：
 
 用户需要知道：
 
-- 力量消耗估算是启发式。
+- 力量消耗估算是 FitLog 的本地启发式。
 - 它适合在 FitLog 内保持一致，不是实验室级测量。
 - App 优先避免明显重复计算，而不是假装能精确知道运动消耗。
 
@@ -249,9 +251,9 @@ FitLog 使用本地确定性规则和用户确认，是因为输入数据本身�
 
 - 餐食估算可能有误差。
 - 外部 AI 估算可能有误差。
-- 体重变化可能来自水分、食物体积、钠、训练压力或消化状态。
-- 运动消耗估算是近似值。
-- BMR 和活动系数是人群估算。
+- 体重变化可能来自水分、食物体积、钠、训练压力或消化状态；静态体重变化模型有局限 [REF-ALG-11](References.md)、[REF-ALG-19](References.md)。
+- 运动消耗估算是近似值 [REF-ALG-08](References.md)、[REF-ALG-09](References.md)。
+- BMR 和活动系数是人群估算 [REF-ALG-01](References.md)、[REF-ALG-02](References.md)。
 
 FitLog 对不确定性的处理方式：
 

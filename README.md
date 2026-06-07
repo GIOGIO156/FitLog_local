@@ -149,6 +149,7 @@ flutter build apk --debug
 | [README.md](README.md) | Project overview, current scope, method entry points, quick start, and documentation map. |
 | [CHANGELOG.md](CHANGELOG.md) | English-only dated history of user-facing, data, algorithm, and documentation changes. |
 | [docs/en/Product.md](docs/en/Product.md) / [docs/zh/Product.md](docs/zh/Product.md) | Product scope, modules, workflows, UX behavior, implemented boundaries, and non-goals. |
+| [docs/en/AppGuide.md](docs/en/AppGuide.md) / [docs/zh/AppGuide.md](docs/zh/AppGuide.md) | App-area guide explaining what each module does, how it works at a high level, and where to read more. |
 | [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | User-facing explanation of why FitLog uses these diet, carb strategy, and workout calorie methods. |
 | [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | Engineering-level formulas, diet modes, workout calorie logic, calibration, self-check, and algorithm boundaries. |
 | [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema, migrations, tables, fields, runtime aggregates, data flows, and export coverage. |
@@ -314,6 +315,7 @@ flutter build apk --debug
 | [README.md](README.md) | 项目概览、当前范围、方法入口说明、快速开始和文档地图。 |
 | [CHANGELOG.md](CHANGELOG.md) | 纯英文按日期记录用户可见行为、数据、算法和文档变更。 |
 | [docs/en/Product.md](docs/en/Product.md) / [docs/zh/Product.md](docs/zh/Product.md) | 产品范围、模块、流程、UX 行为、已实现边界和非目标。 |
+| [docs/en/AppGuide.md](docs/en/AppGuide.md) / [docs/zh/AppGuide.md](docs/zh/AppGuide.md) | 按 App 板块解释每个模块做什么、背后大致如何工作、以及去哪里继续阅读。 |
 | [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | 面向用户解释 FitLog 为什么使用这些饮食、碳水策略和运动消耗方法。 |
 | [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | 工程级公式、饮食模式、运动消耗逻辑、校准、自检和算法边界。 |
 | [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema、迁移、表、字段、运行时聚合、数据流和导出覆盖。 |

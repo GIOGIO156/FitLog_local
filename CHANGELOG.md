@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-07 App Guide And Methodology Citations
+
+### Added
+- Added bilingual `docs/en/AppGuide.md` and `docs/zh/AppGuide.md` to explain each app area, high-level behavior, and related design-document entry points.
+
+### Changed
+- Added inline reference markers in Methodology so key user-facing claims point to `References.md` entries.
+- Updated the README design-document table to include AppGuide.
+- Updated `AGENTS.md` documentation rules so AppGuide is part of the required design documentation set.
+
+### Validation
+- Documentation-only change; Flutter analysis and tests were not required.
+
 ## 2026-06-07 Methodology Documentation
 
 ### Added
