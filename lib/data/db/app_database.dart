@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int dbVersion = 8;
+  static const int dbVersion = 9;
 
   Database? _database;
 
@@ -113,6 +113,9 @@ class AppDatabase {
             'ALTER TABLE workout_sessions ADD COLUMN record_name TEXT',
           );
         }
+        if (oldVersion < 9) {
+          await db.execute('ALTER TABLE user_profile ADD COLUMN nickname TEXT');
+        }
       },
     );
   }
@@ -121,6 +124,7 @@ class AppDatabase {
     await db.execute('''
       CREATE TABLE user_profile (
         id INTEGER PRIMARY KEY,
+        nickname TEXT,
         age INTEGER NOT NULL,
         height_cm REAL NOT NULL,
         weight_kg REAL NOT NULL,

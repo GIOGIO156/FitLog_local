@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/constants/prompt_templates.dart';
 import '../../core/localization/localization_extensions.dart';
+import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import 'manual_food_entry_page.dart';
 import 'paste_ai_result_page.dart';
@@ -57,93 +58,220 @@ class AddFoodPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.addFood)),
-      body: ListView(
-        children: <Widget>[
-          GlassPanel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 28),
+          children: <Widget>[
+            FitLogPageHeader(
+              title: strings.addFood,
+              subtitle: strings.localFirstAiBoundaryHint,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+            ),
+            _PromptShortcutButton(
+              title: strings.copyAiFoodPrompt,
+              subtitle: strings.copyPromptSubtitle,
+              onTap: () => _copyPrompt(context),
+            ),
+            _AddFoodActionCard(
+              icon: Icons.paste_outlined,
+              color: const Color(0xFF76BE59),
+              title: strings.pasteAiResult,
+              subtitle: strings.pasteAiSubtitle,
+              onTap: () => _openPasteAi(context),
+            ),
+            _AddFoodActionCard(
+              icon: Icons.edit_note_outlined,
+              color: const Color(0xFFF2B545),
+              title: strings.manualEntry,
+              subtitle: strings.manualEntrySubtitle,
+              onTap: () => _openManualEntry(context),
+            ),
+            _AddFoodActionCard(
+              icon: Icons.photo_camera_outlined,
+              color: const Color(0xFF6EA4DF),
+              title: strings.photoAiAnalysis,
+              subtitle: strings.photoAiPlaceholderHint,
+            ),
+            GlassPanel(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const FitLogIconCircle(
+                    icon: Icons.eco_outlined,
+                    color: Color(0xFF6FB95A),
+                    size: 42,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          strings.localFirstTipTitle,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(strings.localFirstAiBoundaryHint),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PromptShortcutButton extends StatelessWidget {
+  const _PromptShortcutButton({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF7BC75B), Color(0xFF5FB86B)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(0xFF4E9E3B).withValues(alpha: 0.18),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            child: Row(
               children: <Widget>[
-                Text(
-                  strings.recommendedFlow,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.content_copy_rounded,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(strings.step1),
-                const SizedBox(height: 4),
-                Text(strings.step2),
-                const SizedBox(height: 4),
-                Text(strings.step3),
-                const SizedBox(height: 4),
-                Text(strings.step4),
-                const SizedBox(height: 4),
-                Text(strings.step5),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.45),
-                  ),
+                const SizedBox(width: 14),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        strings.recommendedGpt,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
                       ),
                       const SizedBox(height: 4),
-                      Text(strings.recommendedGptHint),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.88),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => _copyPrompt(context),
-                  icon: const Icon(Icons.copy_all_outlined),
-                  label: Text(strings.copyAiFoodPrompt),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    context.strings.copy,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF3D8D3A),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          GlassPanel(
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.paste_outlined),
-                  title: Text(strings.pasteAiResult),
-                  subtitle: Text(strings.pasteAiSubtitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _openPasteAi(context),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddFoodActionCard extends StatelessWidget {
+  const _AddFoodActionCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: FitLogIconCircle(icon: icon, color: color, size: 42),
+        title: Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle),
+        ),
+        trailing: onTap == null
+            ? Text(
+                context.strings.comingSoon,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF7A8973),
                 ),
-                const Divider(height: 0),
-                ListTile(
-                  leading: const Icon(Icons.edit_note_outlined),
-                  title: Text(strings.manualEntry),
-                  subtitle: Text(strings.manualEntrySubtitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _openManualEntry(context),
-                ),
-                const Divider(height: 0),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined),
-                  title: Text(strings.photoAiAnalysis),
-                  subtitle: Text(strings.comingSoon),
-                ),
-              ],
-            ),
-          ),
-        ],
+              )
+            : const Icon(Icons.chevron_right_rounded, color: Color(0xFF7A8973)),
+        onTap: onTap,
       ),
     );
   }

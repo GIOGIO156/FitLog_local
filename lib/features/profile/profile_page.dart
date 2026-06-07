@@ -10,6 +10,7 @@ import '../../core/localization/language_controller.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
+import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/profile_form_fields.dart';
 import '../../domain/models/calorie_calibration_state.dart';
@@ -31,6 +32,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
+  final _nicknameController = TextEditingController();
   final _ageController = TextEditingController();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
@@ -87,6 +89,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void dispose() {
     _ageController.removeListener(_onAgeChanged);
+    _nicknameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -134,6 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       _loadedProfile = profile;
+      _nicknameController.text = profile.nickname ?? '';
       _ageController.text = profile.age.toString();
       _heightController.text = profile.heightCm.toStringAsFixed(1);
       _weightController.text = profile.weightKg.toStringAsFixed(1);
@@ -192,6 +196,22 @@ class _ProfilePageState extends State<ProfilePage> {
 
   double get _macroRatioTotal =>
       _proteinRatioPercent + _carbsRatioPercent + _fatRatioPercent;
+
+  String get _displayName {
+    final nickname = _nicknameController.text.trim();
+    if (nickname.isNotEmpty) {
+      return nickname;
+    }
+    return context.strings.nicknameFallback;
+  }
+
+  String get _profileInitial {
+    final trimmed = _displayName.trim();
+    if (trimmed.isEmpty) {
+      return 'F';
+    }
+    return trimmed.substring(0, 1).toUpperCase();
+  }
 
   bool get _isGramPerKgMode =>
       _dietCalculationMode == AppConstants.dietCalculationModeGramPerKg;
@@ -254,6 +274,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ? _dietPlanStrategy
         : AppConstants.dietPlanStrategyNone;
     return UserProfile(
+      nickname: _nicknameController.text.trim(),
       age: _age,
       heightCm: _heightCm,
       weightKg: _weightKg,
@@ -764,6 +785,61 @@ class _ProfilePageState extends State<ProfilePage> {
             24,
       ),
       children: <Widget>[
+        FitLogPageHeader(
+          title: strings.profileSettingsTitle,
+          subtitle: strings.localFirstIdentityHint,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        ),
+        GlassPanel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEAF6E3),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _profileInitial,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4E9E3B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          _displayName,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(strings.localFirstIdentityHint),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ProfileTextField(
+                controller: _nicknameController,
+                labelText: strings.nicknameLabel,
+                hintText: strings.nicknameHint,
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+        ),
         GlassPanel(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
-import '../../core/widgets/selected_date_header.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
 import 'add_food_page.dart';
@@ -176,194 +176,240 @@ class _FoodLogPageState extends State<FoodLogPage> {
     }
   }
 
-  void _shiftDate(SelectedDateNotifier selectedDateNotifier, int deltaDays) {
-    final current = DateUtilsX.parseDay(selectedDateNotifier.selectedDate);
-    final next = current.add(Duration(days: deltaDays));
-    selectedDateNotifier.setDate(DateUtilsX.formatDate(next));
-  }
-
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
 
-    return Consumer2<RefreshNotifier, SelectedDateNotifier>(
-      builder: (context, refresh, selectedDateNotifier, _) {
-        refresh.version;
-        final selectedDate = selectedDateNotifier.selectedDate;
+    return SafeArea(
+      child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
+        builder: (context, refresh, selectedDateNotifier, _) {
+          refresh.version;
+          final selectedDate = selectedDateNotifier.selectedDate;
 
-        return Column(
-          children: <Widget>[
-            GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  SelectedDateHeader(
-                    dateText: DateUtilsX.formatReadable(selectedDate),
-                    changeLabel: strings.change,
-                    onPrevious: () => _shiftDate(selectedDateNotifier, -1),
-                    onNext: () => _shiftDate(selectedDateNotifier, 1),
-                    onChangeDate: () =>
-                        _pickDate(context, selectedDateNotifier),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    strings.quickActions,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  FilledButton.icon(
-                    onPressed: () => _openAddFood(context, selectedDate),
-                    icon: const Icon(Icons.add),
-                    label: Text(strings.addFood),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 54),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    strings.estimateNotice,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+          return Column(
+            children: <Widget>[
+              const SizedBox(height: 4),
+              FitLogPageHeader(
+                title: strings.foodLogTitle,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
               ),
-            ),
-            Expanded(
-              child: FutureBuilder<List<FoodRecord>>(
-                future: _loadRecords(context, selectedDate),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+              GlassPanel(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.all(16),
+                child: FitLogDateStrip(
+                  selectedDate: selectedDate,
+                  onSelect: selectedDateNotifier.setDate,
+                  onOpenPicker: () => _pickDate(context, selectedDateNotifier),
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List<FoodRecord>>(
+                  future: _loadRecords(context, selectedDate),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(strings.failedToLoadFood(snapshot.error!)),
-                      ),
-                    );
-                  }
-
-                  final records = snapshot.data ?? <FoodRecord>[];
-                  if (records.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          strings.noFoodRecords,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: EdgeInsets.only(
-                      bottom:
-                          MediaQuery.paddingOf(context).bottom +
-                          kBottomNavigationBarHeight +
-                          24,
-                    ),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final record = records[index];
-                      return GlassPanel(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(18),
-                          onTap: () => _openFoodDetail(context, record.id!),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      record.mealName,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      DateUtilsX.formatReadable(record.date),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${record.caloriesKcal.toStringAsFixed(0)} kcal - ${record.totalWeightG.toStringAsFixed(0)} g',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'P ${record.proteinG.toStringAsFixed(1)}  C ${record.carbsG.toStringAsFixed(1)}  F ${record.fatG.toStringAsFixed(1)}',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: <Widget>[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer
-                                          .withValues(alpha: 0.7),
-                                    ),
-                                    child: Text(
-                                      strings.sourceLabel(record.source),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  IconButton(
-                                    onPressed: () => _copyRecord(
-                                      context,
-                                      record,
-                                      selectedDate,
-                                    ),
-                                    icon: const Icon(Icons.copy_all_outlined),
-                                    tooltip: strings.copy,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  IconButton(
-                                    onPressed: () =>
-                                        _deleteRecord(context, record),
-                                    icon: const Icon(Icons.delete_outline),
-                                    tooltip: strings.delete,
-                                  ),
-                                ],
-                              ),
-                            ],
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            strings.failedToLoadFood(snapshot.error!),
                           ),
                         ),
                       );
-                    },
-                  );
-                },
+                    }
+
+                    final records = snapshot.data ?? <FoodRecord>[];
+                    if (records.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            strings.noFoodRecords,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 96),
+                      itemCount: records.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == records.length) {
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                            child: Text(
+                              strings.estimateNotice,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF61715D),
+                                    height: 1.4,
+                                  ),
+                            ),
+                          );
+                        }
+
+                        final record = records[index];
+                        return GlassPanel(
+                          margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                          padding: const EdgeInsets.all(16),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => _openFoodDetail(context, record.id!),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: Text(
+                                        record.mealName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEAF6E3),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        strings.sourceLabel(record.source),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF4E9E3B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _buildSubtitle(record),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: const Color(0xFF74836E),
+                                      ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: <Widget>[
+                                    _FoodMetaChip(
+                                      label:
+                                          '${record.caloriesKcal.toStringAsFixed(0)} kcal',
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _FoodMetaChip(
+                                      label:
+                                          'P ${record.proteinG.toStringAsFixed(0)} · C ${record.carbsG.toStringAsFixed(0)} · F ${record.fatG.toStringAsFixed(0)}',
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: <Widget>[
+                                    Text(
+                                      DateUtilsX.formatReadable(record.date),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: const Color(0xFF7A8973),
+                                          ),
+                                    ),
+                                    const Spacer(),
+                                    FitLogActionIconButton(
+                                      icon: Icons.copy_all_outlined,
+                                      tooltip: strings.copy,
+                                      onPressed: () => _copyRecord(
+                                        context,
+                                        record,
+                                        selectedDate,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    FitLogActionIconButton(
+                                      icon: Icons.delete_outline_rounded,
+                                      tooltip: strings.delete,
+                                      onPressed: () =>
+                                          _deleteRecord(context, record),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      },
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: FilledButton.icon(
+                  onPressed: () => _openAddFood(context, selectedDate),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(strings.addFood),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    backgroundColor: const Color(0xFF74BF56),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  String _buildSubtitle(FoodRecord record) {
+    if (record.items.isEmpty) {
+      return '${record.totalWeightG.toStringAsFixed(0)} g';
+    }
+    return record.items.take(3).map((item) => item.name).join(', ');
+  }
+}
+
+class _FoodMetaChip extends StatelessWidget {
+  const _FoodMetaChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FAF4),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5EDE0)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF4B5A47),
+        ),
+      ),
     );
   }
 }

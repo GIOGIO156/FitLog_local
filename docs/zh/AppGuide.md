@@ -1,19 +1,19 @@
-# App 导览
+# App Guide
 
-## 目的
+## Purpose
 
-本文档解释 FitLog Local 每个 App 板块是干什么的、背后大致怎么工作、以及去哪里阅读设计细节。它是给用户和维护者看的地图，不替代 Product、Methodology、Algorithm、Database、Agent 或 References。
+本文档解释 FitLog Local 每个 App 板块做什么、背后大致如何工作、以及应去哪里继续阅读。它是给用户和维护者看的地图，不替代 Product、Methodology、Algorithm、Database、Agent 或 References。
 
-## 全局规则
+## App-wide Rules
 
 - FitLog Local 是 local-first：业务数据存储在 SQLite，除非用户主动导出。
 - Home、Food Log 和 Workout Log 共享选中日期。
 - App 没有内部 LLM/API/Agent loop。
-- 外部 AI 可以在数据进入 App 前帮助估算食物，但 FitLog 在本地存储和计算。
+- 外部 AI 可以帮助生成餐食估算，但数据进入 App 之后的存储、计算和展示都在本地完成。
 - `diet_goal_phase` 控制 cutting/bulking 语义。
 - `energy_ratio` 和 `gram_per_kg` 保持分离。
 
-继续阅读：
+Read more:
 
 - 产品范围：[Product](Product.md)
 - 方法原因：[Methodology](Methodology.md)
@@ -21,202 +21,207 @@
 
 ## Home
 
-Home 是选中日期的每日看板。
+Home 是选中日期的每日入口页。
 
-用户会看到：
+What users see:
 
+- 根据本地时间变化的问候语；当昵称过长时，昵称会单独从第二行开始显示
+- 已保存昵称；若为空则使用本地 fallback
 - 选中日期
-- 饮食摄入合计
-- 训练消耗合计
-- BMR 和非运动 TDEE 参考
-- `energy_ratio` 下的目标摄入和剩余 kcal
-- 宏量目标和剩余蛋白质/碳水/脂肪
+- `energy_ratio` 下的主 kcal 概览
+- `gram_per_kg` 下的主宏量概览
+- 蛋白质、碳水、脂肪的三张等尺寸宏量小卡片
 - 当前 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy`
-- 选中日期饮食记录
-- 选中日期训练记录
+- 简洁的当日饮食/训练摘要，并可跳转到副页
 
-背后如何工作：
+How it works:
 
 - `DailySummaryService` 读取 Profile、Food、Workout、校准、自检和策略数据。
-- 饮食合计来自已保存的 `food_records`。
-- 运动合计来自已保存的 `workout_sessions.estimated_calories`。
+- 食物总量来自已保存的 `food_records`。
+- 训练总量来自已保存的 `workout_sessions.estimated_calories`。
 - `energy_ratio` 以 kcal 目标/摄入/剩余为主。
-- `gram_per_kg` 以宏量克数为主，kcal 作为辅助信息。
-- 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文。
+- `gram_per_kg` 以宏量克数为主，kcal 只是辅助信息。
+- 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文；当碳循环或碳水渐降启用时，Home 会直接给出简短方法说明。
+- BMR、TDEE、校准细节和长表单设置不堆在 Home。
 
-继续阅读：
+Read more:
 
-- 每日看板行为：[Product](Product.md#每日看板行为)
+- 每日看板行为：[Product](Product.md#daily-dashboard-behavior)
 - 计算原因：[Methodology](Methodology.md)
 - 公式：[Algorithm](Algorithm.md)
-- 运行时聚合字段：[Database](Database.md#运行时聚合)
+- 运行时聚合字段：[Database](Database.md#runtime-aggregates)
 
 ## Food Log
 
 Food Log 是选中日期的饮食记录列表。
 
-用户可以：
+What users can do:
 
 - 查看选中日期的已保存餐食
-- 打开并编辑记录
-- 复制记录到指定日期
-- 二次确认后删除记录
+- 打开并编辑一条记录
+- 把记录复制到其他日期
+- 确认后删除记录
 - 进入 Add Food
+- 滑到当天记录列表底部后查看估算说明
 
-背后如何工作：
+How it works:
 
-- 一餐存储为一条 `FoodRecord`。
-- 可选 item 行存储为 `FoodItem`。
-- `source` 记录餐食来自手动录入还是外部 AI paste。
-- 复制会创建新的本地记录，并生成新的 id/timestamp。
-- 删除 food record 会级联删除它的 item 行。
+- 一餐存为一条 `FoodRecord`。
+- 可选 item 行存为 `FoodItem`。
+- `source` 记录该餐来自手动录入还是外部 AI 粘贴。
+- 复制会创建新的本地记录和新的 id/timestamp。
+- 删除一条饮食记录会级联删除其 item 行。
 
-继续阅读：
+Read more:
 
-- 饮食流程：[Product](Product.md#饮食流程)
+- 饮食流程：[Product](Product.md#food-workflow)
 - 数据表：[Database](Database.md#food_records)、[Database](Database.md#food_items)
 - AI 相邻边界：[Agent](Agent.md)
 
 ## Add Food
 
-Add Food 是饮食录入入口。
+Add Food 是饮食录入入口页。
 
-录入方式：
+Entry options:
 
-- `Paste AI Result`：粘贴 App 外部产生的 JSON。
-- `Manual Entry`：直接填写饮食数据。
-- `Photo AI Analysis`：只是不具备内部图片识别的占位入口。
-- Prompt 复制：复制中文或英文 prompt 到外部模型使用。
+- `Paste AI Result`：粘贴 App 外部生成的 JSON。
+- `Manual Entry`：手动输入食物数据。
+- `Photo AI Analysis`：可见占位入口，尚未实现 App 内图片识别。
+- Prompt copy：复制中英文静态 prompt 给外部模型使用。
 
-背后如何工作：
+How it works:
 
-- Prompt 复制是静态文本，不是 AI 调用。
+- Prompt copy 是静态文本复制，不是 AI 调用。
 - 粘贴的 JSON 由 `NutritionCalculator` 在本地解析。
-- 预览页允许用户修正解析值后再保存。
-- 手动录入会直接写入本地记录，除非后续编辑，否则没有 item 行。
+- 预览页允许用户修正解析结果后再保存。
+- 手动录入会直接写入本地记录。
 
-继续阅读：
+Read more:
 
-- 产品行为：[Product](Product.md#饮食流程)
+- 产品行为：[Product](Product.md#food-workflow)
 - AI 边界：[Agent](Agent.md)
-- 解析和汇总公式：[Algorithm](Algorithm.md#饮食摄入汇总)
+- 解析与汇总公式：[Algorithm](Algorithm.md#food-intake-summary)
 
 ## Workout Log
 
 Workout Log 是选中日期的训练记录列表。
 
-用户可以：
+页面标题下方直接进入共享日期条，不再额外放置日历前说明文字。
 
-- 查看选中日期的已保存训练记录
-- 打开保存后的记录
-- 删除保存后的记录
+What users can do:
+
+- 查看选中日期的训练记录
+- 打开一条已保存记录
+- 删除已保存记录
 - 进入 Add/Edit Workout Record
 
-背后如何工作：
+How it works:
 
-- 面向用户的 `Workout Record` 可以包含多个动作。
-- 内部一条多动作记录是多条共享同一 `plan_id` 的 `workout_sessions`。
-- 同一记录内每条 session 也保存相同 `record_name`。
-- 记录级摘要从已持久化 session 和 set 派生。
+- 一条面向用户的 `Workout Record` 可以包含多个动作。
+- 在存储层，一个多动作记录是多条共享 `plan_id` 的 `workout_sessions`。
+- 同一记录内每条 session 也保存相同的 `record_name`。
+- 记录级摘要由已保存的 session 和 set 推导而来。
 
-继续阅读：
+Read more:
 
-- 训练流程：[Product](Product.md#训练流程)
+- 训练流程：[Product](Product.md#workout-workflow)
 - 训练表：[Database](Database.md#workout_sessions)、[Database](Database.md#workout_sets)
 
 ## Add/Edit Workout Record
 
-Add/Edit Workout Record 用于创建或修改一条命名训练记录。
+Add/Edit Workout Record 是创建或修改训练记录的页面。
 
-用户可以：
+What users can do:
 
-- 命名训练记录
+- 给训练记录命名
 - 选择一个或多个动作
-- 保留用户选择动作的顺序
-- 输入每个动作自己的时长
+- 保持动作的用户选择顺序
+- 输入每个动作的时长
 - 输入力量组的重量、次数和完成状态
 - 添加备注
-- 保存已完成力量组
+- 保存已完成的力量组
 
-背后如何工作：
+How it works:
 
-- 动作选择支持部位筛选、搜索和多选顺序。
-- 有氧动作使用时长，没有组清单。
-- 力量动作使用 set 行。
-- 保存前先完成校验，再持久化。
-- 只保存已完成力量组；未勾选组会被丢弃。
-- 编辑已保存记录时，以事务替换整个 `plan_id` 分组。
+- 动作选择支持按部位筛选、搜索和多选顺序。
+- 有氧动作只需要时长，不需要组清单。
+- 力量动作使用组行。
+- 保存前先完成校验。
+- 只有已完成的力量组会被保存；未勾选组会被丢弃。
+- 编辑已保存记录时，会事务性替换整个 `plan_id` 分组。
 
-继续阅读：
+Read more:
 
-- 产品流程：[Product](Product.md#训练流程)
+- 产品流程：[Product](Product.md#workout-workflow)
 - 运动消耗原因：[Methodology](Methodology.md#为什么运动消耗使用净消耗)、[Methodology](Methodology.md#为什么力量训练不简单按分钟计算)
-- 公式：[Algorithm](Algorithm.md#运动消耗)
+- 公式：[Algorithm](Algorithm.md#workout-calories)
 - 存储模型：[Database](Database.md#workout_sessions)
 
 ## Workout Record Detail
 
-Workout Record Detail 解释保存后的训练记录。
+Workout Record Detail 用来解释一条已保存训练记录。
 
-用户会看到：
+What users see:
 
-- 记录名称
+- 记录名
 - 日期和开始时间
 - 总时长
 - 总训练量
 - 总组数
 - 估算消耗
-- 记录内动作
-- 保存后的力量组详情
+- 记录中的动作
+- 已保存的力量组细节
 
-背后如何工作：
+How it works:
 
-- 摘要指标来自已保存的 session 和 set。
+- 摘要指标由已保存的 session 和 set 推导。
 - 总训练量基于已保存的力量组。
-- 总组数是已保存力量组数量。
-- 当前记录流程中，保存后的力量详情不再用于切换完成状态。
+- 组数是已保存力量组的数量。
+- 在当前记录流中，已保存力量详情的完成状态是只读的。
 
-继续阅读：
+Read more:
 
-- 产品行为：[Product](Product.md#训练流程)
+- 产品行为：[Product](Product.md#workout-workflow)
 - 数据模型：[Database](Database.md#workout_sessions)、[Database](Database.md#workout_sets)
 
 ## Profile
 
-Profile 用于配置个人数据、饮食行为、语言、导出和本地数据操作。
+Profile 用于配置本地身份、身体资料、饮食行为、语言、导出和本地数据操作。
 
-用户可以设置：
+What users can set:
 
-- 年龄、身高、体重和性别选项
+- 仅用于本地 UI 展示的昵称
+- 年龄、身高、体重和公式性别
 - 语言
 - `diet_goal_phase`
 - `diet_calculation_mode`
 - `energy_ratio` 的活动水平、每日能量目标和宏量百分比
 - `gram_per_kg` 的训练频率档位和自检设置
 - `diet_plan_strategy`
-- 碳循环 pattern 和倍率
-- 碳水渐降 review 周期、目标减重速度、步长和当前偏移
+- carb cycling pattern 和 multiplier
+- carb taper review 周期、目标减重速度、步长和当前 offset
 
-背后如何工作：
+How it works:
 
 - Profile 保存到单例 `user_profile`。
+- `nickname` 是本地 UI 数据，不是账号名。
 - 保存 Profile 也会 upsert 当天体重日志。
-- 未成年人保护会阻止成人式减脂赤字行为和减脂碳水策略。
-- g/kg 自检可以根据近期有效训练日推荐训练频率档位。
-- 碳水渐降 review 可以建议本地操作，但必须用户确认。
+- 未成年人保护会阻止成人式 cutting deficit 行为和 cutting carb 策略。
+- g/kg 自检可以根据最近有效训练日推荐训练频率档位。
+- Carb taper review 可以给出本地建议，但必须由用户确认。
 
-继续阅读：
+Read more:
 
-- 产品行为：[Product](Product.md#饮食设置-ux)
+- 产品行为：[Product](Product.md#diet-setup-ux)
 - 面向用户的方法解释：[Methodology](Methodology.md)
 - 算法细节：[Algorithm](Algorithm.md)
 - Profile 表：[Database](Database.md#user_profile)
 
 ## Export
 
-Export 会为用户记录生成本地文件。
+Export 为用户记录生成本地文件。
 
-导出包含：
+What exports include:
 
 - food records
 - food items
@@ -225,49 +230,40 @@ Export 会为用户记录生成本地文件。
 - daily summary
 - user profile
 - diet adjustment review history
-- 相关策略、校准和自检字段
+- 策略、校准和自检字段，以及本地 nickname 等相关字段
 
-背后如何工作：
+How it works:
 
-- XLSX 和 CSV ZIP 写入 App 文档目录。
-- daily summary 在导出时由 repositories 和 `DailySummaryService` 生成。
-- 导出不会上传数据。
+- XLSX 和 CSV ZIP 写入 app documents directory。
+- Daily summary export 在导出时由 repositories 和 `DailySummaryService` 生成。
+- Export 不会上传任何数据。
 
-继续阅读：
+Read more:
 
-- 导出覆盖：[Database](Database.md#导出覆盖)
-- 产品边界：[Product](Product.md#已实现边界)
+- 导出覆盖：[Database](Database.md#export-coverage)
+- 产品边界：[Product](Product.md#implemented-boundaries)
 
 ## Language
 
-语言偏好控制 UI 文案和 Prompt 复制。
+Language 负责切换中英文 UI。
 
-背后如何工作：
+What users can do:
 
-- 当前语言以 `language_code` 存储在 SharedPreferences。
-- Prompt 复制跟随当前语言。
-- 语言状态只保存在本地。
+- 切换 English 和 中文
 
-继续阅读：
+How it works:
 
-- 存储概览：[Database](Database.md#存储概览)
+- 语言偏好保存到 `SharedPreferences`。
+- Prompt 文案和普通 UI 文案都随语言切换。
 
-## 隐私与 local-first 边界
+## Privacy And Local-first Boundary
 
-FitLog Local 当前没有账号、后端同步、远程数据库或 App 内 AI 调用。
+- 业务数据保存在本地 SQLite。
+- 导出生成本地文件，不做云上传。
+- `Photo AI Analysis` 仍是占位入口，不代表 App 内部具备识图能力。
+- Prompt 复制和 JSON 粘贴是用户驱动的外部 AI 辅助流程，不是 App 内 AI。
 
-保持本地的数据：
-
-- profile 数据
-- 饮食记录
-- 训练记录
-- 体重日志
-- 校准状态
-- 饮食调整 review
-- 导出文件
-- 语言偏好
-
-继续阅读：
+Read more:
 
 - 数据库存储：[Database](Database.md)
 - AI 边界：[Agent](Agent.md)

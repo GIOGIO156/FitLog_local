@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-06-07 Home And Log UI Follow-up
+
+### Changed
+- Reworked the Home macro section into three equal-size cards with matched badge sizing, aligned content slots, and clearer protein, carbs, and avocado-style fat icons.
+- Forced long Home nicknames onto a dedicated second line so the greeting no longer wraps awkwardly beside the salutation.
+- Replaced the non-functional Home strategy chevron with inline carb-cycling and carb-tapering guidance that explains how each strategy sits on top of the current base diet mode.
+- Moved the Food Log estimate notice to the end of the selected-day record list and removed the redundant Workout Log subtitle so both detail pages now place the calendar strip directly under the title.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
+## 2026-06-07 Local-First UI Refresh
+
+### Added
+- Added local-only `user_profile.nickname` storage so Home can greet the user without introducing accounts or cloud identity.
+- Added a focused `user_profile` compatibility test for nickname mapping and empty-local-fallback handling.
+
+### Changed
+- Rebuilt the app shell into a soft light theme with page-owned headers and a rounded bottom navigation bar.
+- Refactored Home into a lower-density entry screen with greeting, primary calorie or macro overview, current diet context, and compact food/workout summaries.
+- Refactored Food Log, Add Food, Workout Log, and Profile into a shared card-based visual system with consistent spacing, icon treatment, and action hierarchy.
+- Kept Add Food within the existing local-first boundary: prompt copy and external JSON paste stay manual, and `Photo AI Analysis` remains a placeholder.
+- Added Profile nickname editing and surfaced it as local UI-only identity rather than an account concept.
+- Renamed `docs/en/AgentDesign.md` and `docs/zh/AgentDesign.md` to `Agent.md` to match the required design-document structure.
+- Updated Product, AppGuide, and Database design docs for the new Home information architecture, local nickname behavior, and schema version 9.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-07 App Guide And Methodology Citations
 
 ### Added

@@ -19,7 +19,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 | Module | Current capability | Main code |
 | --- | --- | --- |
-| Home | Selected-day dashboard for intake, exercise, targets, remaining kcal/macros, diet phase/mode/strategy context, food records, and workout records. | `lib/features/home/home_page.dart`, `DailySummaryService` |
+| Home | Low-density selected-day entry screen for greeting, primary calorie/macro overview, current diet context, and compact food/workout summaries. | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | Date-filtered food records with open/edit, copy-to-date, delete, and add entry points. | `lib/features/food/food_log_page.dart`, `FoodRepository` |
 | Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | Editable saved food record and item rows. | `food_detail_page.dart` |
@@ -27,7 +27,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, cardio duration, strength sets, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Body profile, language, diet phase, diet mode, strategy settings, g/kg self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
+| Profile | Local identity nickname, body profile, language, diet phase, diet mode, strategy settings, g/kg self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
 | Export | XLSX and CSV ZIP exports for raw records, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
@@ -57,9 +57,11 @@ The app is designed for users who may use external multimodal AI to estimate com
 ## Daily Dashboard Behavior
 
 - The selected date is shared by Home, Food Log, and Workout Log.
-- Home shows food intake, workout burn, BMR, no-exercise TDEE reference, target intake, remaining kcal, macro targets, and remaining macros.
+- Home is intentionally lower density than the detail pages.
+- Home shows a local-time greeting with a local nickname fallback, selected date, primary calorie/macro overview, macro targets, current diet context, and compact food/workout summaries.
 - In `energy_ratio`, kcal target/intake/remaining is primary.
 - In `gram_per_kg`, macro grams are primary and kcal is auxiliary intake information.
+- Detailed BMR, TDEE, calibration, and long record editing flows stay in Food Log, Workout Log, Profile, and detail pages.
 - Home also shows `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy` context.
 - `carb_cycling` displays carb day type and carb adjustment context.
 - `carb_tapering` displays current taper offset and pending review context when available.
@@ -68,11 +70,12 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 Profile presents diet setup in this order:
 
-1. Body profile: age, height, weight, and sex option.
-2. Goal phase: `cutting` or `bulking`.
-3. Calculation mode: `energy_ratio` or `gram_per_kg`.
-4. Optional strategy: `none`, `carb_cycling`, or `carb_tapering`.
-5. Phase/mode/strategy-specific controls.
+1. Local identity: nickname used only for on-device UI such as the Home greeting.
+2. Body profile: age, height, weight, and sex option.
+3. Goal phase: `cutting` or `bulking`.
+4. Calculation mode: `energy_ratio` or `gram_per_kg`.
+5. Optional strategy: `none`, `carb_cycling`, or `carb_tapering`.
+6. Phase/mode/strategy-specific controls.
 
 Expected behavior:
 

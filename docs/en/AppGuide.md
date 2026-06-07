@@ -25,15 +25,13 @@ Home is the selected-day dashboard.
 
 What users see:
 
+- local-time greeting using the locally saved nickname when present, with long nicknames moved to a dedicated second line when needed
 - selected date
-- food intake totals
-- workout calorie total
-- BMR and no-exercise TDEE reference
-- target intake and remaining kcal in `energy_ratio`
-- macro targets and remaining protein/carbs/fat
+- primary calorie overview in `energy_ratio`
+- primary macro overview in `gram_per_kg`
+- compact macro progress for protein/carbs/fat in three equal-size cards
 - current `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy`
-- selected-day food records
-- selected-day workout records
+- compact selected-day food/workout summaries with navigation to detail pages
 
 How it works:
 
@@ -42,7 +40,8 @@ How it works:
 - Exercise totals come from saved `workout_sessions.estimated_calories`.
 - `energy_ratio` uses kcal target/intake/remaining as primary.
 - `gram_per_kg` uses macro grams as primary and treats kcal as auxiliary.
-- Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied.
+- Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied, and Home adds a short inline explanation for carb cycling or carb tapering when active.
+- Detailed BMR/TDEE/calibration numbers are intentionally left out of the Home surface and remain available in Profile-oriented views.
 
 Read more:
 
@@ -62,6 +61,7 @@ What users can do:
 - copy a record to a chosen date
 - delete a record after confirmation
 - start Add Food
+- read the estimation notice after scrolling past the selected-day meal list
 
 How it works:
 
@@ -104,6 +104,8 @@ Read more:
 ## Workout Log
 
 Workout Log is the selected-day workout record list.
+
+The page title leads directly into the shared date strip, without a separate subtitle block above the calendar.
 
 What users can do:
 
@@ -187,6 +189,7 @@ Profile is where users configure personal data, diet behavior, language, export,
 
 What users can set:
 
+- nickname for local-only UI display
 - age, height, weight, and sex option
 - language
 - `diet_goal_phase`
@@ -200,6 +203,7 @@ What users can set:
 How it works:
 
 - Profile saves to singleton `user_profile`.
+- `nickname` is local-only profile data and is not an account identifier.
 - Saving Profile also upserts the current day's weight log.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.
 - g/kg self-check can recommend a training-frequency tier from recent valid training days.

@@ -152,6 +152,7 @@ class ExportTableBuilder {
         fileName: 'user_profile.csv',
         rows: <List<dynamic>>[
           <dynamic>[
+            'nickname',
             'age',
             'height_cm',
             'weight_kg',
@@ -180,6 +181,7 @@ class ExportTableBuilder {
             'last_macro_self_check_at',
           ],
           <dynamic>[
+            profile.nickname ?? '',
             profile.age,
             profile.heightCm,
             profile.weightKg,

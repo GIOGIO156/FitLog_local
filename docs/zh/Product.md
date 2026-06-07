@@ -1,36 +1,36 @@
-# 产品设计
+# Product Design
 
-## 目的
+## Purpose
 
 FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的产品价值不是单纯“记录 kcal”，而是把食物估算、结构化记录、每日目标、剩余宏量、训练消耗、饮食策略、复盘和导出串成一个可长期使用的本地工作流。
 
 这个 App 面向的用户可以借助外部多模态 AI 估算复杂餐食，但需要把这些估算结果沉淀成可编辑、可查询、可导出的本地记录。
 
-## 产品原则
+## Product Principles
 
-- 本地优先：业务数据留在 SQLite，除非用户主动导出。
-- 确定性行为：核心计算由本地 Dart 逻辑完成，不依赖 App 内 LLM 推理。
-- 用户掌控：App 可以展示目标、剩余量和复盘建议，但不自动配餐，也不自动修改目标。
-- 加法式兼容：数据库迁移必须保留现有本地用户数据。
+- 本地优先：业务数据保存在 SQLite，除非用户主动导出。
+- 确定性行为：核心计算由本地 Dart 逻辑完成，不依赖 App 内部 LLM 推理。
+- 用户掌控：App 可以展示目标、剩余量和复盘建议，但不会自动配餐或自动修改目标。
+- 加法兼容：数据库迁移必须保留现有本地用户数据。
 - 饮食模式保持分离：`gram_per_kg` 和 `energy_ratio` 是并列方法，不得合并。
-- 阶段必须显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
+- 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
 
-## 当前模块
+## Current Modules
 
-| 模块 | 当前能力 | 主要代码 |
+| Module | Current capability | Main code |
 | --- | --- | --- |
-| Home | 按选中日期展示摄入、运动、目标、剩余 kcal/宏量、饮食阶段/模式/策略上下文、饮食记录和训练记录。 | `lib/features/home/home_page.dart`, `DailySummaryService` |
-| Food Log | 按日期筛选饮食记录，支持打开/编辑、复制到指定日期、删除和添加入口。 | `lib/features/food/food_log_page.dart`, `FoodRepository` |
+| Home | 低信息密度的每日入口页，展示问候语、主 calorie/macro 概览、当前饮食上下文和简洁的饮食/训练摘要。 | `lib/features/home/home_page.dart`, `DailySummaryService` |
+| Food Log | 按日期查看饮食记录，支持打开/编辑、复制到指定日期、删除和新增入口。 | `lib/features/food/food_log_page.dart`, `FoodRepository` |
 | Add Food | 手动录入、外部 AI JSON 粘贴、Prompt 复制和占位的 `Photo AI Analysis`。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | 编辑已保存的饮食记录和 item 行。 | `food_detail_page.dart` |
-| Workout Log | 按日期展示保存后的训练记录，内部通过 `plan_id` 分组。 | `workout_log_page.dart`, `WorkoutRepository` |
+| Workout Log | 按日期展示已保存的训练记录，内部通过 `plan_id` 分组。 | `workout_log_page.dart`, `WorkoutRepository` |
 | Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、有氧时长、力量组、已完成组持久化、备注和摘要计算。 | `add_workout_page.dart` |
-| Workout Record Detail | 保存后记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
-| Workout Session Detail | 单动作详情视图；当前记录流程中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
-| Profile | 身体资料、语言、饮食阶段、饮食模式、策略设置、g/kg 自检、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
+| Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
+| Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
+| Profile | 本地昵称、身体资料、语言、饮食阶段、饮食模式、策略设置、g/kg 自检、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
 | Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、每日汇总、资料、策略字段和 review 历史。 | `lib/export/*` |
 
-## 饮食流程
+## Food Workflow
 
 1. 用户打开 Food Log 并选择日期。
 2. 用户选择 Add Food。
@@ -41,7 +41,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 7. 保存后的记录可以编辑、删除或复制到用户选择的目标日期。
 8. Home 和 Food Log 通过本地 Repository 与刷新状态重新加载。
 
-## 训练流程
+## Workout Workflow
 
 1. 用户打开 Workout Log 并选择日期。
 2. 用户创建 `Workout Record`，填写名称，并选择一个或多个动作。
@@ -54,27 +54,30 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 9. 保存后的记录展示总时长、总训练量、总组数、估算消耗和动作卡片。
 10. 编辑保存后的记录会重新进入创建页面，并以事务替换整个 `plan_id` 分组。
 
-## 每日看板行为
+## Daily Dashboard Behavior
 
 - Home、Food Log 和 Workout Log 共享选中日期。
-- Home 展示饮食摄入、训练消耗、BMR、非运动 TDEE 参考、目标摄入、剩余 kcal、宏量目标和剩余宏量。
+- Home 的信息密度刻意低于其他副页。
+- Home 展示本地时间问候语、本地昵称 fallback、选中日期、主 calorie/macro 概览、宏量进度、当前饮食上下文，以及简洁的饮食/训练摘要。
 - 在 `energy_ratio` 中，kcal 目标/摄入/剩余是主计数器。
-- 在 `gram_per_kg` 中，宏量克数是主计数器，kcal 只是辅助摄入信息。
+- 在 `gram_per_kg` 中，宏量克数是主计数器，kcal 只是辅助信息。
+- BMR、TDEE、校准和长表单细节保留在 Profile、Food、Workout 和详情页，不堆在 Home。
 - Home 同时展示 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy` 上下文。
 - `carb_cycling` 展示碳水日类型和碳水调整上下文。
 - `carb_tapering` 在有数据时展示当前 taper 偏移和待处理 review 上下文。
 
-## 饮食设置 UX
+## Diet Setup UX
 
 Profile 按以下顺序展示饮食设置：
 
-1. 身体资料：年龄、身高、体重和性别选项。
-2. 目标阶段：`cutting` 或 `bulking`。
-3. 计算模式：`energy_ratio` 或 `gram_per_kg`。
-4. 可选策略：`none`、`carb_cycling` 或 `carb_tapering`。
-5. 阶段/模式/策略对应的控制项。
+1. 本地身份：仅用于本机 UI 的昵称，例如 Home 问候语。
+2. 身体资料：年龄、身高、体重和公式性别。
+3. 目标阶段：`cutting` 或 `bulking`。
+4. 计算模式：`energy_ratio` 或 `gram_per_kg`。
+5. 可选策略：`none`、`carb_cycling` 或 `carb_tapering`。
+6. 阶段/模式/策略专属设置。
 
-预期行为：
+Expected behavior:
 
 - `cutting + gram_per_kg`：展示训练频率档位、自检设置、减脂 g/kg 表上下文和宏量目标预览。
 - `bulking + gram_per_kg`：展示训练频率档位、自检设置、增肌 g/kg 表上下文和宏量目标预览。
@@ -83,9 +86,9 @@ Profile 按以下顺序展示饮食设置：
 - `carb_cycling`：展示每周 high/medium/low 日选择、倍率和本周预览。
 - `carb_tapering`：展示 review 周期、目标减重速度、taper 步长、当前碳水偏移和本地 review 的 Apply/Dismiss 流程。
 
-## 已实现边界
+## Implemented Boundaries
 
-已实现：
+Implemented:
 
 - 本地饮食记录 CRUD 和复制到指定日期
 - 外部 AI JSON 粘贴和本地解析
@@ -101,7 +104,7 @@ Profile 按以下顺序展示饮食设置：
 - 语言切换
 - 二次确认后清空本地数据
 
-未实现：
+Not implemented:
 
 - 后端、云同步、账号系统、远程数据库或数据导入
 - App 内图片识别
@@ -110,7 +113,7 @@ Profile 按以下顺序展示饮食设置：
 - 自动配餐、AI Coach 或自动修改目标
 - 医疗建议
 
-## 代码引用
+## Code References
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
 - Home：`lib/features/home/home_page.dart`

@@ -13,7 +13,7 @@ FitLog Local stores business data locally.
 
 Database name: `fitlog_local.db`.
 
-Current SQLite schema version: `8`.
+Current SQLite schema version: `9`.
 
 Foreign keys are enabled with `PRAGMA foreign_keys = ON`.
 
@@ -31,6 +31,7 @@ Migrations are additive and must preserve existing local data.
 | 6 | Added `user_profile.diet_goal_phase TEXT NOT NULL DEFAULT 'cutting'`. |
 | 7 | Added diet strategy profile fields and `diet_adjustment_reviews`. |
 | 8 | Added `workout_sessions.record_name`. |
+| 9 | Added local-only `user_profile.nickname`. |
 
 Compatibility rules:
 
@@ -48,6 +49,7 @@ Purpose: singleton user profile, diet settings, strategy settings, and self-chec
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY | Singleton profile id. |
+| `nickname` | TEXT | Local-only UI nickname used by Home greeting; not an account field. |
 | `age` | INTEGER NOT NULL | BMR and under-18 protection. |
 | `height_cm` | REAL NOT NULL | BMR. |
 | `weight_kg` | REAL NOT NULL | BMR, g/kg macros, workout calories. |
@@ -281,7 +283,7 @@ ProfilePage export action
 
 ## Export Coverage
 
-Exports include food records, food items, workout records, workout sets, daily summary, user profile, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, g/kg self-check fields, and `record_name` are included where relevant.
+Exports include food records, food items, workout records, workout sets, daily summary, user profile, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, g/kg self-check fields, local-only `nickname`, and `record_name` are included where relevant.
 
 ## Not Implemented
 

@@ -92,6 +92,9 @@ class _FitLogAppState extends State<FitLogApp> {
         ChangeNotifierProvider<RefreshNotifier>(
           create: (_) => RefreshNotifier(),
         ),
+        ChangeNotifierProvider<RootTabController>(
+          create: (_) => RootTabController(),
+        ),
         ChangeNotifierProvider<SelectedDateNotifier>(
           create: (_) => SelectedDateNotifier(),
         ),
@@ -113,7 +116,7 @@ class _FitLogAppState extends State<FitLogApp> {
           return MaterialApp(
             title: context.strings.appName,
             debugShowCheckedModeBanner: false,
-            themeMode: ThemeMode.system,
+            themeMode: ThemeMode.light,
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             home: const _RootShell(),
@@ -129,7 +132,7 @@ class _FitLogAppState extends State<FitLogApp> {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF1ED760),
+        seedColor: const Color(0xFF78BE5B),
         brightness: brightness,
       ),
     );
@@ -141,7 +144,7 @@ class _FitLogAppState extends State<FitLogApp> {
       hoverColor: isDark ? Colors.transparent : base.hoverColor,
       scaffoldBackgroundColor: isDark
           ? const Color(0xFF0E1117)
-          : const Color(0xFFF2F5F5),
+          : const Color(0xFFF5F8F1),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -156,36 +159,60 @@ class _FitLogAppState extends State<FitLogApp> {
       cardTheme: CardThemeData(
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         color: isDark
             ? const Color(0xFF171B22).withValues(alpha: 0.88)
-            : Colors.white.withValues(alpha: 0.85),
+            : const Color(0xFFFFFFFF),
       ),
       inputDecorationTheme: InputDecorationTheme(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        labelStyle: const TextStyle(color: Color(0xFF61715D)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.32)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFDCE6D7)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.24)),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFDCE6D7)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFF78BE5B), width: 1.4),
         ),
         filled: true,
-        fillColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.64),
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white,
         isDense: true,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedItemColor: const Color(0xFF16A34A),
+        selectedItemColor: const Color(0xFF4E9E3B),
         unselectedItemColor: isDark
             ? Colors.white.withValues(alpha: 0.58)
-            : const Color(0xFF6B7280),
+            : const Color(0xFF7A8973),
         backgroundColor: isDark
             ? const Color(0xFF11161F).withValues(alpha: 0.9)
-            : Colors.white.withValues(alpha: 0.86),
+            : Colors.white,
+      ),
+      textTheme: base.textTheme.copyWith(
+        headlineSmall: base.textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF152013),
+        ),
+        titleLarge: base.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF152013),
+        ),
+        titleMedium: base.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF22311F),
+        ),
+        bodyMedium: base.textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF51614E),
+        ),
       ),
     );
   }
@@ -199,87 +226,143 @@ class _RootShell extends StatefulWidget {
 }
 
 class _RootShellState extends State<_RootShell> {
-  int _index = 0;
-
-  final List<Widget> _pages = const <Widget>[
-    HomePage(),
-    FoodLogPage(),
-    WorkoutLogPage(),
-    ProfilePage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final titles = <String>[
-      strings.homeDashboardTitle,
-      strings.foodLogTitle,
-      strings.workoutLogTitle,
-      strings.profileSettingsTitle,
+    final navController = context.watch<RootTabController>();
+    final pages = <Widget>[
+      const HomePage(),
+      const FoodLogPage(),
+      const WorkoutLogPage(),
+      const ProfilePage(),
+    ];
+    final items = <_ShellNavItem>[
+      _ShellNavItem(
+        label: strings.navHome,
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
+      ),
+      _ShellNavItem(
+        label: strings.navFood,
+        icon: Icons.restaurant_menu_outlined,
+        activeIcon: Icons.restaurant_menu_rounded,
+      ),
+      _ShellNavItem(
+        label: strings.navWorkout,
+        icon: Icons.fitness_center_outlined,
+        activeIcon: Icons.fitness_center_rounded,
+      ),
+      _ShellNavItem(
+        label: strings.navProfile,
+        icon: Icons.person_outline_rounded,
+        activeIcon: Icons.person_rounded,
+      ),
     ];
 
     return Scaffold(
-      extendBody: true,
-      appBar: AppBar(title: Text(titles[_index])),
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? <Color>[
-                    const Color(0xFF0E1117),
-                    const Color(0xFF121926),
-                    const Color(0xFF0E1117),
-                  ]
-                : <Color>[
-                    const Color(0xFFF4F7F7),
-                    const Color(0xFFE8EFF0),
-                    const Color(0xFFF7F9FA),
-                  ],
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[
+              Color(0xFFFAFCF7),
+              Color(0xFFF3F7EE),
+              Color(0xFFF7FAF3),
+            ],
           ),
         ),
-        child: _pages[_index],
+        child: pages[navController.index],
       ),
-      bottomNavigationBar: Theme(
-        data: theme.copyWith(
-          splashFactory: isDark ? NoSplash.splashFactory : theme.splashFactory,
-          splashColor: isDark ? Colors.transparent : theme.splashColor,
-          highlightColor: isDark ? Colors.transparent : theme.highlightColor,
-          hoverColor: isDark ? Colors.transparent : theme.hoverColor,
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _index,
-          enableFeedback: !isDark,
-          onTap: (value) => setState(() => _index = value),
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: strings.navHome,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.restaurant_menu_outlined),
-              activeIcon: const Icon(Icons.restaurant_menu),
-              label: strings.navFood,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.fitness_center_outlined),
-              activeIcon: const Icon(Icons.fitness_center),
-              label: strings.navWorkout,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: strings.navProfile,
-            ),
-          ],
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.97),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFFE2ECDD)),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: const Color(0xFF13200F).withValues(alpha: 0.08),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Row(
+            children: List<Widget>.generate(items.length, (index) {
+              final item = items[index];
+              final selected = navController.index == index;
+
+              return Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () => navController.setIndex(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 7,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? const Color(0xFFEAF6E3)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          selected ? item.activeIcon : item.icon,
+                          color: selected
+                              ? const Color(0xFF4E9E3B)
+                              : const Color(0xFF7A8973),
+                          size: 22,
+                        ),
+                        const SizedBox(height: 3),
+                        Flexible(
+                          child: Text(
+                            item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              height: 1.0,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: selected
+                                  ? const Color(0xFF234120)
+                                  : const Color(0xFF7A8973),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
   }
+}
+
+class _ShellNavItem {
+  const _ShellNavItem({
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
 }
 
 class RefreshNotifier extends ChangeNotifier {
@@ -289,6 +372,20 @@ class RefreshNotifier extends ChangeNotifier {
 
   void markDataChanged() {
     _version++;
+    notifyListeners();
+  }
+}
+
+class RootTabController extends ChangeNotifier {
+  int _index = 0;
+
+  int get index => _index;
+
+  void setIndex(int index) {
+    if (_index == index) {
+      return;
+    }
+    _index = index;
     notifyListeners();
   }
 }

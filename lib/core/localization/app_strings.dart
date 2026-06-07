@@ -11,6 +11,43 @@ class AppStrings {
   String _t(String en, String zh) => isChinese ? zh : en;
 
   String get appName => _t('FitLog Local', 'FitLog Local');
+  String get appNameShort => _t('FitLog', 'FitLog');
+  String get nicknameLabel => _t('Nickname', '昵称');
+  String get nicknameHint => _t('Used for the Home greeting', '用于首页问候语');
+  String get nicknameFallback => _t('there', '你');
+  String get morningGreeting => _t('Good morning', '早上好');
+  String get afternoonGreeting => _t('Good afternoon', '下午好');
+  String get eveningGreeting => _t('Good evening', '晚上好');
+  String homeGreeting(String greeting, String nickname) =>
+      isChinese ? '$greeting，$nickname！' : '$greeting, $nickname!';
+  String get homeConsistencyHint => _t("Let's stay consistent.", '今天也稳稳记录。');
+  String get todayRecordsTitle => _t("Today's Records", '今日记录');
+  String get strategyContextTitle => _t('Current Strategy', '当前策略');
+  String get viewAll => _t('View all', '查看全部');
+  String get details => _t('Details', '详情');
+  String get localFirstIdentityHint =>
+      _t('Saved only on this device for your local UI.', '仅保存在本机，用于本地 UI 展示。');
+  String get localFirstTipTitle => _t('Local-first', 'Local-first');
+  String get localFirstAiBoundaryHint => _t(
+    'Prompt copy and JSON paste stay manual. There is still no in-app AI or photo recognition in this local build.',
+    'Prompt 复制和 JSON 粘贴仍然是手动流程。这个本地版本依然没有 App 内 AI 或图片识别。',
+  );
+  String get photoAiPlaceholderHint => _t(
+    'Reserved entry only. No in-app image analysis is implemented yet.',
+    '当前只是预留入口，尚未实现 App 内图片分析。',
+  );
+  String get copyPromptSubtitle => _t(
+    'Copy the static prompt for external AI tools',
+    '复制静态 prompt 给外部 AI 工具使用',
+  );
+  String foodRecordsSummary(int mealCount) =>
+      _t('$mealCount meals logged', '已记录 $mealCount 餐');
+  String workoutRecordsSummary(int sessionCount) => _t(
+    '$sessionCount session${sessionCount == 1 ? '' : 's'}',
+    '已记录 $sessionCount 次训练',
+  );
+  String macroProgressText(double current, double target) =>
+      '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g';
 
   String get homeDashboardTitle => _t('Home / Daily Dashboard', '首页 / 每日看板');
   String get foodLogTitle => _t('Food Log', '饮食记录');
@@ -145,6 +182,14 @@ class AppStrings {
   String get carbTaperingIntro => _t(
     'Carb tapering reviews weight trend, food coverage, and training stability locally. Suggestions never apply automatically.',
     '碳水渐降会在本地检查体重趋势、饮食覆盖率和训练稳定性，建议不会自动应用。',
+  );
+  String homeCarbCyclingSummary(String modeLabel) => _t(
+    'Redistributes carbs across high, medium, and low days after the base target is calculated. Your base method is still $modeLabel.',
+    '在基础目标算出后，把碳水分配到高、中、低日。当前的基础算法仍然是 $modeLabel。',
+  );
+  String homeCarbTaperingSummary(String modeLabel) => _t(
+    'Reviews weight trend, food coverage, and training stability locally, then suggests small carb changes for you to confirm. Your base method is still $modeLabel.',
+    '在本地复盘体重趋势、饮食覆盖率和训练稳定性后，再给出小步碳水调整建议，由你确认。当前的基础算法仍然是 $modeLabel。',
   );
   String get weeklyCarbPatternLabel => _t('Weekly carb pattern', '每周碳水模式');
   String get carbCyclePreviewLabel => _t('Current week preview', '本周预览');
@@ -444,6 +489,10 @@ class AppStrings {
     'g/kg mode uses bodyweight, sex, training-frequency tier, and the current phase table only. It does not mix with calorie deficit or surplus math; kcal is auxiliary.',
     'g/kg 模式只按体重、性别、训练频率档位和当前阶段表计算，不与热量赤字或盈余算法混合；kcal 仅作辅助信息。',
   );
+  String get caloriesRingTitle => _t('Calories', '热量');
+  String get macrosTitle => _t('Macros', '宏量');
+  String get foodLabel => _t('Food', '饮食');
+
   String phaseLabel(String phase) {
     switch (phase) {
       case 'bulking':
@@ -548,6 +597,26 @@ class AppStrings {
       case 'sun':
       default:
         return _t('Sun', '周日');
+    }
+  }
+
+  String weekdayUltraShortLabel(String key) {
+    switch (key) {
+      case 'mon':
+        return _t('Mon', '一');
+      case 'tue':
+        return _t('Tue', '二');
+      case 'wed':
+        return _t('Wed', '三');
+      case 'thu':
+        return _t('Thu', '四');
+      case 'fri':
+        return _t('Fri', '五');
+      case 'sat':
+        return _t('Sat', '六');
+      case 'sun':
+      default:
+        return _t('Sun', '日');
     }
   }
 

@@ -6,6 +6,7 @@ import '../../core/utils/number_utils.dart';
 class UserProfile {
   const UserProfile({
     this.id,
+    this.nickname,
     required this.age,
     required this.heightCm,
     required this.weightKg,
@@ -37,6 +38,7 @@ class UserProfile {
   });
 
   final int? id;
+  final String? nickname;
   final int age;
   final double heightCm;
   final double weightKg;
@@ -68,6 +70,7 @@ class UserProfile {
 
   static const UserProfile defaults = UserProfile(
     id: 1,
+    nickname: null,
     age: 25,
     heightCm: 170,
     weightKg: 65,
@@ -123,6 +126,7 @@ class UserProfile {
 
   UserProfile copyWith({
     int? id,
+    String? nickname,
     int? age,
     double? heightCm,
     double? weightKg,
@@ -166,6 +170,7 @@ class UserProfile {
 
     return UserProfile(
       id: id ?? this.id,
+      nickname: nickname ?? this.nickname,
       age: age ?? this.age,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
@@ -223,6 +228,7 @@ class UserProfile {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
+      'nickname': nickname,
       'age': age,
       'height_cm': heightCm,
       'weight_kg': weightKg,
@@ -259,6 +265,7 @@ class UserProfile {
       id: NumberUtils.toInt(map['id'], fallback: -1) == -1
           ? null
           : NumberUtils.toInt(map['id']),
+      nickname: map['nickname']?.toString(),
       age: NumberUtils.toInt(map['age'], fallback: 25),
       heightCm: NumberUtils.toDouble(map['height_cm'], fallback: 170),
       weightKg: NumberUtils.toDouble(map['weight_kg'], fallback: 65),
