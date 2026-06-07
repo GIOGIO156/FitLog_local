@@ -434,11 +434,6 @@ class _HomeGreeting extends StatelessWidget {
   final String nickname;
   final bool isChinese;
 
-  bool get _shouldBreakLine {
-    final nicknameLength = nickname.runes.length;
-    return nicknameLength > (isChinese ? 4 : 12);
-  }
-
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -446,25 +441,36 @@ class _HomeGreeting extends StatelessWidget {
       color: const Color(0xFF152013),
       height: 1.1,
     );
+    final prefixText = isChinese ? '$greetingPrefix，' : '$greetingPrefix,';
+    final nicknameText = isChinese ? '$nickname！' : '$nickname!';
+    final fullText = isChinese
+        ? '$greetingPrefix，$nickname！'
+        : '$greetingPrefix, $nickname!';
 
-    if (_shouldBreakLine) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            isChinese ? '$greetingPrefix，' : '$greetingPrefix,',
-            style: style,
-          ),
-          const SizedBox(height: 2),
-          Text(isChinese ? '$nickname！' : '$nickname!', style: style),
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = math.max(0.0, constraints.maxWidth - 8);
+        final fullTextPainter = TextPainter(
+          text: TextSpan(text: fullText, style: style),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: availableWidth);
+        final shouldBreakLine = fullTextPainter.didExceedMaxLines;
 
-    return Text(
-      isChinese ? '$greetingPrefix，$nickname！' : '$greetingPrefix, $nickname!',
-      style: style,
+        if (shouldBreakLine) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(prefixText, style: style),
+              const SizedBox(height: 2),
+              Text(nicknameText, style: style),
+            ],
+          );
+        }
+
+        return Text(fullText, style: style);
+      },
     );
   }
 }
@@ -539,12 +545,11 @@ class _StrategyCard extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      const FitLogSvgIconCircle(
+                      const _PngBadgeIcon(
                         assetName: FitLogIconAssets.strategy,
                         backgroundColor: Color(0xFFEAF6E3),
-                        tintColor: Color(0xFF6FB95A),
                         size: 44,
-                        iconSize: 22,
+                        iconSize: 29,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -631,12 +636,11 @@ class _StrategyCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const FitLogSvgIconCircle(
+              const _PngBadgeIcon(
                 assetName: FitLogIconAssets.strategy,
                 backgroundColor: Color(0xFFEAF6E3),
-                tintColor: Color(0xFF6FB95A),
                 size: 48,
-                iconSize: 24,
+                iconSize: 31,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -706,7 +710,7 @@ class _TodayRecordsCard extends StatelessWidget {
           _RecordRow(
             assetName: FitLogIconAssets.workout,
             color: const Color(0xFF6B9ED6),
-            title: strings.workoutLogTitle,
+            title: strings.navWorkout,
             subtitle: strings.workoutRecordsSummary(
               summary.workoutSessions.length,
             ),
@@ -750,12 +754,11 @@ class _RecordRow extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            FitLogSvgIconCircle(
+            _PngBadgeIcon(
               assetName: assetName,
               backgroundColor: color.withValues(alpha: 0.14),
-              tintColor: color,
               size: 42,
-              iconSize: 21,
+              iconSize: 29,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -797,11 +800,54 @@ class _MacroIconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FitLogSvgIconCircle(
-      assetName: assetName,
-      size: 40,
-      iconSize: 22,
-      backgroundColor: color.withValues(alpha: 0.14),
+    final iconSize = assetName == FitLogIconAssets.macroCarbs ? 32.0 : 29.0;
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Image.asset(
+        assetName,
+        width: iconSize,
+        height: iconSize,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
+    );
+  }
+}
+
+class _PngBadgeIcon extends StatelessWidget {
+  const _PngBadgeIcon({
+    required this.assetName,
+    required this.backgroundColor,
+    required this.size,
+    required this.iconSize,
+  });
+
+  final String assetName;
+  final Color backgroundColor;
+  final double size;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: Image.asset(
+        assetName,
+        width: iconSize,
+        height: iconSize,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
     );
   }
 }

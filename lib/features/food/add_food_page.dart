@@ -92,35 +92,6 @@ class AddFoodPage extends StatelessWidget {
               title: strings.photoAiAnalysis,
               subtitle: strings.photoAiPlaceholderHint,
             ),
-            GlassPanel(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const FitLogIconCircle(
-                    icon: Icons.eco_outlined,
-                    color: Color(0xFF6FB95A),
-                    size: 42,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          strings.localFirstTipTitle,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(strings.localFirstAiBoundaryHint),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

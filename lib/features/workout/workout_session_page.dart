@@ -45,6 +45,28 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     });
   }
 
+  String _weightValueText({
+    required WorkoutSession session,
+    required double weightKg,
+  }) {
+    final strings = context.strings;
+    final isBodyweightExercise = AppConstants.isBodyweightExercise(
+      session.exerciseName,
+    );
+    final isAssistedBodyweightExercise =
+        AppConstants.isAssistedBodyweightExercise(session.exerciseName);
+
+    if (isAssistedBodyweightExercise) {
+      return '${weightKg.toStringAsFixed(1)} kg';
+    }
+    if (isBodyweightExercise && weightKg <= 0) {
+      return strings.isChinese ? '自重' : 'Bodyweight';
+    }
+    return '${weightKg.toStringAsFixed(1)} kg';
+  }
+
+  String _repsValueText(int reps) => '× $reps';
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
@@ -200,12 +222,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 18),
                               child: Text(
-                                strings.setPerformanceLabel(
+                                _weightValueText(
+                                  session: session,
                                   weightKg: set.weightKg,
-                                  reps: set.reps,
-                                  isBodyweightExercise: isBodyweightExercise,
-                                  isAssistedBodyweightExercise:
-                                      isAssistedBodyweightExercise,
                                 ),
                                 style: const TextStyle(
                                   fontSize: 17,
@@ -214,7 +233,19 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                               ),
                             ),
                           ),
-                          Expanded(flex: 4, child: const SizedBox.shrink()),
+                          Expanded(
+                            flex: 4,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 18),
+                              child: Text(
+                                _repsValueText(set.reps),
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );

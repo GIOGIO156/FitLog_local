@@ -1,13 +1,13 @@
 class FitLogIconAssets {
   FitLogIconAssets._();
 
-  static const String macroProtein = 'assets/icons/macros/protein.svg';
-  static const String macroCarbs = 'assets/icons/macros/carbs.svg';
-  static const String macroFat = 'assets/icons/macros/fat.svg';
+  static const String macroProtein = 'assets/icons/macros/protein.png';
+  static const String macroCarbs = 'assets/icons/macros/carbs.png';
+  static const String macroFat = 'assets/icons/macros/fat.png';
 
-  static const String strategy = 'assets/icons/common/strategy.svg';
-  static const String food = 'assets/icons/common/food.svg';
-  static const String workout = 'assets/icons/common/workout.svg';
+  static const String strategy = 'assets/icons/common/strategy.png';
+  static const String food = 'assets/icons/common/food.png';
+  static const String workout = 'assets/icons/common/workout.png';
   static const String flame = 'assets/icons/common/flame.svg';
 
   static const String workoutChest = 'assets/icons/workouts/chest.svg';

@@ -26,6 +26,8 @@
 - Migrated Home macro icons and workout body-part thumbnails from painter-based glyphs to SVG assets with shared icon-badge rendering.
 - Adjusted the Home protein macro SVG to match the requested bone-style reference mark after the SVG migration.
 - Redrew the Home carbs and fat macro SVGs to better match the wheat and avocado reference shapes, and refined the protein mark to read more cleanly at small sizes.
+- Switched the Home macro icons from SVG to user-provided transparent PNG assets so the protein, carbs, and fat marks can preserve more visual detail inside the existing badge layout.
+- Switched the Home strategy, food, and workout summary icons to transparent PNG assets and aligned their badge sizing with the updated macro icon treatment.
 - Restored the Home strategy chevron as a tappable guidance card that opens a structured carb-cycling or carb-tapering explainer sheet.
 - Expanded the Home strategy sheet with concrete principle, number-change, and setup guidance, including when to use low, medium, and high carb days and how to choose taper speed, step size, and review window.
 - Moved the Food Log estimate notice to the end of the selected-day record list and removed the redundant Workout Log subtitle so both detail pages now place the calendar strip directly under the title.
