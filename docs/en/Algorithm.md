@@ -230,10 +230,11 @@ Strength uses volume-driven net calories:
 
 1. Prefer completed sets with `reps > 0`; if none exist, use all valid entered sets.
 2. Bodyweight movements use `bodyWeightKg * bodyweightShare + externalLoadKg` as effective load.
-3. Non-bodyweight movements use external load.
-4. Compute `totalVolumeKg = sum(effectiveLoadKg * reps)`.
-5. Select movement profile coefficients.
-6. Use duration only in a capped recovery-density modifier, not as linear calorie accumulation.
+3. Assisted bodyweight movements store assistance in `weight_kg`, and use `max(0, bodyWeightKg - assistanceKg)` as effective load.
+4. Non-bodyweight movements use external load.
+5. Compute `totalVolumeKg = sum(effectiveLoadKg * reps)`.
+6. Select movement profile coefficients from the updated chest/back/legs/glutes/shoulders/arms/core/full-body movement library.
+7. Use duration only in a capped recovery-density modifier, not as linear calorie accumulation.
 
 ```text
 activeLiftingKcal =

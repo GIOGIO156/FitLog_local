@@ -1,12 +1,39 @@
 # Changelog
 
+## 2026-06-07 Workout Library Refresh
+
+### Changed
+- Rebuilt the workout exercise library from the updated master list, including expanded chest, back, shoulders, arms, glutes, full-body, and cardio coverage plus the new `Glutes` body-part bucket.
+- Updated workout localization so the refreshed library names and the new glutes category display correctly in Chinese UI.
+- Refined strength calorie profiling so the new movement set routes through the intended compound, isolation, lower-body, or high-density heuristic buckets.
+- Changed assisted pull-up and assisted dip handling so the entered weight is treated as assistance load and actual movement load is calculated as `bodyweight - assistance`.
+- Updated workout detail and record-entry copy so assisted movements show `Assist (kg)` instead of added load wording.
+- Synced the bilingual workout design docs with the refreshed library structure and assisted-load calorie rule.
+
+### Added
+- Added a workout calorie test covering assisted bodyweight load handling.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-07 Home And Log UI Follow-up
 
 ### Changed
 - Reworked the Home macro section into three equal-size cards with matched badge sizing, aligned content slots, and clearer protein, carbs, and avocado-style fat icons.
 - Forced long Home nicknames onto a dedicated second line so the greeting no longer wraps awkwardly beside the salutation.
-- Replaced the non-functional Home strategy chevron with inline carb-cycling and carb-tapering guidance that explains how each strategy sits on top of the current base diet mode.
+- Migrated Home macro icons and workout body-part thumbnails from painter-based glyphs to SVG assets with shared icon-badge rendering.
+- Adjusted the Home protein macro SVG to match the requested bone-style reference mark after the SVG migration.
+- Redrew the Home carbs and fat macro SVGs to better match the wheat and avocado reference shapes, and refined the protein mark to read more cleanly at small sizes.
+- Restored the Home strategy chevron as a tappable guidance card that opens a structured carb-cycling or carb-tapering explainer sheet.
+- Expanded the Home strategy sheet with concrete principle, number-change, and setup guidance, including when to use low, medium, and high carb days and how to choose taper speed, step size, and review window.
 - Moved the Food Log estimate notice to the end of the selected-day record list and removed the redundant Workout Log subtitle so both detail pages now place the calendar strip directly under the title.
+- Removed the extra top spacer from Food Log so its title and date-strip card align with Workout Log in the first viewport.
+- Removed the extra Home consistency tagline and tightened the top spacing so the calorie and macro cards sit higher in the first viewport.
+
+### Fixed
+- Updated the bilingual Methodology and References docs so carb-cycling and carb-tapering explanations match the current local algorithm boundaries and include explicit evidence-backed usage framing.
 
 ### Validation
 - `flutter analyze`: success.

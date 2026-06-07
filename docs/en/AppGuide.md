@@ -29,7 +29,7 @@ What users see:
 - selected date
 - primary calorie overview in `energy_ratio`
 - primary macro overview in `gram_per_kg`
-- compact macro progress for protein/carbs/fat in three equal-size cards
+- compact macro progress for protein/carbs/fat in three equal-size cards rendered from dedicated SVG assets
 - current `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy`
 - compact selected-day food/workout summaries with navigation to detail pages
 
@@ -40,7 +40,8 @@ How it works:
 - Exercise totals come from saved `workout_sessions.estimated_calories`.
 - `energy_ratio` uses kcal target/intake/remaining as primary.
 - `gram_per_kg` uses macro grams as primary and treats kcal as auxiliary.
-- Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied, and Home adds a short inline explanation for carb cycling or carb tapering when active.
+- Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied.
+- When carb cycling or carb tapering is active, the Home strategy card opens a structured explainer sheet with methodology-oriented guidance for non-expert users.
 - Detailed BMR/TDEE/calibration numbers are intentionally left out of the Home surface and remain available in Profile-oriented views.
 
 Read more:
@@ -120,6 +121,7 @@ How it works:
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
 - Record-level summaries are derived from persisted sessions and sets.
+- Body-part thumbnails and key workout glyphs now come from shared SVG assets instead of ad hoc painter-based mini-icons.
 
 Read more:
 
@@ -133,7 +135,7 @@ Add/Edit Workout Record is where users create or revise a named workout record.
 What users can do:
 
 - name the workout record
-- choose one or more exercises
+- choose one or more exercises from the current chest, back, legs, glutes, shoulders, arms, core, full-body, and cardio library
 - keep selected exercises in user-chosen order
 - enter per-exercise duration
 - enter strength sets with weight, reps, and completed state
@@ -145,6 +147,7 @@ How it works:
 - Exercise selection supports body-part filtering, search, and multi-select order.
 - Cardio exercises use duration and have no set checklist.
 - Strength exercises use set rows.
+- Assisted bodyweight exercises store assistance load in the weight field, and calorie estimation treats actual load as `bodyweight - assistance`.
 - Save validation happens before persistence.
 - Only completed strength sets are saved; unchecked sets are discarded.
 - Editing a saved record replaces the full `plan_id` group transactionally.

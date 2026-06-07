@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/app_constants.dart';
+import '../constants/fitlog_icon_assets.dart';
 import '../localization/localization_extensions.dart';
 import '../utils/date_utils.dart';
 
@@ -120,6 +122,148 @@ class FitLogIconCircle extends StatelessWidget {
       ),
       child: Icon(icon, color: color, size: size * 0.48),
     );
+  }
+}
+
+class FitLogSvgIcon extends StatelessWidget {
+  const FitLogSvgIcon({
+    super.key,
+    required this.assetName,
+    required this.size,
+    this.tintColor,
+  });
+
+  final String assetName;
+  final double size;
+  final Color? tintColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      assetName,
+      width: size,
+      height: size,
+      colorFilter: tintColor == null
+          ? null
+          : ColorFilter.mode(tintColor!, BlendMode.srcIn),
+    );
+  }
+}
+
+class FitLogSvgIconCircle extends StatelessWidget {
+  const FitLogSvgIconCircle({
+    super.key,
+    required this.assetName,
+    required this.backgroundColor,
+    this.size = 42,
+    this.iconSize,
+    this.tintColor,
+  });
+
+  final String assetName;
+  final Color backgroundColor;
+  final double size;
+  final double? iconSize;
+  final Color? tintColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: FitLogSvgIcon(
+        assetName: assetName,
+        size: iconSize ?? size * 0.56,
+        tintColor: tintColor,
+      ),
+    );
+  }
+}
+
+class FitLogStrategyGuideSection extends StatelessWidget {
+  const FitLogStrategyGuideSection({
+    super.key,
+    required this.title,
+    required this.lines,
+  });
+
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF152013),
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...lines.map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(top: 7),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF74BF56),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF51614E),
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String fitLogWorkoutAssetForBodyPart(String bodyPart) {
+  switch (bodyPart) {
+    case 'Chest':
+      return FitLogIconAssets.workoutChest;
+    case 'Back':
+      return FitLogIconAssets.workoutBack;
+    case 'Legs':
+      return FitLogIconAssets.workoutLegs;
+    case 'Glutes':
+      return FitLogIconAssets.workoutLegs;
+    case 'Shoulders':
+      return FitLogIconAssets.workoutShoulders;
+    case 'Arms':
+      return FitLogIconAssets.workoutArms;
+    case 'Core':
+      return FitLogIconAssets.workoutCore;
+    case 'Cardio':
+      return FitLogIconAssets.workoutCardio;
+    case 'Full Body':
+      return FitLogIconAssets.workoutFullBody;
+    default:
+      return FitLogIconAssets.workoutFullBody;
   }
 }
 

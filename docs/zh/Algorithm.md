@@ -230,10 +230,11 @@ netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 
 1. 优先使用已完成且 `reps > 0` 的组；如果没有，则使用所有有效输入组。
 2. 自重动作使用 `bodyWeightKg * bodyweightShare + externalLoadKg` 作为有效负荷。
-3. 非自重动作使用外部负荷。
-4. 计算 `totalVolumeKg = sum(effectiveLoadKg * reps)`。
-5. 选择动作 profile 系数。
-6. 时长只进入有上限的恢复密度修正，不线性累加热量。
+3. 辅助类自重动作把 `weight_kg` 视为辅助重量，并用 `max(0, bodyWeightKg - assistanceKg)` 作为有效负荷。
+4. 非自重动作使用外部负荷。
+5. 计算 `totalVolumeKg = sum(effectiveLoadKg * reps)`。
+6. 按更新后的胸部、背部、腿部、臀部、肩部、手臂、核心、全身动作库选择动作 profile 系数。
+7. 时长只进入有上限的恢复密度修正，不线性累加热量。
 
 ```text
 activeLiftingKcal =

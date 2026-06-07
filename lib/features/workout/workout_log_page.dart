@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/constants/fitlog_icon_assets.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -295,11 +296,12 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                                 const SizedBox(height: 14),
                                 Row(
                                   children: <Widget>[
-                                    const FitLogIconCircle(
-                                      icon:
-                                          Icons.local_fire_department_outlined,
-                                      color: Color(0xFF6EA4DF),
+                                    const FitLogSvgIconCircle(
+                                      assetName: FitLogIconAssets.flame,
+                                      backgroundColor: Color(0xFFE8F1FC),
+                                      tintColor: Color(0xFF6EA4DF),
                                       size: 38,
+                                      iconSize: 20,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(

@@ -18,21 +18,45 @@ class WorkoutCalorieCalculator {
   // Approximate body-mass share moved in common bodyweight movements.
   static const Map<String, double> _bodyweightLoadShare = <String, double>{
     'Push-up': 0.69,
+    'Kneeling Push-up': 0.45,
     'Plank': 0.60,
     'Crunch': 0.45,
     'Hanging Leg Raise': 0.90,
     'Pull-up': 1.00,
+    'Assisted Pull-up': 1.00,
+    'Dip': 0.90,
+    'Assisted Dip': 0.90,
     'Burpee': 1.00,
+    'Jumping Jack': 0.65,
   };
 
   static const Set<String> _upperBodyCompoundExercises = <String>{
+    'Barbell Flat Bench Press',
+    'Barbell Incline Bench Press',
+    'Dumbbell Flat Bench Press',
+    'Machine Chest Press',
     'Bench Press',
     'Incline Dumbbell Press',
+    'Close-grip Bench Press',
+    'Dip',
+    'Assisted Dip',
     'Barbell Row',
     'Seated Cable Row',
+    'Seated Row',
+    'Bent-over Barbell Row',
+    'Underhand Barbell Row',
+    'Seal Barbell Row',
+    'Chest-supported T-Bar Row',
+    'Iso-lateral High Row',
+    'Hammer Strength High Row',
+    'Single-arm Dumbbell Row',
     'Lat Pulldown',
+    'Standing Dumbbell Shoulder Press',
+    'Standing Barbell Shoulder Press',
+    'Seated Barbell Shoulder Press',
     'Overhead Press',
     'Pull-up',
+    'Assisted Pull-up',
     'Push-up',
   };
 
@@ -40,20 +64,30 @@ class WorkoutCalorieCalculator {
     'Squat',
     'Deadlift',
     'Romanian Deadlift',
+    'Barbell Straight-leg Deadlift',
     'Leg Press',
+    'Barbell Hip Thrust',
   };
 
   static const Set<String> _fullBodyPowerHighDensityExercises = <String>{
     'Kettlebell Swing',
     'Burpee',
+    'Jumping Jack',
   };
 
   static const Set<String> _isolationExercises = <String>{
+    'Dumbbell Fly',
+    'Cable Fly',
+    'Machine Pec Fly',
     'Chest Fly',
     'Leg Extension',
     'Leg Curl',
     'Lateral Raise',
     'Rear Delt Fly',
+    'Standing Barbell Front Raise',
+    'Barbell Upright Row',
+    'Barbell High Pull',
+    'Barbell Pullover',
     'Biceps Curl',
     'Triceps Pushdown',
     'Hammer Curl',
@@ -132,6 +166,7 @@ class WorkoutCalorieCalculator {
 
     final profile = _profileForExercise(exerciseName);
     final isBodyweight = AppConstants.isBodyweightExercise(exerciseName);
+    final isAssisted = AppConstants.isAssistedBodyweightExercise(exerciseName);
     final bodyweightShare =
         _bodyweightLoadShare[exerciseName] ?? (isBodyweight ? 1.0 : 0.0);
 
@@ -142,9 +177,14 @@ class WorkoutCalorieCalculator {
     for (final set in validSets) {
       final reps = set.reps;
       final externalLoadKg = math.max(0.0, set.weightKg);
-      final effectiveLoadKg = isBodyweight
-          ? bodyWeightKg * bodyweightShare + externalLoadKg
-          : externalLoadKg;
+      late final double effectiveLoadKg;
+      if (isAssisted) {
+        effectiveLoadKg = math.max(0.0, bodyWeightKg - externalLoadKg);
+      } else if (isBodyweight) {
+        effectiveLoadKg = bodyWeightKg * bodyweightShare + externalLoadKg;
+      } else {
+        effectiveLoadKg = externalLoadKg;
+      }
       final volumeKg = effectiveLoadKg * reps;
       if (volumeKg <= 0) {
         continue;

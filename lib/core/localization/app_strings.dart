@@ -191,6 +191,147 @@ class AppStrings {
     'Reviews weight trend, food coverage, and training stability locally, then suggests small carb changes for you to confirm. Your base method is still $modeLabel.',
     '在本地复盘体重趋势、饮食覆盖率和训练稳定性后，再给出小步碳水调整建议，由你确认。当前的基础算法仍然是 $modeLabel。',
   );
+  String strategyGuideTitle(String strategyLabel) =>
+      _t('$strategyLabel guide', '$strategyLabel 说明');
+  String get strategyGuideBaseMethodTitle =>
+      _t('Base method relationship', '和基础算法的关系');
+  String get strategyGuideCorePrincipleTitle => _t('Core principle', '核心原理');
+  String get strategyGuideNumbersTitle =>
+      _t('How the numbers change', '数值怎么变化');
+  String get strategyGuideSetupTitle => _t('How to set it up', '怎么设置更稳妥');
+  String get strategyGuideKnowTitle =>
+      _t('What to know before using it', '使用前要知道');
+  String strategyGuideBaseMethodBody(String modeLabel) => _t(
+    'This strategy does not replace your base diet method. It is layered on top of $modeLabel after the base target is calculated.',
+    '这个策略不会替代你的基础饮食算法。它是在基础目标先算出来之后，再叠加在 $modeLabel 之上的一层策略。',
+  );
+  List<String> carbCyclingGuidePrinciple() => <String>[
+    _t(
+      'Carb cycling is not a second diet formula. FitLog first calculates your base target, then redistributes only the carbohydrate portion across the week.',
+      '碳循环不是第二套饮食算法。FitLog 会先算出你的基础目标，再只对其中的碳水部分做一周内的重新分配。',
+    ),
+    _t(
+      'Protein and fat stay comparatively stable. The main thing that moves is carbs, so the strategy changes fuel timing more than it changes the whole plan.',
+      '蛋白质和脂肪会相对稳定，主要移动的是碳水，所以它更像是在调配供能时机，而不是把整套计划推翻重来。',
+    ),
+    _t(
+      'The week is normalized before the daily target is shown, so a high-carb day is offset by lower-carb days elsewhere instead of silently adding extra weekly carbs.',
+      '系统会先对整周做归一化，再给出当天目标，所以高碳日会由别的日子的较低碳水来平衡，而不是悄悄把整周碳水总量抬高。',
+    ),
+  ];
+  List<String> carbCyclingGuideNumbers({
+    required double highMultiplier,
+    required double mediumMultiplier,
+    required double lowMultiplier,
+    required double minimumCarbsG,
+  }) => <String>[
+    _t(
+      'Your current weekly multipliers are high x${highMultiplier.toStringAsFixed(2)}, medium x${mediumMultiplier.toStringAsFixed(2)}, and low x${lowMultiplier.toStringAsFixed(2)} before normalization.',
+      '你当前的一周倍率在归一化前分别是：高碳 x${highMultiplier.toStringAsFixed(2)}、中碳 x${mediumMultiplier.toStringAsFixed(2)}、低碳 x${lowMultiplier.toStringAsFixed(2)}。',
+    ),
+    _t(
+      'High, medium, and low days all start from the same base carbs. FitLog then shifts that base up or down, while keeping protein and fat steady.',
+      '高碳、中碳、低碳都从同一个基础碳水出发，FitLog 只是在这个基础上把当天碳水往上或往下拨动，蛋白质和脂肪保持稳定。',
+    ),
+    _t(
+      'A carb floor is always active. If the low day would fall below about ${minimumCarbsG.toStringAsFixed(0)} g, FitLog clamps it instead of pushing lower.',
+      '系统始终会保留碳水下限。如果低碳日会低于约 ${minimumCarbsG.toStringAsFixed(0)} g，FitLog 会直接限住，不再继续往下压。',
+    ),
+  ];
+  List<String> carbCyclingGuideSetup() => <String>[
+    _t(
+      'Start by marking your hardest or longest training days as high carb, your normal training days as medium carb, and rest or easy days as low carb.',
+      '最稳妥的起点是：把最重或时间最长的训练日设成高碳，把普通训练日设成中碳，把休息日或很轻松的活动日设成低碳。',
+    ),
+    _t(
+      'If you only have one or two genuinely hard sessions each week, keep the rest as medium or low instead of making every training day high carb.',
+      '如果你一周里真正很重的训练只有一到两天，就把那几天设成高碳，其余训练日尽量放在中碳或低碳，不要把所有训练日都设成高碳。',
+    ),
+    _t(
+      'If recovery, appetite, or adherence gets worse, move one day back toward medium before you raise the multipliers further.',
+      '如果恢复、食欲控制或执行稳定性开始变差，优先把某一天调回中碳，而不是继续把倍率拉得更高。',
+    ),
+  ];
+  List<String> carbCyclingGuideKnow() => <String>[
+    _t(
+      'Carb cycling is not a magic fat-loss switch. Weekly intake and consistency still matter most.',
+      '碳循环不是自动减脂开关，整周总摄入和执行稳定性仍然最重要。',
+    ),
+    _t(
+      'FitLog keeps a carb safety floor and will clamp targets that drop too low.',
+      'FitLog 会保留碳水安全下限，过低时会直接限制目标。',
+    ),
+    _t(
+      'If you use g/kg, the strategy still sits on top of your macro-first target. If you use energy ratio, it sits on top of your kcal-first target.',
+      '如果你用 g/kg，它叠加在宏量优先目标上；如果你用能量比例法，它叠加在 kcal 优先目标上。',
+    ),
+  ];
+  List<String> carbTaperingGuidePrinciple() => <String>[
+    _t(
+      'Carb tapering is a local review loop for cutting. It does not replace your base diet mode, and it never applies changes automatically.',
+      '碳水渐降是减脂期里的本地复盘回路。它不会替代你的基础饮食模式，也不会自动替你改计划。',
+    ),
+    _t(
+      'FitLog looks at a rolling weight trend, food-log coverage, and training stability together so it does not overreact to one noisy weigh-in.',
+      'FitLog 会把滚动体重趋势、饮食记录覆盖率和训练稳定性一起看，避免因为一次噪音很大的称重就做出激进反应。',
+    ),
+    _t(
+      'The output is only a suggestion such as keep, decrease carbs, pause taper, or no data. You still decide whether to apply it.',
+      '最终输出也只是建议，比如保持、降低碳水、暂停渐降或数据不足，是否应用仍然由你决定。',
+    ),
+  ];
+  List<String> carbTaperingGuideNumbers({
+    required int reviewDays,
+    required double targetLossPctPerWeek,
+    required double stepG,
+    required double conservativeMaxStepG,
+    required double minimumCarbsG,
+  }) => <String>[
+    _t(
+      'Your current review period is $reviewDays days. A longer window is steadier but slower; a shorter window reacts faster but is easier to misread.',
+      '你当前的复盘周期是 $reviewDays 天。周期越长，判断越稳；周期越短，反应越快，但也越容易被噪音带偏。',
+    ),
+    _t(
+      'Your current target loss rate is ${targetLossPctPerWeek.toStringAsFixed(2)}% per week. FitLog compares the rolling trend with that setting, then checks whether the difference is large enough to justify action.',
+      '你当前的目标减重速度是每周 ${targetLossPctPerWeek.toStringAsFixed(2)}%。FitLog 会先把滚动趋势和这个设定比较，再判断偏差是否大到值得调整。',
+    ),
+    _t(
+      'Your selected taper step is ${stepG.toStringAsFixed(0)} g, and the app keeps the effective step conservative by capping it at about ${conservativeMaxStepG.toStringAsFixed(0)} g for your current body weight.',
+      '你当前选择的渐降步长是 ${stepG.toStringAsFixed(0)} g；同时系统还会按你现在的体重把有效步长保守地限制在约 ${conservativeMaxStepG.toStringAsFixed(0)} g 以内。',
+    ),
+    _t(
+      'If the projected carbs would fall below about ${minimumCarbsG.toStringAsFixed(0)} g per day, FitLog blocks the decrease instead of chasing scale speed.',
+      '如果预计碳水会掉到每天约 ${minimumCarbsG.toStringAsFixed(0)} g 以下，FitLog 会阻止继续下降，而不是为了追体重速度硬压。',
+    ),
+  ];
+  List<String> carbTaperingGuideSetup() => <String>[
+    _t(
+      'A good default target-loss setting is around 0.5% of body weight per week. Move toward the high end only when recovery, food logging, and training stability are all solid.',
+      '比较稳妥的默认目标减重速度通常是每周体重的 0.5% 左右。只有在恢复、饮食记录和训练稳定性都不错时，才考虑往更激进的高端去调。',
+    ),
+    _t(
+      'Use smaller taper steps such as 5-10 g when your logging is patchy, your carbs are already low, or you are close to the carb floor. Use 10-15 g when the trend is clearly too slow and the data quality is good.',
+      '如果你的记录不够完整、当前碳水本来就不高，或者已经接近碳水下限，更适合用 5 到 10 g 这种小步长。只有当趋势明显太慢、而且数据质量不错时，再考虑 10 到 15 g 的步长。',
+    ),
+    _t(
+      'Use a longer review period such as 21-28 days when your body weight swings a lot. Use 7 days only when weighing and food logging are both very consistent.',
+      '如果你的体重日波动比较大，优先用 21 到 28 天这种更长的复盘周期。只有在称重和饮食记录都非常稳定时，才建议把周期缩到 7 天。',
+    ),
+  ];
+  List<String> carbTaperingGuideKnow() => <String>[
+    _t(
+      'Weak data should lead to no suggestion, not fake confidence.',
+      '当数据不够时，正确结果应该是不给建议，而不是装作很确定。',
+    ),
+    _t(
+      'If loss is already too fast, the app may suggest pausing the taper instead of cutting carbs further.',
+      '如果减重已经太快，App 可能会建议暂停渐降，而不是继续往下砍碳水。',
+    ),
+    _t(
+      'This strategy still respects the carb safety floor and the current base diet mode.',
+      '这个策略仍然会尊重碳水安全下限，也不会绕开你当前的基础饮食算法。',
+    ),
+  ];
   String get weeklyCarbPatternLabel => _t('Weekly carb pattern', '每周碳水模式');
   String get carbCyclePreviewLabel => _t('Current week preview', '本周预览');
   String get carbCycleMultiplierLabel => _t('Multiplier preview', '倍率预览');
@@ -398,6 +539,7 @@ class AppStrings {
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
   String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
+  String get assistWeightKgShortLabel => _t('Assist (kg)', '辅助 (kg)');
   String get repsLabel => _t('Reps', '次数');
   String get addSet => _t('Add Set', '新增组');
   String get removeExercise => _t('Remove exercise', '移除动作');
@@ -405,6 +547,10 @@ class AppStrings {
   String get bodyweightAddedLoadHint => _t(
     'For bodyweight exercises, weight means added load. Enter 0 for bodyweight only.',
     '自重动作中“重量”表示额外加重；填 0 表示仅自重。',
+  );
+  String get bodyweightAssistLoadHint => _t(
+    'For assisted movements, weight means assistance load. Actual load = bodyweight - assistance.',
+    '辅助动作中“重量”表示辅助重量；计算时实际负重 = 体重 - 辅助重量。',
   );
   String get completeBeforeSaveHint => _t(
     'Mark completed sets before saving. Unchecked sets will not be saved.',
@@ -723,6 +869,7 @@ class AppStrings {
       'Chest': '胸部',
       'Back': '背部',
       'Legs': '腿部',
+      'Glutes': '臀部',
       'Shoulders': '肩部',
       'Arms': '手臂',
       'Core': '核心',
@@ -741,25 +888,55 @@ class AppStrings {
     }
 
     const map = <String, String>{
+      'Barbell Flat Bench Press': '杠铃平板卧推',
+      'Barbell Incline Bench Press': '杠铃上斜卧推',
+      'Dumbbell Flat Bench Press': '哑铃平板卧推',
+      'Dumbbell Fly': '哑铃平板飞鸟',
+      'Cable Fly': '钢线飞鸟',
+      'Machine Chest Press': '坐姿器械推胸',
+      'Machine Pec Fly': '坐姿器械夹胸',
+      'Kneeling Push-up': '跪姿俯卧撑',
       'Bench Press': '卧推',
       'Incline Dumbbell Press': '上斜哑铃卧推',
       'Push-up': '俯卧撑',
       'Chest Fly': '飞鸟',
       'Pull-up': '引体向上',
+      'Assisted Pull-up': '引体向上（辅助）',
       'Lat Pulldown': '高位下拉',
       'Barbell Row': '杠铃划船',
       'Seated Cable Row': '坐姿划船',
+      'Seated Row': '坐姿划船',
+      'Bent-over Barbell Row': '杠铃俯身划船',
+      'Underhand Barbell Row': '反手杠铃划船',
+      'Seal Barbell Row': '海豹杠铃划船',
+      'Chest-supported T-Bar Row': '俯卧 T-bar 划船',
+      'Iso-lateral High Row': '分动式高位划船',
+      'Hammer Strength High Row': '悍马机大剪刀',
+      'Barbell High Pull': '杠铃上斜提拉',
+      'Barbell Pullover': '杠铃抱拉',
+      'Barbell Straight-leg Deadlift': '杠铃直腿硬拉',
+      'Single-arm Dumbbell Row': '哑铃俯身单臂提拉',
       'Squat': '深蹲',
+      'Deadlift': '硬拉',
       'Leg Press': '腿举',
       'Romanian Deadlift': '罗马尼亚硬拉',
       'Leg Extension': '腿屈伸',
       'Leg Curl': '腿弯举',
+      'Barbell Hip Thrust': '杠铃臀冲',
       'Overhead Press': '推举',
       'Lateral Raise': '侧平举',
       'Rear Delt Fly': '反向飞鸟',
+      'Standing Dumbbell Shoulder Press': '哑铃站姿推肩',
+      'Standing Barbell Shoulder Press': '杠铃站姿推肩',
+      'Seated Barbell Shoulder Press': '杠铃坐姿推肩',
+      'Standing Barbell Front Raise': '站姿杠铃前平举',
+      'Barbell Upright Row': '杠铃直立划船',
       'Biceps Curl': '二头弯举',
       'Triceps Pushdown': '三头下压',
       'Hammer Curl': '锤式弯举',
+      'Close-grip Bench Press': '杠铃窄距平板卧推',
+      'Dip': '双杠臂屈伸',
+      'Assisted Dip': '辅助双杠臂屈伸',
       'Plank': '平板支撑',
       'Crunch': '卷腹',
       'Hanging Leg Raise': '悬垂举腿',
@@ -768,9 +945,9 @@ class AppStrings {
       'Cycling': '骑行',
       'Rowing Machine': '划船机',
       'Stair Climber': '登阶机',
-      'Deadlift': '硬拉',
       'Kettlebell Swing': '壶铃摆动',
       'Burpee': '波比跳',
+      'Jumping Jack': '开合跳',
     };
 
     return map[exerciseName] ?? exerciseName;
@@ -833,7 +1010,14 @@ class AppStrings {
     required double weightKg,
     required int reps,
     required bool isBodyweightExercise,
+    bool isAssistedBodyweightExercise = false,
   }) {
+    if (isAssistedBodyweightExercise) {
+      return _t(
+        'Assist ${weightKg.toStringAsFixed(1)} kg - Reps $reps',
+        '辅助 ${weightKg.toStringAsFixed(1)} kg - $reps 次',
+      );
+    }
     if (isBodyweightExercise) {
       if (weightKg <= 0) {
         return _t('Bodyweight - Reps $reps', '自重 - $reps 次');

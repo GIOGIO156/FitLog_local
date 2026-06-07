@@ -25,6 +25,7 @@ class AppConstants {
     'Chest',
     'Back',
     'Legs',
+    'Glutes',
     'Shoulders',
     'Arms',
     'Core',
@@ -35,6 +36,14 @@ class AppConstants {
   static const Map<String, List<String>> bodyPartExercises =
       <String, List<String>>{
         'Chest': <String>[
+          'Barbell Flat Bench Press',
+          'Barbell Incline Bench Press',
+          'Dumbbell Flat Bench Press',
+          'Dumbbell Fly',
+          'Cable Fly',
+          'Machine Chest Press',
+          'Machine Pec Fly',
+          'Kneeling Push-up',
           'Bench Press',
           'Incline Dumbbell Press',
           'Push-up',
@@ -42,23 +51,48 @@ class AppConstants {
         ],
         'Back': <String>[
           'Pull-up',
+          'Assisted Pull-up',
           'Lat Pulldown',
           'Barbell Row',
-          'Seated Cable Row',
+          'Seated Row',
+          'Bent-over Barbell Row',
+          'Underhand Barbell Row',
+          'Seal Barbell Row',
+          'Chest-supported T-Bar Row',
+          'Iso-lateral High Row',
+          'Hammer Strength High Row',
+          'Barbell High Pull',
+          'Barbell Pullover',
+          'Barbell Straight-leg Deadlift',
+          'Single-arm Dumbbell Row',
         ],
         'Legs': <String>[
           'Squat',
+          'Deadlift',
           'Leg Press',
           'Romanian Deadlift',
           'Leg Extension',
           'Leg Curl',
         ],
+        'Glutes': <String>['Barbell Hip Thrust'],
         'Shoulders': <String>[
           'Overhead Press',
           'Lateral Raise',
           'Rear Delt Fly',
+          'Standing Dumbbell Shoulder Press',
+          'Standing Barbell Shoulder Press',
+          'Seated Barbell Shoulder Press',
+          'Standing Barbell Front Raise',
+          'Barbell Upright Row',
         ],
-        'Arms': <String>['Biceps Curl', 'Triceps Pushdown', 'Hammer Curl'],
+        'Arms': <String>[
+          'Biceps Curl',
+          'Hammer Curl',
+          'Triceps Pushdown',
+          'Close-grip Bench Press',
+          'Dip',
+          'Assisted Dip',
+        ],
         'Core': <String>['Plank', 'Crunch', 'Hanging Leg Raise'],
         'Cardio': <String>[
           'Walking',
@@ -67,20 +101,34 @@ class AppConstants {
           'Rowing Machine',
           'Stair Climber',
         ],
-        'Full Body': <String>['Deadlift', 'Kettlebell Swing', 'Burpee'],
+        'Full Body': <String>['Kettlebell Swing', 'Burpee', 'Jumping Jack'],
       };
 
   static const Set<String> bodyweightExercises = <String>{
     'Pull-up',
+    'Assisted Pull-up',
     'Push-up',
+    'Kneeling Push-up',
+    'Dip',
+    'Assisted Dip',
     'Plank',
     'Crunch',
     'Hanging Leg Raise',
     'Burpee',
+    'Jumping Jack',
+  };
+
+  static const Set<String> assistedBodyweightExercises = <String>{
+    'Assisted Pull-up',
+    'Assisted Dip',
   };
 
   static bool isBodyweightExercise(String exerciseName) {
     return bodyweightExercises.contains(exerciseName);
+  }
+
+  static bool isAssistedBodyweightExercise(String exerciseName) {
+    return assistedBodyweightExercises.contains(exerciseName);
   }
 
   static const List<String> intensityLevels = <String>['low', 'medium', 'high'];

@@ -188,7 +188,6 @@ class _FoodLogPageState extends State<FoodLogPage> {
 
           return Column(
             children: <Widget>[
-              const SizedBox(height: 4),
               FitLogPageHeader(
                 title: strings.foodLogTitle,
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),

@@ -64,6 +64,8 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     final isBodyweightExercise = AppConstants.isBodyweightExercise(
       session.exerciseName,
     );
+    final isAssistedBodyweightExercise =
+        AppConstants.isAssistedBodyweightExercise(session.exerciseName);
     final color = ExerciseVisuals.colorForBodyPart(session.bodyPart, context);
     return Scaffold(
       appBar: AppBar(title: Text(strings.workoutLogTitle)),
@@ -142,7 +144,11 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 18),
                             child: Text(
-                              strings.weightKgShortLabel,
+                              isAssistedBodyweightExercise
+                                  ? strings.assistWeightKgShortLabel
+                                  : isBodyweightExercise
+                                  ? strings.addedWeightKgShortLabel
+                                  : strings.weightKgShortLabel,
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
@@ -194,11 +200,13 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 18),
                               child: Text(
-                                isBodyweightExercise && set.weightKg <= 0
-                                    ? (strings.isChinese
-                                          ? '自重'
-                                          : 'Bodyweight')
-                                    : '${set.weightKg.toStringAsFixed(1)} kg',
+                                strings.setPerformanceLabel(
+                                  weightKg: set.weightKg,
+                                  reps: set.reps,
+                                  isBodyweightExercise: isBodyweightExercise,
+                                  isAssistedBodyweightExercise:
+                                      isAssistedBodyweightExercise,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w700,
@@ -206,19 +214,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                               ),
                             ),
                           ),
-                          Expanded(
-                            flex: 4,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 18),
-                              child: Text(
-                                '× ${set.reps}',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
+                          Expanded(flex: 4, child: const SizedBox.shrink()),
                         ],
                       ),
                     );

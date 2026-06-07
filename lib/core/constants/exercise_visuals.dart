@@ -11,6 +11,8 @@ class ExerciseVisuals {
         return Icons.accessibility_new;
       case 'Legs':
         return Icons.directions_run;
+      case 'Glutes':
+        return Icons.hiking;
       case 'Shoulders':
         return Icons.sports_mma;
       case 'Arms':
@@ -34,6 +36,8 @@ class ExerciseVisuals {
         return const Color(0xFF3B82F6);
       case 'Legs':
         return const Color(0xFFF59E0B);
+      case 'Glutes':
+        return const Color(0xFFEA580C);
       case 'Shoulders':
         return const Color(0xFF8B5CF6);
       case 'Arms':

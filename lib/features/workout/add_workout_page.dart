@@ -780,7 +780,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: Text(
-                                      strings.bodyweightAddedLoadHint,
+                                      draft.isAssistedBodyweight
+                                          ? strings.bodyweightAssistLoadHint
+                                          : strings.bodyweightAddedLoadHint,
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodySmall,
@@ -805,7 +807,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
                                       Expanded(
                                         flex: 6,
                                         child: Text(
-                                          draft.isBodyweight
+                                          draft.isAssistedBodyweight
+                                              ? strings.assistWeightKgShortLabel
+                                              : draft.isBodyweight
                                               ? strings.addedWeightKgShortLabel
                                               : strings.weightKgShortLabel,
                                           maxLines: 1,
@@ -1266,6 +1270,8 @@ class _ExercisePlanDraft {
 
   bool get isCardio => bodyPart == 'Cardio';
   bool get isBodyweight => AppConstants.isBodyweightExercise(exerciseName);
+  bool get isAssistedBodyweight =>
+      AppConstants.isAssistedBodyweightExercise(exerciseName);
   List<_SetDraft> get completedSets =>
       sets.where((set) => set.isCompleted).toList();
 

@@ -152,5 +152,68 @@ void main() {
       expect(squat, greaterThan(bench));
       expect(bench, greaterThan(curl));
     });
+
+    test(
+      'assisted bodyweight movements treat entered weight as assistance',
+      () {
+        final assistedSets = <WorkoutSet>[
+          const WorkoutSet(
+            setNumber: 1,
+            weightKg: 20,
+            reps: 8,
+            isCompleted: true,
+          ),
+          const WorkoutSet(
+            setNumber: 2,
+            weightKg: 20,
+            reps: 8,
+            isCompleted: true,
+          ),
+          const WorkoutSet(
+            setNumber: 3,
+            weightKg: 20,
+            reps: 8,
+            isCompleted: true,
+          ),
+        ];
+        final unassistedSets = <WorkoutSet>[
+          const WorkoutSet(
+            setNumber: 1,
+            weightKg: 0,
+            reps: 8,
+            isCompleted: true,
+          ),
+          const WorkoutSet(
+            setNumber: 2,
+            weightKg: 0,
+            reps: 8,
+            isCompleted: true,
+          ),
+          const WorkoutSet(
+            setNumber: 3,
+            weightKg: 0,
+            reps: 8,
+            isCompleted: true,
+          ),
+        ];
+
+        final assistedPullUp =
+            WorkoutCalorieCalculator.estimateStrengthCalories(
+              exerciseName: 'Assisted Pull-up',
+              bodyWeightKg: 80,
+              sets: assistedSets,
+              totalSessionDurationMinutes: 20,
+            );
+        final pullUp = WorkoutCalorieCalculator.estimateStrengthCalories(
+          exerciseName: 'Pull-up',
+          bodyWeightKg: 80,
+          sets: unassistedSets,
+          totalSessionDurationMinutes: 20,
+        );
+
+        expect(assistedPullUp, lessThan(pullUp));
+        expect(assistedPullUp, greaterThan(0));
+      },
+    );
   });
 }

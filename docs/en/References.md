@@ -51,6 +51,8 @@ References are not needed for:
 | REF-ALG-17 | Conservative loss-rate framing | Helms ER, Aragon AA, Fitschen PJ. "Evidence-based recommendations for natural bodybuilding contest preparation." J Int Soc Sports Nutr. 2014. PMID: 24864135. | Taper target-loss context. | Contest-prep population. |
 | REF-ALG-18 | Prep macro shifts | Chappell AJ, Simper T, Barker ME. "Nutritional strategies of high level natural bodybuilders during competition preparation." J Int Soc Sports Nutr. 2018. PMID: 29371857. | Observation that carbs/fats often trend down while protein stays high. | Observational only. |
 | REF-ALG-19 | Dynamic weight-change limitation | Hall KD. "Why is the 3500 kcal per pound weight loss rule wrong?" Int J Obes. 2013. PMID: 23774459. | Supports rolling trend review and user confirmation. | Does not validate exact taper step. |
+| REF-ALG-20 | Day-to-day body-mass variability | Schneditz D, Hofmann P, Krenn S, et al. "Day-to-day variability in euvolemic body mass." Ren Fail. 2023. PMID: 37955103. | Supports using longer trend windows instead of overreacting to one weigh-in. | Variability context, not a diet-planning rule. |
+| REF-ALG-21 | Practical carbohydrate day assignment | Burke LM, Cox GR, Cummings NK, Desbrow B. "Guidelines for daily carbohydrate intake: do athletes achieve them?" Sports Med. 2001. PMID: 11310548. | Supports assigning more carbohydrate to higher training demand and expressing intake in g/kg terms. | Athlete fueling context, not a direct validation of FitLog multipliers. |
 
 ## Agent / AI Boundary References
 

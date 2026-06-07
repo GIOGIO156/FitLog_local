@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/fitlog_icon_assets.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -103,7 +104,7 @@ class HomePage extends StatelessWidget {
                       nickname: nickname,
                       isChinese: strings.isChinese,
                     ),
-                    subtitle: strings.homeConsistencyHint,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                     trailing: FitLogActionIconButton(
                       icon: Icons.calendar_today_outlined,
                       tooltip: strings.change,
@@ -111,7 +112,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                     child: Text(
                       DateUtilsX.formatReadable(summary.date),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -121,7 +122,11 @@ class HomePage extends StatelessWidget {
                   ),
                   _CaloriesHero(summary: summary, strings: strings),
                   _MacrosCard(summary: summary, strings: strings),
-                  _StrategyCard(summary: summary, strings: strings),
+                  _StrategyCard(
+                    summary: summary,
+                    profile: profile ?? UserProfile.defaults,
+                    strings: strings,
+                  ),
                   _TodayRecordsCard(summary: summary, strings: strings),
                 ],
               );
@@ -154,16 +159,13 @@ class _CaloriesHero extends StatelessWidget {
     final progressBase = isGramPerKgMode
         ? math.max(summary.macroEnergyEquivalentKcal, 1)
         : math.max(summary.targetIntake, 1);
-    final progressValue = summary.caloriesIn;
-    final progress = (progressValue / progressBase).clamp(0.0, 1.0);
-    final heroValue =
-        summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg
+    final progress = (summary.caloriesIn / progressBase).clamp(0.0, 1.0);
+    final heroValue = isGramPerKgMode
         ? summary.macroEnergyEquivalentKcal
         : summary.caloriesIn;
-    final targetValue = summary.targetIntake;
 
     return GlassPanel(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +237,7 @@ class _CaloriesHero extends StatelessWidget {
                           : strings.targetIntakeLabel,
                       value: isGramPerKgMode
                           ? '${summary.caloriesIn.toStringAsFixed(0)} kcal'
-                          : '${targetValue.toStringAsFixed(0)} kcal',
+                          : '${summary.targetIntake.toStringAsFixed(0)} kcal',
                     ),
                     const SizedBox(height: 18),
                     _HeroMetric(
@@ -311,7 +313,7 @@ class _MacrosCard extends StatelessWidget {
                   current: summary.proteinG,
                   target: summary.targetProteinG,
                   color: const Color(0xFF6DBA57),
-                  iconType: _MacroIconType.protein,
+                  iconAsset: FitLogIconAssets.macroProtein,
                 ),
               ),
               const SizedBox(width: 10),
@@ -321,7 +323,7 @@ class _MacrosCard extends StatelessWidget {
                   current: summary.carbsG,
                   target: summary.targetCarbsG,
                   color: const Color(0xFFF2B545),
-                  iconType: _MacroIconType.carbs,
+                  iconAsset: FitLogIconAssets.macroCarbs,
                 ),
               ),
               const SizedBox(width: 10),
@@ -331,7 +333,7 @@ class _MacrosCard extends StatelessWidget {
                   current: summary.fatG,
                   target: summary.targetFatG,
                   color: const Color(0xFFE89257),
-                  iconType: _MacroIconType.fat,
+                  iconAsset: FitLogIconAssets.macroFat,
                 ),
               ),
             ],
@@ -348,14 +350,14 @@ class _MacroMetricCard extends StatelessWidget {
     required this.current,
     required this.target,
     required this.color,
-    required this.iconType,
+    required this.iconAsset,
   });
 
   final String label;
   final double current;
   final double target;
   final Color color;
-  final _MacroIconType iconType;
+  final String iconAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +375,7 @@ class _MacroMetricCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _MacroIconBadge(type: iconType, color: color),
+            _MacroIconBadge(assetName: iconAsset, color: color),
             const SizedBox(height: 12),
             Text(
               current.toStringAsFixed(0),
@@ -393,7 +395,7 @@ class _MacroMetricCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 42,
+              height: 44,
               child: Text(
                 context.strings.macroProgressText(current, target),
                 maxLines: 2,
@@ -448,12 +450,13 @@ class _HomeGreeting extends StatelessWidget {
     if (_shouldBreakLine) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
             isChinese ? '$greetingPrefix，' : '$greetingPrefix,',
             style: style,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(isChinese ? '$nickname！' : '$nickname!', style: style),
         ],
       );
@@ -467,10 +470,140 @@ class _HomeGreeting extends StatelessWidget {
 }
 
 class _StrategyCard extends StatelessWidget {
-  const _StrategyCard({required this.summary, required this.strings});
+  const _StrategyCard({
+    required this.summary,
+    required this.profile,
+    required this.strings,
+  });
 
   final DailySummary summary;
+  final UserProfile profile;
   final AppStrings strings;
+
+  void _openGuide(BuildContext context, String modeText) {
+    if (summary.dietPlanStrategy == AppConstants.dietPlanStrategyNone) {
+      return;
+    }
+
+    final strategyLabel =
+        summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
+        ? strings.carbCyclingLabel
+        : strings.carbTaperingLabel;
+
+    final baseCarbFloor = math.max(
+      profile.weightKg * AppConstants.carbSafetyFloorPerKg,
+      AppConstants.carbSafetyFloorMinimumG,
+    );
+    final guidePrinciple =
+        summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
+        ? strings.carbCyclingGuidePrinciple()
+        : strings.carbTaperingGuidePrinciple();
+    final guideNumbers =
+        summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
+        ? strings.carbCyclingGuideNumbers(
+            highMultiplier: profile.carbCycleHighMultiplier,
+            mediumMultiplier: profile.carbCycleMediumMultiplier,
+            lowMultiplier: profile.carbCycleLowMultiplier,
+            minimumCarbsG: baseCarbFloor,
+          )
+        : strings.carbTaperingGuideNumbers(
+            reviewDays: profile.carbTaperReviewPeriodDays,
+            targetLossPctPerWeek: profile.carbTaperTargetLossPctPerWeek,
+            stepG: profile.carbTaperStepG,
+            conservativeMaxStepG: math.min(20, profile.weightKg * 0.25),
+            minimumCarbsG: baseCarbFloor,
+          );
+    final guideSetup =
+        summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
+        ? strings.carbCyclingGuideSetup()
+        : strings.carbTaperingGuideSetup();
+    final whatToKnow =
+        summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
+        ? strings.carbCyclingGuideKnow()
+        : strings.carbTaperingGuideKnow();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: GlassPanel(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      const FitLogSvgIconCircle(
+                        assetName: FitLogIconAssets.strategy,
+                        backgroundColor: Color(0xFFEAF6E3),
+                        tintColor: Color(0xFF6FB95A),
+                        size: 44,
+                        iconSize: 22,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          strings.strategyGuideTitle(strategyLabel),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: math.min(
+                      MediaQuery.of(context).size.height * 0.72,
+                      620,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          FitLogStrategyGuideSection(
+                            title: strings.strategyGuideBaseMethodTitle,
+                            lines: <String>[
+                              strings.strategyGuideBaseMethodBody(modeText),
+                            ],
+                          ),
+                          FitLogStrategyGuideSection(
+                            title: strings.strategyGuideCorePrincipleTitle,
+                            lines: guidePrinciple,
+                          ),
+                          FitLogStrategyGuideSection(
+                            title: strings.strategyGuideNumbersTitle,
+                            lines: guideNumbers,
+                          ),
+                          FitLogStrategyGuideSection(
+                            title: strings.strategyGuideSetupTitle,
+                            lines: guideSetup,
+                          ),
+                          FitLogStrategyGuideSection(
+                            title: strings.strategyGuideKnowTitle,
+                            lines: whatToKnow,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -484,57 +617,59 @@ class _StrategyCard extends StatelessWidget {
         summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg
         ? strings.gramPerKgModeLabel
         : strings.energyRatioModeLabel;
-    final explanation = switch (summary.dietPlanStrategy) {
-      AppConstants.dietPlanStrategyCarbCycling =>
-        strings.homeCarbCyclingSummary(modeText),
-      AppConstants.dietPlanStrategyCarbTapering =>
-        strings.homeCarbTaperingSummary(modeText),
-      _ => null,
-    };
+    final canOpen =
+        summary.dietPlanStrategy != AppConstants.dietPlanStrategyNone;
 
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const FitLogIconCircle(
-            icon: Icons.spa_outlined,
-            color: Color(0xFF6FB95A),
-            size: 48,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  '${strings.phaseLabel(summary.dietGoalPhase)} - $modeText',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF7A8973),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  strategyText,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (explanation != null) ...<Widget>[
-                  const SizedBox(height: 8),
-                  Text(
-                    explanation,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF61715D),
-                      height: 1.35,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: canOpen ? () => _openGuide(context, modeText) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const FitLogSvgIconCircle(
+                assetName: FitLogIconAssets.strategy,
+                backgroundColor: Color(0xFFEAF6E3),
+                tintColor: Color(0xFF6FB95A),
+                size: 48,
+                iconSize: 24,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '${strings.phaseLabel(summary.dietGoalPhase)} - $modeText',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF7A8973),
+                      ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      strategyText,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (canOpen)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF7A8973),
                   ),
-                ],
-              ],
-            ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -560,7 +695,7 @@ class _TodayRecordsCard extends StatelessWidget {
             actionLabel: strings.viewAll,
           ),
           _RecordRow(
-            icon: Icons.restaurant_menu_outlined,
+            assetName: FitLogIconAssets.food,
             color: const Color(0xFF74BF56),
             title: strings.foodLabel,
             subtitle: strings.foodRecordsSummary(summary.foodRecords.length),
@@ -569,7 +704,7 @@ class _TodayRecordsCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _RecordRow(
-            icon: Icons.fitness_center_outlined,
+            assetName: FitLogIconAssets.workout,
             color: const Color(0xFF6B9ED6),
             title: strings.workoutLogTitle,
             subtitle: strings.workoutRecordsSummary(
@@ -586,7 +721,7 @@ class _TodayRecordsCard extends StatelessWidget {
 
 class _RecordRow extends StatelessWidget {
   const _RecordRow({
-    required this.icon,
+    required this.assetName,
     required this.color,
     required this.title,
     required this.subtitle,
@@ -594,7 +729,7 @@ class _RecordRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final String assetName;
   final Color color;
   final String title;
   final String subtitle;
@@ -615,7 +750,13 @@ class _RecordRow extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            FitLogIconCircle(icon: icon, color: color, size: 42),
+            FitLogSvgIconCircle(
+              assetName: assetName,
+              backgroundColor: color.withValues(alpha: 0.14),
+              tintColor: color,
+              size: 42,
+              iconSize: 21,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -648,147 +789,19 @@ class _RecordRow extends StatelessWidget {
   }
 }
 
-enum _MacroIconType { protein, carbs, fat }
-
 class _MacroIconBadge extends StatelessWidget {
-  const _MacroIconBadge({required this.type, required this.color});
+  const _MacroIconBadge({required this.assetName, required this.color});
 
-  final _MacroIconType type;
+  final String assetName;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: CustomPaint(
-        size: const Size.square(20),
-        painter: _MacroIconPainter(type: type, color: color),
-      ),
+    return FitLogSvgIconCircle(
+      assetName: assetName,
+      size: 40,
+      iconSize: 22,
+      backgroundColor: color.withValues(alpha: 0.14),
     );
-  }
-}
-
-class _MacroIconPainter extends CustomPainter {
-  const _MacroIconPainter({required this.type, required this.color});
-
-  final _MacroIconType type;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.9
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final fill = Paint()
-      ..color = color.withValues(alpha: 0.18)
-      ..style = PaintingStyle.fill;
-
-    switch (type) {
-      case _MacroIconType.protein:
-        final eggRect = Rect.fromCenter(
-          center: Offset(size.width / 2, size.height / 2),
-          width: size.width * 0.62,
-          height: size.height * 0.8,
-        );
-        canvas.drawOval(eggRect, stroke);
-        final yolk = Path()
-          ..moveTo(size.width * 0.5, size.height * 0.42)
-          ..quadraticBezierTo(
-            size.width * 0.62,
-            size.height * 0.54,
-            size.width * 0.5,
-            size.height * 0.68,
-          )
-          ..quadraticBezierTo(
-            size.width * 0.38,
-            size.height * 0.54,
-            size.width * 0.5,
-            size.height * 0.42,
-          );
-        canvas.drawPath(yolk, fill);
-        canvas.drawPath(yolk, stroke);
-        return;
-      case _MacroIconType.carbs:
-        canvas.drawLine(
-          Offset(size.width * 0.5, size.height * 0.2),
-          Offset(size.width * 0.5, size.height * 0.82),
-          stroke,
-        );
-        for (final entry in <Offset>[
-          Offset(size.width * 0.34, size.height * 0.32),
-          Offset(size.width * 0.34, size.height * 0.46),
-          Offset(size.width * 0.34, size.height * 0.6),
-          Offset(size.width * 0.66, size.height * 0.32),
-          Offset(size.width * 0.66, size.height * 0.46),
-          Offset(size.width * 0.66, size.height * 0.6),
-        ]) {
-          final grain = Path()
-            ..moveTo(entry.dx, entry.dy)
-            ..quadraticBezierTo(
-              entry.dx + (entry.dx < size.width / 2 ? -2.4 : 2.4),
-              entry.dy + 2.6,
-              entry.dx,
-              entry.dy + 5.2,
-            )
-            ..quadraticBezierTo(
-              entry.dx + (entry.dx < size.width / 2 ? 2.4 : -2.4),
-              entry.dy + 2.6,
-              entry.dx,
-              entry.dy,
-            );
-          canvas.drawPath(grain, stroke);
-        }
-        return;
-      case _MacroIconType.fat:
-        final body = Path()
-          ..moveTo(size.width * 0.5, size.height * 0.14)
-          ..quadraticBezierTo(
-            size.width * 0.82,
-            size.height * 0.2,
-            size.width * 0.8,
-            size.height * 0.52,
-          )
-          ..quadraticBezierTo(
-            size.width * 0.78,
-            size.height * 0.82,
-            size.width * 0.5,
-            size.height * 0.86,
-          )
-          ..quadraticBezierTo(
-            size.width * 0.22,
-            size.height * 0.82,
-            size.width * 0.2,
-            size.height * 0.52,
-          )
-          ..quadraticBezierTo(
-            size.width * 0.18,
-            size.height * 0.2,
-            size.width * 0.5,
-            size.height * 0.14,
-          );
-        canvas.drawPath(body, stroke);
-        final pit = Rect.fromCenter(
-          center: Offset(size.width * 0.53, size.height * 0.56),
-          width: size.width * 0.18,
-          height: size.height * 0.22,
-        );
-        canvas.drawOval(pit, fill);
-        canvas.drawOval(pit, stroke);
-        return;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MacroIconPainter oldDelegate) {
-    return oldDelegate.type != type || oldDelegate.color != color;
   }
 }

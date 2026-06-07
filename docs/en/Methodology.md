@@ -132,6 +132,13 @@ Why this method exists:
 - Carb needs can vary with training demands [REF-ALG-15](References.md).
 - Weekly normalization helps avoid accidentally turning cycling into hidden overeating or excessive restriction.
 
+How to assign high, medium, and low days:
+
+- High-carb days are usually the best fit for the hardest sessions of the week: the longest training day, the most demanding lower-body session, or a day where performance matters most [REF-ALG-15](References.md), [REF-ALG-21](References.md).
+- Medium-carb days fit ordinary training days that still need support, but are not the most demanding session of the week.
+- Low-carb days fit rest days, technique days, or clearly lighter activity days.
+- This is a practical planning rule, not a claim that one exact pattern is scientifically superior for everyone. FitLog keeps it simple so users can map carb availability to training demand without changing the base diet mode.
+
 What users should know:
 
 - Carb cycling is not a magic fat-loss algorithm; evidence around periodized carbohydrate restriction should not be overstated [REF-ALG-14](References.md).
@@ -139,12 +146,17 @@ What users should know:
 - It keeps protein and fat stable while adjusting carbs.
 - It applies a safety floor: carbs should not drop below `max(weightKg * 1.2, 100)`.
 - If the floor is hit, FitLog clamps the target and records a local reason code.
+- The current multipliers are a local FitLog setting layer. They move carbs up or down from the base target, then normalize the week so the average does not drift too far.
+- A good starting pattern is:
+  High on the hardest session days, medium on normal training days, low on rest or easy days.
+- If recovery or adherence gets worse, change the day labels before making the multipliers more aggressive.
 
 Main evidence context:
 
 - Periodized carbohydrate availability: [REF-ALG-13](References.md).
 - Limits of periodized carb restriction evidence: [REF-ALG-14](References.md).
 - Carbohydrate needs vary with training demands: [REF-ALG-15](References.md).
+- Practical daily carbohydrate ranges and g/kg framing: [REF-ALG-21](References.md).
 
 ## Carb Tapering
 
@@ -168,6 +180,20 @@ Why this method exists:
 - A rolling review is safer than reacting to a single day because it reduces the influence of short-term noise [REF-ALG-19](References.md).
 - User confirmation prevents the app from silently tightening the plan.
 
+How to set target loss rate and taper step:
+
+- A conservative default target is about `0.5%` bodyweight loss per week, which lines up with common physique-sport guidance for preserving lean mass during a cut [REF-ALG-17](References.md).
+- Pushing toward `1.0%/week` is more aggressive and should be reserved for cases where logging quality, recovery, and training stability are all good [REF-ALG-17](References.md).
+- Going slower than `0.5%/week` can be reasonable when the user is already lean, highly sensitive to recovery disruption, or simply prefers a steadier cut. FitLog allows this, but treats it as a user choice rather than a universal best setting.
+- Taper step size is a FitLog local product rule, not a literature-derived prescription. The app uses small gram changes because body weight is noisy and because the trend signal should be respected before making another cut [REF-ALG-19](References.md), [REF-ALG-20](References.md).
+- In practice, smaller steps such as `5-10 g/day` are the safer starting point when carbs are already low or logging is inconsistent. Larger steps such as `15-20 g/day` make more sense only when the trend is clearly too slow and the data quality is strong.
+
+How to choose the review period:
+
+- Longer windows such as `14-28 days` are steadier when day-to-day body weight swings are large [REF-ALG-20](References.md).
+- A `7-day` review is faster, but easier to misread unless weighing and food logging are both very consistent.
+- FitLog therefore treats the review window as a stability control, not as a claim that one exact period is clinically correct for everyone.
+
 What users should know:
 
 - FitLog uses a rolling trend, not one weigh-in.
@@ -177,6 +203,9 @@ What users should know:
 - If the data is weak, the app should say `no_data` instead of pretending to know.
 - If loss is too fast, the app can suggest `pause_taper`, matching the app's conservative loss-rate framing [REF-ALG-17](References.md).
 - If carbs would fall below the safety floor, the app blocks the decrease.
+- The taper delta is cumulative. The current carb target is roughly:
+  `base carbs + current taper delta`
+- Because of that, a `10 g` step is not a one-time opinion about today; it shifts the standing carb target until the user accepts a later review or changes settings.
 
 Main evidence context:
 
@@ -184,6 +213,7 @@ Main evidence context:
 - Conservative loss-rate framing: [REF-ALG-17](References.md).
 - Observed prep macro shifts: [REF-ALG-18](References.md).
 - Dynamic weight-change limitations: [REF-ALG-19](References.md).
+- Day-to-day body-mass variability: [REF-ALG-20](References.md).
 
 ## Why Exercise Calories Are Net Calories
 
@@ -234,6 +264,8 @@ effective load
 -> active lifting cost
 -> recovery and adaptation components
 ```
+
+For assisted pull-up or dip variants, the logged weight is assistance load, so FitLog estimates actual movement load from `bodyweight - assistance` before applying the normal strength heuristic.
 
 Duration still matters, but only as a capped recovery-density modifier. It can create a small difference between denser and slower sessions, but it does not linearly add calories.
 

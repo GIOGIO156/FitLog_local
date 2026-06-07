@@ -30,7 +30,7 @@ What users see:
 - 选中日期
 - `energy_ratio` 下的主 kcal 概览
 - `gram_per_kg` 下的主宏量概览
-- 蛋白质、碳水、脂肪的三张等尺寸宏量小卡片
+- 蛋白质、碳水、脂肪的三张等尺寸宏量小卡片，并使用独立 SVG 资产渲染图标
 - 当前 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy`
 - 简洁的当日饮食/训练摘要，并可跳转到副页
 
@@ -41,7 +41,8 @@ How it works:
 - 训练总量来自已保存的 `workout_sessions.estimated_calories`。
 - `energy_ratio` 以 kcal 目标/摄入/剩余为主。
 - `gram_per_kg` 以宏量克数为主，kcal 只是辅助信息。
-- 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文；当碳循环或碳水渐降启用时，Home 会直接给出简短方法说明。
+- 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文。
+- 当碳循环或碳水渐降启用时，Home 的策略卡片可以点开，并展示面向非熟悉用户的结构化方法说明。
 - BMR、TDEE、校准细节和长表单设置不堆在 Home。
 
 Read more:
@@ -121,6 +122,7 @@ How it works:
 - 在存储层，一个多动作记录是多条共享 `plan_id` 的 `workout_sessions`。
 - 同一记录内每条 session 也保存相同的 `record_name`。
 - 记录级摘要由已保存的 session 和 set 推导而来。
+- 身体部位缩略图和关键训练图标现在来自共享 SVG 资产，而不是临时手绘的小图标。
 
 Read more:
 
@@ -134,7 +136,7 @@ Add/Edit Workout Record 是创建或修改训练记录的页面。
 What users can do:
 
 - 给训练记录命名
-- 选择一个或多个动作
+- 从当前胸部、背部、腿部、臀部、肩部、手臂、核心、全身和有氧动作库中选择一个或多个动作
 - 保持动作的用户选择顺序
 - 输入每个动作的时长
 - 输入力量组的重量、次数和完成状态
@@ -146,6 +148,7 @@ How it works:
 - 动作选择支持按部位筛选、搜索和多选顺序。
 - 有氧动作只需要时长，不需要组清单。
 - 力量动作使用组行。
+- 辅助类自重动作在重量字段里记录的是辅助重量；估算消耗时按 `体重 - 辅助重量` 计算实际负重。
 - 保存前先完成校验。
 - 只有已完成的力量组会被保存；未勾选组会被丢弃。
 - 编辑已保存记录时，会事务性替换整个 `plan_id` 分组。
