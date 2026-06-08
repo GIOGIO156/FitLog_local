@@ -28,8 +28,8 @@ What users see:
 - local-time greeting using the locally saved nickname when present, with long nicknames moved to a dedicated second line when needed
 - selected date
 - primary calorie overview in `energy_ratio`
-- primary macro overview in `gram_per_kg`
-- compact macro progress for protein/carbs/fat in three equal-size cards rendered from dedicated SVG assets
+- dedicated macro-progress hero in `gram_per_kg`
+- compact macro progress for protein/carbs/fat in equal-size cards when the page is in `energy_ratio`
 - current `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy`
 - compact selected-day food/workout summaries with navigation to detail pages
 
@@ -38,10 +38,16 @@ How it works:
 - `DailySummaryService` reads Profile, Food, Workout, calibration, self-check, and strategy data.
 - Food totals come from saved `food_records`.
 - Exercise totals come from saved `workout_sessions.estimated_calories`.
-- `energy_ratio` uses kcal target/intake/remaining as primary.
-- `gram_per_kg` uses macro grams as primary and treats kcal as auxiliary.
+- `energy_ratio` uses kcal target/intake/remaining as primary, so Home keeps the calorie ring and kcal summary metrics at the top.
+- In `energy_ratio`, the opening viewport is treated as a dedicated two-card box: only the calorie hero and macro cards live inside it, their gap stays controlled, and a short protective tail below the macro card separates the strategy card without creating a large empty band.
+- `gram_per_kg` uses macro grams as primary and treats kcal as auxiliary, so Home replaces the calorie-ring hero with a dedicated macro dashboard built around the clipped arc, a lowest-completion macro focus hint, and the remaining grams.
+- In `gram_per_kg`, kcal intake and workout burn move into the macro dashboard as compact tappable summaries instead of a separate Today's Records card, so the first viewport stays macro-first without losing navigation.
+- In `gram_per_kg`, the clipped arc is intentionally oversized relative to the title so the first viewport reads as one continuous dashboard instead of a stack of smaller sections.
+- In `gram_per_kg`, the bottom detail list stays vertical and denser, without a visible divider line, so the arc, focus state, and macro rows still read as one surface.
+- In `gram_per_kg`, the first viewport still relies on a large dashboard container rather than measured spacer math: the macro dashboard owns the opening screen and the strategy card is placed after that container.
 - Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied.
 - When carb cycling or carb tapering is active, the Home strategy card opens a structured explainer sheet with methodology-oriented guidance for non-expert users.
+- In `gram_per_kg`, the strategy card stays below the initial macro viewport and only appears after scrolling, keeping the opening screen focused on execution rather than explanation.
 - Detailed BMR/TDEE/calibration numbers are intentionally left out of the Home surface and remain available in Profile-oriented views.
 
 Read more:

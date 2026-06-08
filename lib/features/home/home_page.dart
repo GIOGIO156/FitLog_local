@@ -14,8 +14,17 @@ import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/daily_summary.dart';
 import '../../domain/models/user_profile.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  Future<_HomePageData>? _dataFuture;
+  String? _loadedDate;
+  int? _loadedRefreshVersion;
 
   Future<_HomePageData> _loadData(BuildContext context, String day) async {
     final services = context.read<AppServices>();
@@ -66,9 +75,16 @@ class HomePage extends StatelessWidget {
         builder: (context, refresh, selectedDateNotifier, _) {
           refresh.version;
           final selectedDate = selectedDateNotifier.selectedDate;
+          if (_dataFuture == null ||
+              _loadedDate != selectedDate ||
+              _loadedRefreshVersion != refresh.version) {
+            _loadedDate = selectedDate;
+            _loadedRefreshVersion = refresh.version;
+            _dataFuture = _loadData(context, selectedDate);
+          }
 
           return FutureBuilder<_HomePageData>(
-            future: _loadData(context, selectedDate),
+            future: _dataFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
                 return const Center(child: CircularProgressIndicator());
@@ -87,48 +103,82 @@ class HomePage extends StatelessWidget {
 
               final profile = data.profile;
               final summary = data.summary;
+              final effectiveProfile = profile ?? UserProfile.defaults;
+              final isGramPerKgMode =
+                  summary.dietCalculationMode ==
+                  AppConstants.dietCalculationModeGramPerKg;
               final nickname = ((profile?.nickname ?? '').trim().isEmpty)
                   ? strings.nicknameFallback
                   : profile!.nickname!.trim();
               final greetingPrefix = _greetingForNow(strings);
 
-              return ListView(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.paddingOf(context).bottom + 132,
-                ),
-                children: <Widget>[
-                  FitLogPageHeader(
-                    title: '',
-                    titleWidget: _HomeGreeting(
-                      greetingPrefix: greetingPrefix,
-                      nickname: nickname,
-                      isChinese: strings.isChinese,
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final gramDashboardHeight = math.max(
+                    560.0,
+                    constraints.maxHeight - 170,
+                  );
+                  final energyDashboardHeight = math.max(
+                    648.0,
+                    constraints.maxHeight - 196,
+                  );
+
+                  return ListView(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom + 132,
                     ),
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    trailing: FitLogActionIconButton(
-                      icon: Icons.calendar_today_outlined,
-                      tooltip: strings.change,
-                      onPressed: () => _pickDate(context, selectedDateNotifier),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                    child: Text(
-                      DateUtilsX.formatReadable(summary.date),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF7A8973),
+                    children: <Widget>[
+                      FitLogPageHeader(
+                        title: '',
+                        titleWidget: _HomeGreeting(
+                          greetingPrefix: greetingPrefix,
+                          nickname: nickname,
+                          isChinese: strings.isChinese,
+                        ),
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                        trailing: FitLogActionIconButton(
+                          icon: Icons.calendar_today_outlined,
+                          tooltip: strings.change,
+                          onPressed: () =>
+                              _pickDate(context, selectedDateNotifier),
+                        ),
                       ),
-                    ),
-                  ),
-                  _CaloriesHero(summary: summary, strings: strings),
-                  _MacrosCard(summary: summary, strings: strings),
-                  _StrategyCard(
-                    summary: summary,
-                    profile: profile ?? UserProfile.defaults,
-                    strings: strings,
-                  ),
-                  _TodayRecordsCard(summary: summary, strings: strings),
-                ],
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                        child: Text(
+                          DateUtilsX.formatReadable(summary.date),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF7A8973)),
+                        ),
+                      ),
+                      if (isGramPerKgMode) ...<Widget>[
+                        _GramPerKgDashboard(
+                          summary: summary,
+                          strings: strings,
+                          height: gramDashboardHeight,
+                        ),
+                        const SizedBox(height: 20),
+                        _StrategyCard(
+                          summary: summary,
+                          profile: effectiveProfile,
+                          strings: strings,
+                        ),
+                      ] else ...<Widget>[
+                        _EnergyRatioDashboard(
+                          summary: summary,
+                          strings: strings,
+                          height: energyDashboardHeight,
+                        ),
+                        _StrategyCard(
+                          summary: summary,
+                          profile: effectiveProfile,
+                          strings: strings,
+                        ),
+                        _TodayRecordsCard(summary: summary, strings: strings),
+                      ],
+                    ],
+                  );
+                },
               );
             },
           );
@@ -143,6 +193,33 @@ class _HomePageData {
 
   final DailySummary summary;
   final UserProfile? profile;
+}
+
+class _EnergyRatioDashboard extends StatelessWidget {
+  const _EnergyRatioDashboard({
+    required this.summary,
+    required this.strings,
+    required this.height,
+  });
+
+  final DailySummary summary;
+  final AppStrings strings;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      child: Column(
+        children: <Widget>[
+          _CaloriesHero(summary: summary, strings: strings),
+          const SizedBox(height: 20),
+          _MacrosCard(summary: summary, strings: strings),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
 }
 
 class _CaloriesHero extends StatelessWidget {
@@ -163,10 +240,21 @@ class _CaloriesHero extends StatelessWidget {
     final heroValue = isGramPerKgMode
         ? summary.macroEnergyEquivalentKcal
         : summary.caloriesIn;
+    final energyRingState = _energyRingState(summary);
+    final ringValue = isGramPerKgMode ? progress : energyRingState.ringValue;
+    final ringColor = isGramPerKgMode
+        ? const Color(0xFF74BF56)
+        : energyRingState.ringColor;
+    final ringBackgroundColor = isGramPerKgMode
+        ? const Color(0xFFEEF3E7)
+        : energyRingState.backgroundColor;
+    final remainingAccent = isGramPerKgMode
+        ? const Color(0xFF4E9E3B)
+        : energyRingState.accentColor;
 
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -176,6 +264,7 @@ class _CaloriesHero extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               SizedBox(
                 width: 170,
@@ -187,12 +276,10 @@ class _CaloriesHero extends StatelessWidget {
                       width: 170,
                       height: 170,
                       child: CircularProgressIndicator(
-                        value: progress,
+                        value: ringValue,
                         strokeWidth: 12,
-                        backgroundColor: const Color(0xFFEEF3E7),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF74BF56),
-                        ),
+                        backgroundColor: ringBackgroundColor,
+                        valueColor: AlwaysStoppedAnimation<Color>(ringColor),
                       ),
                     ),
                     Column(
@@ -216,36 +303,40 @@ class _CaloriesHero extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 20),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _HeroMetric(
-                      label: isGramPerKgMode
-                          ? strings.macroEquivalentEnergyLabel
-                          : strings.remainingCaloriesLabel,
-                      value: isGramPerKgMode
-                          ? '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal'
-                          : '${summary.remainingCalories.toStringAsFixed(0)} kcal',
-                      emphasize: const Color(0xFF4E9E3B),
-                    ),
-                    const SizedBox(height: 18),
-                    _HeroMetric(
-                      label: isGramPerKgMode
-                          ? strings.caloriesInTodayLabel
-                          : strings.targetIntakeLabel,
-                      value: isGramPerKgMode
-                          ? '${summary.caloriesIn.toStringAsFixed(0)} kcal'
-                          : '${summary.targetIntake.toStringAsFixed(0)} kcal',
-                    ),
-                    const SizedBox(height: 18),
-                    _HeroMetric(
-                      label: strings.exerciseCaloriesTodayLabel,
-                      value:
-                          '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
-                    ),
-                  ],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _HeroMetric(
+                        label: isGramPerKgMode
+                            ? strings.macroEquivalentEnergyLabel
+                            : strings.remainingCaloriesLabel,
+                        value: isGramPerKgMode
+                            ? '${summary.macroEnergyEquivalentKcal.toStringAsFixed(0)} kcal'
+                            : '${summary.remainingCalories.toStringAsFixed(0)} kcal',
+                        emphasize: remainingAccent,
+                      ),
+                      const SizedBox(height: 14),
+                      _HeroMetric(
+                        label: isGramPerKgMode
+                            ? strings.caloriesInTodayLabel
+                            : strings.targetIntakeLabel,
+                        value: isGramPerKgMode
+                            ? '${summary.caloriesIn.toStringAsFixed(0)} kcal'
+                            : '${summary.targetIntake.toStringAsFixed(0)} kcal',
+                      ),
+                      const SizedBox(height: 14),
+                      _HeroMetric(
+                        label: strings.exerciseCaloriesTodayLabel,
+                        value:
+                            '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -266,23 +357,55 @@ class _HeroMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF75856F)),
+          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF75856F)),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
+        const SizedBox(height: 2),
+        _HeroMetricValueLine(
+          value: value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color: emphasize ?? const Color(0xFF152013),
             fontWeight: FontWeight.w800,
+            fontSize: 20.5,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HeroMetricValueLine extends StatelessWidget {
+  const _HeroMetricValueLine({required this.value, this.style});
+
+  final String value;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedValue = value.replaceAll(' kcal', '\u00A0kcal');
+
+    return SizedBox(
+      width: double.infinity,
+      height: 32,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            normalizedValue,
+            maxLines: 1,
+            softWrap: false,
+            style: style,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -344,6 +467,621 @@ class _MacrosCard extends StatelessWidget {
   }
 }
 
+class _GramPerKgDashboard extends StatelessWidget {
+  const _GramPerKgDashboard({
+    required this.summary,
+    required this.strings,
+    required this.height,
+  });
+
+  final DailySummary summary;
+  final AppStrings strings;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final navController = context.read<RootTabController>();
+    final proteinProgress = _macroProgress(
+      summary.proteinG,
+      summary.targetProteinG,
+    );
+    final carbsProgress = _macroProgress(summary.carbsG, summary.targetCarbsG);
+    final fatProgress = _macroProgress(summary.fatG, summary.targetFatG);
+    final focus = _macroFocus(summary, strings);
+    final allComplete =
+        proteinProgress >= 1 && carbsProgress >= 1 && fatProgress >= 1;
+
+    const stripHeight = 160.0;
+
+    return SizedBox(
+      height: height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final rightColumnWidth = math.min(constraints.maxWidth * 0.40, 166.0);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: <Widget>[
+                    Text(
+                      strings.gramPerKgHeroTitle,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF455340),
+                      ),
+                    ),
+                    Text(
+                      strings.gramPerKgHeroModeSuffix,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF7A8973),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Positioned(
+                      left: 0,
+                      top: 12,
+                      bottom: -18,
+                      width: constraints.maxWidth * 0.90,
+                      child: IgnorePointer(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: AspectRatio(
+                            aspectRatio: 0.56,
+                            child: ClipRect(
+                              child: CustomPaint(
+                                painter: _TripleMacroArcPainter(
+                                  proteinProgress: proteinProgress,
+                                  carbsProgress: carbsProgress,
+                                  fatProgress: fatProgress,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 20,
+                      right: 2,
+                      width: rightColumnWidth,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            allComplete
+                                ? strings.gramPerKgAllCompleteTitle
+                                : strings.gramPerKgFocusTitle,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: const Color(0xFF7A8973)),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            allComplete
+                                ? strings.gramPerKgAllCompleteBody
+                                : focus.label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: allComplete
+                                      ? const Color(0xFF152013)
+                                      : focus.color,
+                                  height: 1.02,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            allComplete
+                                ? strings.gramPerKgBalancedHint
+                                : strings.gramPerKgRemainingHint(
+                                    math.max(focus.target - focus.current, 0),
+                                  ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: const Color(0xFF152013),
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.0,
+                                ),
+                          ),
+                          const SizedBox(height: 52),
+                          _DashboardEnergyLink(
+                            label: strings.caloriesInTodayLabel,
+                            value: summary.caloriesIn.toStringAsFixed(0),
+                            subtitle: strings.foodRecordsSummary(
+                              summary.foodRecords.length,
+                            ),
+                            color: const Color(0xFF4E9E3B),
+                            onTap: () => navController.setIndex(1),
+                          ),
+                          const SizedBox(height: 16),
+                          _DashboardEnergyLink(
+                            label: strings.exerciseCaloriesTodayLabel,
+                            value: summary.exerciseCalories.toStringAsFixed(0),
+                            subtitle: strings.workoutRecordsSummary(
+                              summary.workoutSessions.length,
+                            ),
+                            color: const Color(0xFF3F78C0),
+                            onTap: () => navController.setIndex(2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                child: SizedBox(
+                  height: stripHeight,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Expanded(
+                        child: _GramPerKgMacroStripColumn(
+                          label: strings.proteinLabel,
+                          current: summary.proteinG,
+                          target: summary.targetProteinG,
+                          progress: proteinProgress,
+                          color: const Color(0xFF6DBA57),
+                          iconAsset: FitLogIconAssets.macroProtein,
+                          contentAlignment: const Alignment(-0.72, -1),
+                        ),
+                      ),
+                      const _MacroStripDivider(),
+                      Expanded(
+                        child: _GramPerKgMacroStripColumn(
+                          label: strings.carbsLabel,
+                          current: summary.carbsG,
+                          target: summary.targetCarbsG,
+                          progress: carbsProgress,
+                          color: const Color(0xFFF2B545),
+                          iconAsset: FitLogIconAssets.macroCarbs,
+                          contentAlignment: Alignment.topCenter,
+                        ),
+                      ),
+                      const _MacroStripDivider(),
+                      Expanded(
+                        child: _GramPerKgMacroStripColumn(
+                          label: strings.fatLabel,
+                          current: summary.fatG,
+                          target: summary.targetFatG,
+                          progress: fatProgress,
+                          color: const Color(0xFFE89257),
+                          iconAsset: FitLogIconAssets.macroFat,
+                          contentAlignment: const Alignment(0.72, -1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DashboardEnergyLink extends StatelessWidget {
+  const _DashboardEnergyLink({
+    required this.label,
+    required this.value,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final textWidth = math.max(
+            0.0,
+            math.min(122.0, constraints.maxWidth - 22),
+          );
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    width: textWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: const Color(0xFF7A8973)),
+                        ),
+                        const SizedBox(height: 2),
+                        SizedBox(
+                          height: 34,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: RichText(
+                                text: TextSpan(
+                                  children: <InlineSpan>[
+                                    TextSpan(
+                                      text: value,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            color: color,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 21,
+                                            height: 1.0,
+                                          ),
+                                    ),
+                                    TextSpan(
+                                      text: ' kcal',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: color,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: const Color(0xFF7A8973)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: Color(0xFF7A8973),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _GramPerKgMacroStripColumn extends StatelessWidget {
+  const _GramPerKgMacroStripColumn({
+    required this.label,
+    required this.current,
+    required this.target,
+    required this.progress,
+    required this.color,
+    required this.iconAsset,
+    required this.contentAlignment,
+  });
+
+  final String label;
+  final double current;
+  final double target;
+  final double progress;
+  final Color color;
+  final String iconAsset;
+  final Alignment contentAlignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconSize = iconAsset == FitLogIconAssets.macroCarbs ? 30.0 : 22.0;
+    final isCenter = contentAlignment.x == 0;
+    final isRight = contentAlignment.x > 0;
+    final textAlign = isCenter
+        ? TextAlign.center
+        : isRight
+        ? TextAlign.right
+        : TextAlign.left;
+    final columnAlignment = isCenter
+        ? CrossAxisAlignment.center
+        : isRight
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
+
+    return Align(
+      alignment: contentAlignment,
+      child: SizedBox(
+        width: 82,
+        child: Column(
+          crossAxisAlignment: columnAlignment,
+          children: <Widget>[
+            const SizedBox(height: 4),
+            _PngBadgeIcon(
+              assetName: iconAsset,
+              backgroundColor: color.withValues(alpha: 0.12),
+              size: 40,
+              iconSize: iconSize,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: textAlign,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              context.strings.macroProgressText(current, target),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: textAlign,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF455340),
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              context.strings.macroPercentText(progress),
+              textAlign: textAlign,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroStripDivider extends StatelessWidget {
+  const _MacroStripDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(width: 1, height: 102, color: const Color(0xFFE2E9DB)),
+    );
+  }
+}
+
+class _MacroFocusData {
+  const _MacroFocusData({
+    required this.label,
+    required this.color,
+    required this.current,
+    required this.target,
+    required this.progress,
+  });
+
+  final String label;
+  final Color color;
+  final double current;
+  final double target;
+  final double progress;
+}
+
+class _EnergyRingState {
+  const _EnergyRingState({
+    required this.ringValue,
+    required this.ringColor,
+    required this.backgroundColor,
+    required this.accentColor,
+  });
+
+  final double ringValue;
+  final Color ringColor;
+  final Color backgroundColor;
+  final Color accentColor;
+}
+
+double _macroProgress(double current, double target) {
+  if (target <= 0) {
+    return 0;
+  }
+  return (current / target).clamp(0.0, 1.0);
+}
+
+_MacroFocusData _macroFocus(DailySummary summary, AppStrings strings) {
+  final options = <_MacroFocusData>[
+    _MacroFocusData(
+      label: strings.proteinLabel,
+      color: const Color(0xFF6DBA57),
+      current: summary.proteinG,
+      target: summary.targetProteinG,
+      progress: _macroProgress(summary.proteinG, summary.targetProteinG),
+    ),
+    _MacroFocusData(
+      label: strings.carbsLabel,
+      color: const Color(0xFFF2B545),
+      current: summary.carbsG,
+      target: summary.targetCarbsG,
+      progress: _macroProgress(summary.carbsG, summary.targetCarbsG),
+    ),
+    _MacroFocusData(
+      label: strings.fatLabel,
+      color: const Color(0xFFE89257),
+      current: summary.fatG,
+      target: summary.targetFatG,
+      progress: _macroProgress(summary.fatG, summary.targetFatG),
+    ),
+  ];
+
+  options.sort((a, b) => a.progress.compareTo(b.progress));
+  return options.first;
+}
+
+_EnergyRingState _energyRingState(DailySummary summary) {
+  const green = Color(0xFF74BF56);
+  const softGreen = Color(0xFFEAF5E4);
+  const softOrange = Color(0xFFF3C27A);
+  const red = Color(0xFFE16759);
+  const paleRed = Color(0xFFF7D9D5);
+
+  final target = math.max(summary.targetIntake, 1);
+  final intake = summary.caloriesIn;
+
+  if (intake <= 0) {
+    return const _EnergyRingState(
+      ringValue: 1,
+      ringColor: softOrange,
+      backgroundColor: softOrange,
+      accentColor: softOrange,
+    );
+  }
+
+  if (intake > target) {
+    return const _EnergyRingState(
+      ringValue: 1,
+      ringColor: red,
+      backgroundColor: paleRed,
+      accentColor: red,
+    );
+  }
+
+  if ((intake - target).abs() < 0.5) {
+    return const _EnergyRingState(
+      ringValue: 1,
+      ringColor: green,
+      backgroundColor: softGreen,
+      accentColor: green,
+    );
+  }
+
+  return _EnergyRingState(
+    ringValue: (intake / target).clamp(0.0, 1.0),
+    ringColor: green,
+    backgroundColor: softOrange,
+    accentColor: softOrange,
+  );
+}
+
+class _TripleMacroArcPainter extends CustomPainter {
+  _TripleMacroArcPainter({
+    required this.proteinProgress,
+    required this.carbsProgress,
+    required this.fatProgress,
+  });
+
+  final double proteinProgress;
+  final double carbsProgress;
+  final double fatProgress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const startAngle = -math.pi / 2;
+    const totalSweep = math.pi;
+    const strokeWidth = 26.0;
+    const ringStep = 38.0;
+
+    final maxRadiusFromWidth = size.width - strokeWidth / 2;
+    final maxRadiusFromHeight = (size.height - strokeWidth) / 2;
+    final outerRadius = math.min(maxRadiusFromWidth, maxRadiusFromHeight);
+    final adjustedRingStep = math.min(
+      ringStep,
+      (outerRadius - strokeWidth * 2) / 2,
+    );
+    final center = Offset(0, size.height / 2);
+    final radii = <double>[
+      outerRadius,
+      outerRadius - adjustedRingStep,
+      outerRadius - adjustedRingStep * 2,
+    ];
+    final colors = <Color>[
+      const Color(0xFF6DBA57),
+      const Color(0xFFF2B545),
+      const Color(0xFFE89257),
+    ];
+    final backgrounds = <Color>[
+      const Color(0xFFE8F2E3),
+      const Color(0xFFF9E8BE),
+      const Color(0xFFF8DFC9),
+    ];
+    final progresses = <double>[proteinProgress, carbsProgress, fatProgress];
+
+    for (var i = 0; i < radii.length; i++) {
+      final radius = math.max(radii[i], strokeWidth);
+      final rect = Rect.fromCircle(center: center, radius: radius);
+      final backgroundPaint = Paint()
+        ..color = backgrounds[i]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+      final progressPaint = Paint()
+        ..color = colors[i]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(rect, startAngle, totalSweep, false, backgroundPaint);
+      canvas.drawArc(
+        rect,
+        startAngle,
+        totalSweep * progresses[i].clamp(0.0, 1.0),
+        false,
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TripleMacroArcPainter oldDelegate) {
+    return proteinProgress != oldDelegate.proteinProgress ||
+        carbsProgress != oldDelegate.carbsProgress ||
+        fatProgress != oldDelegate.fatProgress;
+  }
+}
+
 class _MacroMetricCard extends StatelessWidget {
   const _MacroMetricCard({
     required this.label,
@@ -364,9 +1102,9 @@ class _MacroMetricCard extends StatelessWidget {
     final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.0);
 
     return SizedBox(
-      height: 196,
+      height: 184,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
         decoration: BoxDecoration(
           color: const Color(0xFFFCFDFC),
           borderRadius: BorderRadius.circular(22),
@@ -376,7 +1114,7 @@ class _MacroMetricCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _MacroIconBadge(assetName: iconAsset, color: color),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               current.toStringAsFixed(0),
               maxLines: 1,
@@ -386,16 +1124,16 @@ class _MacroMetricCard extends StatelessWidget {
                 height: 1.0,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             SizedBox(
-              height: 44,
+              height: 36,
               child: Text(
                 context.strings.macroProgressText(current, target),
                 maxLines: 2,
@@ -703,7 +1441,12 @@ class _TodayRecordsCard extends StatelessWidget {
             color: const Color(0xFF74BF56),
             title: strings.foodLabel,
             subtitle: strings.foodRecordsSummary(summary.foodRecords.length),
-            value: '${summary.caloriesIn.toStringAsFixed(0)} kcal',
+            value: Text(
+              '${summary.caloriesIn.toStringAsFixed(0)} kcal',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
             onTap: () => navController.setIndex(1),
           ),
           const SizedBox(height: 12),
@@ -714,7 +1457,12 @@ class _TodayRecordsCard extends StatelessWidget {
             subtitle: strings.workoutRecordsSummary(
               summary.workoutSessions.length,
             ),
-            value: '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
+            value: Text(
+              '${summary.exerciseCalories.toStringAsFixed(0)} kcal',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
             onTap: () => navController.setIndex(2),
           ),
         ],
@@ -737,7 +1485,7 @@ class _RecordRow extends StatelessWidget {
   final Color color;
   final String title;
   final String subtitle;
-  final String value;
+  final Widget value;
   final VoidCallback onTap;
 
   @override
@@ -777,11 +1525,8 @@ class _RecordRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            Flexible(
+              child: Align(alignment: Alignment.centerRight, child: value),
             ),
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right_rounded, color: Color(0xFF7A8973)),

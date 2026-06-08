@@ -29,8 +29,8 @@ What users see:
 - 已保存昵称；若为空则使用本地 fallback
 - 选中日期
 - `energy_ratio` 下的主 kcal 概览
-- `gram_per_kg` 下的主宏量概览
-- 蛋白质、碳水、脂肪的三张等尺寸宏量小卡片，并使用独立 SVG 资产渲染图标
+- `gram_per_kg` 下的专属宏量进度 hero
+- 在 `energy_ratio` 下显示蛋白质、碳水、脂肪的三张等尺寸宏量小卡片，并使用独立 PNG 资产渲染图标
 - 当前 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy`
 - 简洁的当日饮食/训练摘要，并可跳转到副页
 
@@ -39,10 +39,16 @@ How it works:
 - `DailySummaryService` 读取 Profile、Food、Workout、校准、自检和策略数据。
 - 食物总量来自已保存的 `food_records`。
 - 训练总量来自已保存的 `workout_sessions.estimated_calories`。
-- `energy_ratio` 以 kcal 目标/摄入/剩余为主。
-- `gram_per_kg` 以宏量克数为主，kcal 只是辅助信息。
+- `energy_ratio` 以 kcal 目标/摄入/剩余为主，因此 Home 顶部保留热量圆环和 kcal 摘要指标。
+- `gram_per_kg` 以宏量克数为主，kcal 只是辅助信息，因此 Home 顶部改为专属宏量 dashboard：左侧裁切大圆环负责进度，右侧提示当前完成度最低的宏量和剩余克数。
+- 在 `gram_per_kg` 下，饮食摄入和训练消耗 kcal 会收进 macro dashboard 内，作为可点击的紧凑摘要，而不是继续占用独立的今日记录卡片。
+- 在 `gram_per_kg` 下，裁切大圆环会比标题更强势，首屏看起来更像一个完整的仪表盘，而不是多个小段落拼在一起。
+- 在 `gram_per_kg` 下，底部纵向明细列表会继续保留，但去掉明显分割线，用更连续的留白把圆环、焦点状态和三项宏量连成一个整体。
 - 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文。
 - 当碳循环或碳水渐降启用时，Home 的策略卡片可以点开，并展示面向非熟悉用户的结构化方法说明。
+- 在 `gram_per_kg` 下，策略卡片位于首屏宏量区域之后，用户需要下滑后才会看到解释入口，首页打开时只聚焦宏量执行信息。
+- 在 `energy_ratio` 下，首屏会被当作一个只容纳热量卡片和宏量卡片的专用大盒子：盒子里只放这两张卡片，二者之间的距离保持受控，宏量卡片下方只保留较短的保护间距，避免策略卡片前出现大段空白。
+- 在 `gram_per_kg` 下，策略卡片之所以位于首屏之后，主要来自专属宏量 dashboard 自身的大区域容器，而不是使用 `energy_ratio` 那种先测量内容再计算留白的方式。
 - BMR、TDEE、校准细节和长表单设置不堆在 Home。
 
 Read more:

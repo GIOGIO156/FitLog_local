@@ -19,6 +19,17 @@ import 'features/home/home_page.dart';
 import 'features/profile/profile_page.dart';
 import 'features/workout/workout_log_page.dart';
 
+const String _fitlogFontFamily = 'NotoSansSC';
+const List<String> _fitlogChineseSansFallback = <String>[
+  'Noto Sans CJK SC',
+  'Noto Sans SC',
+  'Source Han Sans SC',
+  'PingFang SC',
+  'Hiragino Sans GB',
+  'Microsoft YaHei',
+  'sans-serif',
+];
+
 class FitLogApp extends StatefulWidget {
   const FitLogApp({super.key});
 
@@ -136,6 +147,34 @@ class _FitLogAppState extends State<FitLogApp> {
         brightness: brightness,
       ),
     );
+    final textTheme = base.textTheme
+        .apply(
+          fontFamily: _fitlogFontFamily,
+          fontFamilyFallback: _fitlogChineseSansFallback,
+        )
+        .copyWith(
+          headlineSmall: _withFontFallback(
+            base.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF152013),
+            ),
+          ),
+          titleLarge: _withFontFallback(
+            base.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF152013),
+            ),
+          ),
+          titleMedium: _withFontFallback(
+            base.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF22311F),
+            ),
+          ),
+          bodyMedium: _withFontFallback(
+            base.textTheme.bodyMedium?.copyWith(color: const Color(0xFF51614E)),
+          ),
+        );
 
     return base.copyWith(
       splashFactory: isDark ? NoSplash.splashFactory : InkRipple.splashFactory,
@@ -150,10 +189,12 @@ class _FitLogAppState extends State<FitLogApp> {
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
-        titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: isDark ? Colors.white : const Color(0xFF111827),
+        titleTextStyle: _withFontFallback(
+          TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : const Color(0xFF111827),
+          ),
         ),
       ),
       cardTheme: CardThemeData(
@@ -169,7 +210,9 @@ class _FitLogAppState extends State<FitLogApp> {
           horizontal: 16,
           vertical: 14,
         ),
-        labelStyle: const TextStyle(color: Color(0xFF61715D)),
+        labelStyle: _withFontFallback(
+          const TextStyle(color: Color(0xFF61715D)),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: Color(0xFFDCE6D7)),
@@ -197,25 +240,16 @@ class _FitLogAppState extends State<FitLogApp> {
             ? const Color(0xFF11161F).withValues(alpha: 0.9)
             : Colors.white,
       ),
-      textTheme: base.textTheme.copyWith(
-        headlineSmall: base.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w800,
-          color: const Color(0xFF152013),
-        ),
-        titleLarge: base.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w800,
-          color: const Color(0xFF152013),
-        ),
-        titleMedium: base.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF22311F),
-        ),
-        bodyMedium: base.textTheme.bodyMedium?.copyWith(
-          color: const Color(0xFF51614E),
-        ),
-      ),
+      textTheme: textTheme,
     );
   }
+}
+
+TextStyle? _withFontFallback(TextStyle? style) {
+  return style?.copyWith(
+    fontFamily: _fitlogFontFamily,
+    fontFamilyFallback: _fitlogChineseSansFallback,
+  );
 }
 
 class _RootShell extends StatefulWidget {
@@ -226,16 +260,17 @@ class _RootShell extends StatefulWidget {
 }
 
 class _RootShellState extends State<_RootShell> {
+  late final List<Widget> _pages = const <Widget>[
+    HomePage(),
+    FoodLogPage(),
+    WorkoutLogPage(),
+    ProfilePage(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
     final navController = context.watch<RootTabController>();
-    final pages = <Widget>[
-      const HomePage(),
-      const FoodLogPage(),
-      const WorkoutLogPage(),
-      const ProfilePage(),
-    ];
     final items = <_ShellNavItem>[
       _ShellNavItem(
         label: strings.navHome,
@@ -272,81 +307,100 @@ class _RootShellState extends State<_RootShell> {
             ],
           ),
         ),
-        child: pages[navController.index],
+        child: IndexedStack(index: navController.index, children: _pages),
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Container(
-          height: 72,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.97),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xFFE2ECDD)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: const Color(0xFF13200F).withValues(alpha: 0.08),
-                blurRadius: 30,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Row(
-            children: List<Widget>.generate(items.length, (index) {
-              final item = items[index];
-              final selected = navController.index == index;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final trackWidth = constraints.maxWidth;
+            final segmentWidth = trackWidth / items.length;
+            const indicatorInset = 5.0;
+            const indicatorVerticalMargin = 7.0;
+            final indicatorWidth = segmentWidth - indicatorInset * 2;
 
-              return Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => navController.setIndex(index),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 7,
+            return Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.97),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0xFFE2ECDD)),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: const Color(0xFF13200F).withValues(alpha: 0.08),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: <Widget>[
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    left: navController.index * segmentWidth + indicatorInset,
+                    top: indicatorVerticalMargin,
+                    width: indicatorWidth,
+                    height: 72 - indicatorVerticalMargin * 2,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF6E3),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? const Color(0xFFEAF6E3)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(
-                          selected ? item.activeIcon : item.icon,
-                          color: selected
-                              ? const Color(0xFF4E9E3B)
-                              : const Color(0xFF7A8973),
-                          size: 22,
-                        ),
-                        const SizedBox(height: 3),
-                        Flexible(
-                          child: Text(
-                            item.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              height: 1.0,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: selected
-                                  ? const Color(0xFF234120)
-                                  : const Color(0xFF7A8973),
+                  ),
+                  Row(
+                    children: List<Widget>.generate(items.length, (index) {
+                      final item = items[index];
+                      final selected = navController.index == index;
+
+                      return Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => navController.setIndex(index),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 7),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Icon(
+                                  selected ? item.activeIcon : item.icon,
+                                  color: selected
+                                      ? const Color(0xFF4E9E3B)
+                                      : const Color(0xFF7A8973),
+                                  size: 22,
+                                ),
+                                const SizedBox(height: 3),
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    height: 1.0,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: selected
+                                        ? const Color(0xFF234120)
+                                        : const Color(0xFF7A8973),
+                                  ),
+                                  child: Text(
+                                    item.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    }),
                   ),
-                ),
-              );
-            }),
-          ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

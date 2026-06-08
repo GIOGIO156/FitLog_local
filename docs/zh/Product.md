@@ -58,9 +58,11 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 
 - Home、Food Log 和 Workout Log 共享选中日期。
 - Home 的信息密度刻意低于其他副页。
-- Home 展示本地时间问候语、本地昵称 fallback、选中日期、主 calorie/macro 概览、宏量进度、当前饮食上下文，以及简洁的饮食/训练摘要。
-- 在 `energy_ratio` 中，kcal 目标/摄入/剩余是主计数器。
-- 在 `gram_per_kg` 中，宏量克数是主计数器，kcal 只是辅助信息。
+- Home 展示本地时间问候语、本地昵称 fallback、选中日期、当前饮食上下文，以及简洁的饮食/训练摘要，但首屏结构会随计算模式切换。
+- 在 `energy_ratio` 中，kcal 目标/摄入/剩余是主计数器，Home 保留热量圆环 hero 和紧随其后的宏量小卡片。
+- 在 `gram_per_kg` 中，宏量克数是主计数器，kcal 只是辅助信息；Home 用专属宏量 dashboard 取代热量圆环，并把饮食/训练 kcal 摘要收进 dashboard，让 dashboard 尽量占满首页首屏，把策略卡片放到首屏宏量区域之后。
+- 在 `energy_ratio` 中，首屏被定义为一个只包含热量卡和宏量卡的 kcal-first 大盒子：这两张卡片一起待在首屏容器里，二者之间的距离保持受控，宏量卡片下方只保留较短的保护间距，让策略卡片以正常列表节奏接在大盒子之后。
+- 在 `gram_per_kg` 中，策略卡片之所以留在首屏之外，同样主要依赖专属首屏 dashboard 容器本身；只是它使用的是 macro-first 的专属 dashboard，而不是 `energy_ratio` 的 kcal-first 双卡盒子。
 - BMR、TDEE、校准和长表单细节保留在 Profile、Food、Workout 和详情页，不堆在 Home。
 - Home 同时展示 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy` 上下文。
 - `carb_cycling` 展示碳水日类型和碳水调整上下文。

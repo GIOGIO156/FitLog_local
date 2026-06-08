@@ -48,6 +48,7 @@ class AppStrings {
   );
   String macroProgressText(double current, double target) =>
       '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g';
+  String macroPercentText(double progress) => '${(progress * 100).round()}%';
 
   String get homeDashboardTitle => _t('Home / Daily Dashboard', '首页 / 每日看板');
   String get foodLogTitle => _t('Food Log', '饮食记录');
@@ -637,8 +638,19 @@ class AppStrings {
   );
   String get caloriesRingTitle => _t('Calories', '热量');
   String get macrosTitle => _t('Macros', '宏量');
+  String get carbsLabelLong => _t('Carbohydrates', '碳水化合物');
   String get foodLabel => _t('Food', '饮食');
-
+  String get gramPerKgHeroTitle => _t("Today's Macro Progress", '今日宏量进度');
+  String get gramPerKgHeroModeSuffix => _t('(g/kg)', '（g/kg）');
+  String get gramPerKgFocusTitle => _t('Focus next', '优先补充');
+  String gramPerKgRemainingHint(double grams) => _t(
+    '${grams.toStringAsFixed(0)} g left',
+    '还差 ${grams.toStringAsFixed(0)} g',
+  );
+  String get gramPerKgAllCompleteTitle => _t('Today macros', '今日宏量');
+  String get gramPerKgAllCompleteBody => _t('Target reached', '已达到目标');
+  String get gramPerKgBalancedHint =>
+      _t('All three macros are on track', '三项宏量都已跟上');
   String phaseLabel(String phase) {
     switch (phase) {
       case 'bulking':

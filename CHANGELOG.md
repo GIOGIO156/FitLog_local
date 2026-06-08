@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-06-08 Mode-Switched Home Dashboard
+
+### Changed
+- Split Home into mode-specific first-screen layouts instead of forcing both diet calculation modes through one kcal-centered hero.
+- Kept the existing `energy_ratio` Home structure with the calorie ring, target intake, remaining kcal, exercise kcal, and compact macro cards.
+- Rebuilt the `gram_per_kg` Home surface into a macro-first dashboard with the clipped arc, lowest-completion macro focus, remaining grams, and a bottom detail list for protein, carbs, and fat.
+- Moved kcal intake and workout burn into compact tappable summaries inside the `gram_per_kg` dashboard instead of keeping a separate Today's Records card in that mode.
+- Kept the Home strategy card below the `gram_per_kg` dashboard so the first viewport stays focused on execution signals while the explainer entry remains one scroll step away.
+- Tightened the `gram_per_kg` first viewport so the macro dashboard occupies the opening screen more completely, with a lighter section title, a larger clipped arc, and a continuous vertical macro detail stack.
+- Bundled `NotoSansSC` into the app and switched Home typography from best-effort fallback matching to an explicit packaged Chinese sans family.
+- Reworked the `gram_per_kg` hero into a taller first-viewport composition that keeps the macro strip pinned near the bottom while using any recovered vertical space to enlarge the clipped arc.
+- Replaced the bottom `gram_per_kg` macro rows with a three-column vertical strip separated by light vertical dividers so the first viewport stays information-dense without reintroducing cards.
+- Tuned the `gram_per_kg` hero proportions again so the clipped arc remains the left-side visual anchor without visually crossing the right-side metrics or the bottom macro strip.
+- Tightened the `gram_per_kg` right-side metric hierarchy again so the remaining-grams line regains emphasis while the intake and exercise kcal values stay smaller and closer to their chevrons.
+- Rebalanced the `gram_per_kg` arc geometry and bottom strip spacing so the first-screen macro dashboard keeps a larger rounder left arc without letting it drift into the detailed macro columns.
+- Rebuilt the `gram_per_kg` macro arc as a more explicit shared semicircle geometry, then dropped it slightly lower in the hero so the chart reads less like three loose arcs and more like one coherent left-side figure.
+- Repositioned the `gram_per_kg` bottom macro strip so protein stays anchored on the left, carbs remain the visual center, and fat finishes closer to the right edge with matching divider structure.
+- Locked the `gram_per_kg` arc into a dedicated semicircle viewport so all three macro tracks now derive from the same circle geometry and only the visible half carries progress.
+- Pulled the `gram_per_kg` semicircle viewport back to the screen edge so the visible chart now exposes more of the true half-circle instead of an over-trimmed arc slice.
+- Enlarged the `gram_per_kg` semicircle viewport again so the outer protein arc pushes further toward the page midpoint while preserving the stable half-circle geometry.
+- Scaled the `gram_per_kg` semicircle group by expanding the arc canvas downward, increasing the actual shared radius while keeping the title gap visually consistent.
+- Lowered the `gram_per_kg` macro strip and the right-side kcal record cluster slightly so the lower half of the semicircle reads as part of one continuous composition instead of visually dropping away from the text blocks.
+- Enlarged the `gram_per_kg` focus header hierarchy again so the “priority replenish” section reads more like the dominant status block above the kcal summaries.
+- Reworked the root navigation into a single moving selection capsule and kept the four root pages alive in an `IndexedStack`, which makes tab switching feel more intentional and avoids repeated page reconstruction.
+- Cached Home's loaded future across ordinary rebuilds and only refreshes it when the selected date or refresh version changes, which reduces loading flashes when switching tabs.
+- Updated the `energy_ratio` calorie ring to use intake-aware color semantics, including a soft orange empty state, green intake progress against an orange remainder, a fully green on-target state, and a fully red over-target state.
+- Pushed the `gram_per_kg` bottom macro strip down again by a visible step while moving the right-side kcal summary block down much further, so the lower half of the semicircle now reads as connected to the detail area instead of hanging in open space.
+- Unified the `energy_ratio` remainder orange so the empty-day full ring and the in-range remainder track now use the same visible hue.
+- Kept `energy_ratio` right-side kcal values on one line by switching the metric value row to scale down as a single non-wrapping unit, which prevents four-digit values from stretching the calorie card taller than the intended first viewport.
+- Reduced the `energy_ratio` right-side metric typography and vertical spacing slightly, then tightened the macro-card internals so the calorie and macro modules are more likely to fit together in the opening viewport without the ring losing visual priority.
+- Dropped the `gram_per_kg` macro strip farther again and nudged the right-side kcal links down with it so the lower strip-to-arc gap reads closer to the title-to-arc gap at the top of the hero.
+- Wrapped the `energy_ratio` calorie and macro cards in a dedicated first-viewport dashboard height so the opening screen stops at those two modules and keeps the strategy card fully below the fold on common phone sizes.
+- Shifted the `energy_ratio` right-side metric column slightly farther right by widening the gap from the circular ring.
+- Re-aligned the `energy_ratio` right-side metric stack to share the ring's full vertical span, while slightly enlarging the kcal values so the top remaining-calorie label and bottom exercise value anchor more cleanly to the circle.
+- Re-expanded the `energy_ratio` calorie hero again by restoring a more natural right-side metric rhythm, increasing the kcal typography and spacing, and slightly enlarging the card without letting the strategy card rise back into the first viewport.
+- Replaced the measured `energy_ratio` trailing spacer with a dedicated first-viewport dashboard box that contains only the calorie hero and macro cards, keeps their internal gap controlled, and uses a shorter protective tail below the macro card so the strategy card follows with a normal list rhythm.
+- Restored the p2-style `energy_ratio` metric rhythm by keeping the group spacing tight and only nudging the right-side kcal values larger.
+
+### Fixed
+- Removed the `gram_per_kg` macro row overflow path that appeared once percent and gram progress text expanded on narrower screens.
+- Prevented the `gram_per_kg` strategy card from peeking into the initial viewport on common phone sizes.
+- Removed the artificial middle spacer that was creating an obvious blank band between the top macro dashboard and the vertical macro detail list.
+- Kept the `gram_per_kg` kcal summaries readable by switching them from ellipsized single-line text to a smaller scale-down number-plus-unit treatment closer to the previous visual hierarchy.
+- Enlarged the `gram_per_kg` carbs icon badge so it matches the apparent visual weight of the protein and fat badges.
+- Pulled the `gram_per_kg` right-side summary group closer to the trailing edge and tightened the chevron spacing so the tappable kcal rows read as one compact block.
+- Reduced the remaining-grams text hierarchy so it stays bold but no longer competes with the main macro name.
+- Added a larger bottom safe zone above the `gram_per_kg` macro strip so the clipped arc no longer visually overlaps the first row of macro details on short screens.
+- Relaxed the spacing between gram totals and percentages in the `gram_per_kg` macro strip without reintroducing the earlier overflow path on smaller phones.
+- Fixed the `gram_per_kg` macro strip dividers so they sit on the true column boundaries between protein/carbs and carbs/fat instead of drifting with the content alignment.
+- Pulled the protein and fat macro-strip content slightly inward with matching edge spacing so the outer columns read more balanced without moving the center divider geometry.
+- Nudged the protein and fat macro-strip content a bit further inward with mirrored alignment so the outer columns feel tighter around the centered carbs column.
+- Tightened the protein and fat macro-strip columns slightly more toward center with matching mirrored offsets.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-07 Workout Library Refresh
 
 ### Changed

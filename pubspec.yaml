@@ -29,6 +29,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/fonts/
     - assets/icons/common/
     - assets/icons/macros/
     - assets/icons/workouts/
+  fonts:
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-VF.ttf
