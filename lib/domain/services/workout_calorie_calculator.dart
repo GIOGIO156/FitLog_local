@@ -62,6 +62,7 @@ class WorkoutCalorieCalculator {
 
   static const Set<String> _lowerBodyCompoundExercises = <String>{
     'Squat',
+    'Bulgarian Split Squat',
     'Deadlift',
     'Romanian Deadlift',
     'Barbell Straight-leg Deadlift',

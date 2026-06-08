@@ -929,6 +929,7 @@ class AppStrings {
       'Barbell Straight-leg Deadlift': '杠铃直腿硬拉',
       'Single-arm Dumbbell Row': '哑铃俯身单臂提拉',
       'Squat': '深蹲',
+      'Bulgarian Split Squat': '保加利亚分腿蹲',
       'Deadlift': '硬拉',
       'Leg Press': '腿举',
       'Romanian Deadlift': '罗马尼亚硬拉',

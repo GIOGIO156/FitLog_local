@@ -68,6 +68,7 @@ class AppConstants {
         ],
         'Legs': <String>[
           'Squat',
+          'Bulgarian Split Squat',
           'Deadlift',
           'Leg Press',
           'Romanian Deadlift',

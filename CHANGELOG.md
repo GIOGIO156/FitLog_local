@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-09 Add Bulgarian Split Squat
+
+### Changed
+- Added `Bulgarian Split Squat` to the legs exercise library and mapped its Chinese display name.
+- Classified `Bulgarian Split Squat` as a lower-body compound movement so strength calorie estimation uses the intended lower-body heuristic profile.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-08 Mode-Switched Home Dashboard
 
 ### Changed
