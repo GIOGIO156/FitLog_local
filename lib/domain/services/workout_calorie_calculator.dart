@@ -89,6 +89,8 @@ class WorkoutCalorieCalculator {
     'Barbell Upright Row',
     'Barbell High Pull',
     'Barbell Pullover',
+    'Barbell Biceps Curl',
+    'Dumbbell Biceps Curl',
     'Biceps Curl',
     'Triceps Pushdown',
     'Hammer Curl',

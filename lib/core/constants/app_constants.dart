@@ -87,7 +87,8 @@ class AppConstants {
           'Barbell Upright Row',
         ],
         'Arms': <String>[
-          'Biceps Curl',
+          'Barbell Biceps Curl',
+          'Dumbbell Biceps Curl',
           'Hammer Curl',
           'Triceps Pushdown',
           'Close-grip Bench Press',

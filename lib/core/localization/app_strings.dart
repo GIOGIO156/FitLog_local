@@ -944,6 +944,8 @@ class AppStrings {
       'Seated Barbell Shoulder Press': '杠铃坐姿推肩',
       'Standing Barbell Front Raise': '站姿杠铃前平举',
       'Barbell Upright Row': '杠铃直立划船',
+      'Barbell Biceps Curl': '杠铃二头弯举',
+      'Dumbbell Biceps Curl': '哑铃二头弯举',
       'Biceps Curl': '二头弯举',
       'Triceps Pushdown': '三头下压',
       'Hammer Curl': '锤式弯举',

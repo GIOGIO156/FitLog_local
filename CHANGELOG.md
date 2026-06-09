@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-09 Split Biceps Curl Variants
+
+### Changed
+- Split the arm exercise library entry `Biceps Curl` into `Barbell Biceps Curl` and `Dumbbell Biceps Curl`.
+- Kept legacy `Biceps Curl` localization and calorie-profile compatibility for previously saved workout records.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+
 ## 2026-06-09 Add Bulgarian Split Squat
 
 ### Changed
