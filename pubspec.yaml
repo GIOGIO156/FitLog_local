@@ -31,6 +31,7 @@ flutter:
   assets:
     - assets/fonts/
     - assets/icons/common/
+    - assets/icons/exercises/
     - assets/icons/macros/
     - assets/icons/workouts/
   fonts:

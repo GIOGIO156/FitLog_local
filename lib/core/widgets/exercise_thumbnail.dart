@@ -18,6 +18,27 @@ class ExerciseThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final exerciseAsset = fitLogWorkoutAssetForExercise(exerciseName);
+
+    if (exerciseAsset != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Image.asset(
+          exerciseAsset,
+          width: size * 0.66,
+          height: size * 0.66,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
     return FitLogSvgIconCircle(
       assetName: fitLogWorkoutAssetForBodyPart(bodyPart),
       size: size,

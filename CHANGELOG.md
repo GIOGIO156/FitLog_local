@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-10 Exercise PNG Icon Mapping
+
+### Changed
+- Added 14 dedicated transparent PNG exercise thumbnails and mapped them by exact workout-library exercise name.
+- Updated workout thumbnails to prefer matched per-exercise PNG assets while keeping the existing body-part SVG icons as the fallback for unmatched movements.
+- Kept the workout library, exercise localization, and calorie logic unchanged; this change only affects thumbnail rendering.
+
+### Validation
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-09 Split Biceps Curl Variants
 
 ### Changed

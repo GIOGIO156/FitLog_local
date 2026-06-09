@@ -267,6 +267,42 @@ String fitLogWorkoutAssetForBodyPart(String bodyPart) {
   }
 }
 
+String? fitLogWorkoutAssetForExercise(String exerciseName) {
+  switch (exerciseName) {
+    case 'Bench Press':
+      return FitLogIconAssets.exerciseBenchPress;
+    case 'Cable Fly':
+      return FitLogIconAssets.exerciseCableFly;
+    case 'Deadlift':
+      return FitLogIconAssets.exerciseDeadlift;
+    case 'Dumbbell Biceps Curl':
+      return FitLogIconAssets.exerciseDumbbellBicepsCurl;
+    case 'Dumbbell Fly':
+      return FitLogIconAssets.exerciseDumbbellFly;
+    case 'Barbell Biceps Curl':
+      return FitLogIconAssets.exerciseBarbellBicepsCurl;
+    case 'Bent-over Barbell Row':
+      return FitLogIconAssets.exerciseBentOverBarbellRow;
+    case 'Lateral Raise':
+      return FitLogIconAssets.exerciseLateralRaise;
+    case 'Lat Pulldown':
+      return FitLogIconAssets.exerciseLatPulldown;
+    case 'Overhead Press':
+      return FitLogIconAssets.exerciseOverheadPress;
+    case 'Pull-up':
+      return FitLogIconAssets.exercisePullUp;
+    case 'Running':
+      return FitLogIconAssets.exerciseRunning;
+    case 'Seated Cable Row':
+    case 'Seated Row':
+      return FitLogIconAssets.exerciseSeatedRow;
+    case 'Squat':
+      return FitLogIconAssets.exerciseSquat;
+    default:
+      return null;
+  }
+}
+
 class FitLogActionIconButton extends StatelessWidget {
   const FitLogActionIconButton({
     super.key,

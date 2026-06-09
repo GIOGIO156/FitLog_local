@@ -128,7 +128,7 @@ How it works:
 - 在存储层，一个多动作记录是多条共享 `plan_id` 的 `workout_sessions`。
 - 同一记录内每条 session 也保存相同的 `record_name`。
 - 记录级摘要由已保存的 session 和 set 推导而来。
-- 身体部位缩略图和关键训练图标现在来自共享 SVG 资产，而不是临时手绘的小图标。
+- 动作缩略图现在会优先使用已匹配动作的透明 PNG 资产；未匹配到具体动作图标时，仍回退到按身体部位区分的共享 SVG 图标。
 
 Read more:
 

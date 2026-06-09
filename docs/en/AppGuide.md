@@ -127,7 +127,7 @@ How it works:
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
 - Record-level summaries are derived from persisted sessions and sets.
-- Body-part thumbnails and key workout glyphs now come from shared SVG assets instead of ad hoc painter-based mini-icons.
+- Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
 
 Read more:
 
