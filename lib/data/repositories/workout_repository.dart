@@ -92,6 +92,38 @@ class WorkoutRepository {
     });
   }
 
+  Future<void> replaceSingleWorkoutRecord({
+    required int sessionId,
+    required List<WorkoutSession> sessions,
+  }) async {
+    final db = await _database.database;
+    final now = DateTime.now().toIso8601String();
+
+    await db.transaction((txn) async {
+      await txn.delete(
+        'workout_sessions',
+        where: 'id = ?',
+        whereArgs: <Object?>[sessionId],
+      );
+
+      for (final session in sessions) {
+        final int insertedSessionId = await txn.insert(
+          'workout_sessions',
+          session.copyWith(createdAt: now, updatedAt: now).toMap()
+            ..remove('id'),
+        );
+
+        for (final set in session.sets) {
+          await txn.insert(
+            'workout_sets',
+            set.copyWith(workoutSessionId: insertedSessionId).toMap()
+              ..remove('id'),
+          );
+        }
+      }
+    });
+  }
+
   Future<void> updateWorkoutSession(WorkoutSession session) async {
     if (session.id == null) {
       throw ArgumentError('Workout session id is required for update.');

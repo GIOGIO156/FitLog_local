@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-06-11 Workout Draft Resume Flow
+
+### Added
+
+- Added SQLite schema version `10` with a dedicated `workout_record_drafts` table for one active unsaved workout editor state.
+- Added a compact workout draft resume bar above `Add Workout` on the Workout tab so users can reopen or discard an unsaved training draft without creating a saved record first.
+- Added a focused `workout_record_draft_test.dart` unit test covering draft payload parsing and repository-map round-tripping.
+
+### Changed
+
+- Reworked `AddWorkoutPage` so editor exit now keeps a local draft instead of forcing immediate save/discard handling on back navigation.
+- Split workout editor persistence into draft autosave and explicit saved-record commit paths, keeping validation on the explicit save path only.
+- Added red in-editor discard actions for both new workout drafts and unsaved edits to existing workout records.
+- Updated bilingual workout design docs to describe the draft bar, autosave behavior, and schema version `10`.
+
+### Fixed
+
+- Prevented unsaved workout edits from being lost when the user leaves the editor before saving.
+- Hardened saved workout replacement for older single-session records so edit-save no longer depends on `plan_id` already existing.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+
+## 2026-06-11 Documentation Naming And Chinese Doc Polish
+
+### Changed
+
+- Renamed the current AI boundary design document references back to `docs/en/AgentDesign.md` and `docs/zh/AgentDesign.md` to match the repository rules and avoid collisions with `AGENTS.md`.
+- Updated README, AppGuide, and Methodology links so the design-document map no longer points to deleted `Agent.md` paths.
+- Reworked the Chinese Product, App Guide, and Database doc structure into finished-source wording by localizing remaining section headings and recurring guide labels.
+- Updated Chinese cross-document anchors to match the localized Product headings and the current Methodology strength-calorie heading.
+
+### Validation
+
+- Verified the required design-document tree still exists under `docs/en/` and `docs/zh/`.
+- Searched for stale `Agent.md` design-document links after the rename cleanup.
+- Re-checked Chinese doc reads with UTF-8 to distinguish terminal mojibake from real file corruption.
+
 ## 2026-06-10 Exercise PNG Icon Mapping
 
 ### Changed

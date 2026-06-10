@@ -510,6 +510,43 @@ class AppStrings {
     '确认删除 $date 这条训练记录？（共 $count 个动作）',
   );
 
+  String get unsavedWorkoutDraftTitle => _t('Unsaved workout draft', '未保存训练');
+  String workoutDraftBanner(String summary) =>
+      _t('Unsaved workout · $summary', '未保存训练 · $summary');
+  String workoutDraftExerciseSummary(String exerciseName, int count) => _t(
+    '$exerciseName · $count exercise${count == 1 ? '' : 's'}',
+    '$exerciseName · $count 个动作',
+  );
+  String get workoutDraftUntitled => _t('Tap to continue editing', '点击继续编辑');
+  String get workoutDraftExistsTitle =>
+      _t('Continue the existing draft?', '继续未保存训练？');
+  String get workoutDraftExistsMessage => _t(
+    'You already have an unsaved workout draft. Continue it, or discard it and start a new record.',
+    '当前已有一条未保存训练草稿。你可以继续编辑，或者先舍弃它再开始新的记录。',
+  );
+  String get workoutEditDraftConflictMessage => _t(
+    'You already have another unsaved workout draft. Continue it, or discard it before editing this saved record.',
+    '当前还有另一条未保存训练草稿。你可以继续编辑那条草稿，或者先舍弃它再编辑这条已保存记录。',
+  );
+  String get continueEditing => _t('Continue Editing', '继续编辑');
+  String get discardAndStartNewWorkout => _t('Discard And Start New', '舍弃并新建');
+  String get discardAndEditWorkout =>
+      _t('Discard And Edit This Record', '舍弃并编辑这条记录');
+  String get discardWorkoutDraftTitle =>
+      _t('Discard this workout draft?', '舍弃这次训练？');
+  String get discardWorkoutDraftMessage => _t(
+    'Discarding will delete this unsaved workout draft.',
+    '舍弃后，这次未保存的训练草稿会被删除。',
+  );
+  String get discardWorkoutDraftAction => _t('Discard This Workout', '舍弃本次训练');
+  String get discardWorkoutChangesTitle =>
+      _t('Discard these workout changes?', '放弃本次修改？');
+  String get discardWorkoutChangesMessage => _t(
+    'Discarding will remove your unsaved workout changes. The saved workout record will stay as it is.',
+    '放弃后，当前未保存的训练修改会被删除，已保存的训练记录保持不变。',
+  );
+  String get discardWorkoutChangesAction =>
+      _t('Discard These Changes', '放弃本次修改');
   String get searchExercise => _t('Search exercise', '搜索动作');
   String get exercisesLibrary => _t('Exercise Library', '动作库');
   String get allBodyParts => _t('All muscle groups', '所有肌群');

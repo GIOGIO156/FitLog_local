@@ -17,7 +17,7 @@ Read more:
 
 - Product scope: [Product](Product.md)
 - Method reasoning: [Methodology](Methodology.md)
-- AI boundary: [Agent](Agent.md)
+- AI boundary: [AgentDesign](AgentDesign.md)
 
 ## Home
 
@@ -82,7 +82,7 @@ Read more:
 
 - Food workflow: [Product](Product.md#food-workflow)
 - Tables: [Database](Database.md#food_records), [Database](Database.md#food_items)
-- AI-adjacent boundary: [Agent](Agent.md)
+- AI-adjacent boundary: [AgentDesign](AgentDesign.md)
 
 ## Add Food
 
@@ -105,7 +105,7 @@ How it works:
 Read more:
 
 - Product behavior: [Product](Product.md#food-workflow)
-- AI boundary: [Agent](Agent.md)
+- AI boundary: [AgentDesign](AgentDesign.md)
 - Parser and summary formulas: [Algorithm](Algorithm.md#food-intake-summary)
 
 ## Workout Log
@@ -120,12 +120,15 @@ What users can do:
 - open a saved record
 - delete a saved record
 - start Add/Edit Workout Record
+- resume one unsaved workout draft from the floating draft bar above `Add Workout`
+- discard that draft from the floating bar after confirmation
 
 How it works:
 
 - A user-facing `Workout Record` can contain multiple exercises.
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
+- One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately and does not count as a saved workout record.
 - Record-level summaries are derived from persisted sessions and sets.
 - Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
 
@@ -146,6 +149,8 @@ What users can do:
 - enter per-exercise duration
 - enter strength sets with weight, reps, and completed state
 - add notes
+- leave the editor and come back later through the Workout Log draft bar
+- discard a new draft or discard edits from inside the editor with the red danger action
 - save completed strength sets
 
 How it works:
@@ -154,7 +159,8 @@ How it works:
 - Cardio exercises use duration and have no set checklist.
 - Strength exercises use set rows.
 - Assisted bodyweight exercises store assistance load in the weight field, and calorie estimation treats actual load as `bodyweight - assistance`.
-- Save validation happens before persistence.
+- Draft persistence happens while editing; saved-record persistence only happens after explicit save and successful validation.
+- Back/gesture exit keeps the draft instead of opening a save/discard modal.
 - Only completed strength sets are saved; unchecked sets are discarded.
 - Editing a saved record replaces the full `plan_id` group transactionally.
 
@@ -283,5 +289,5 @@ What stays local:
 Read more:
 
 - Database storage: [Database](Database.md)
-- AI boundary: [Agent](Agent.md)
+- AI boundary: [AgentDesign](AgentDesign.md)
 - Evidence and safety boundaries: [References](References.md)

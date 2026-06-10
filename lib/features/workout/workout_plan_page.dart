@@ -9,6 +9,7 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/exercise_thumbnail.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import 'add_workout_page.dart';
 import 'workout_session_page.dart';
@@ -44,7 +45,9 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
       final session = await repository.getWorkoutSessionById(
         widget.seedSessionId,
       );
-      sessions = session == null ? <WorkoutSession>[] : <WorkoutSession>[session];
+      sessions = session == null
+          ? <WorkoutSession>[]
+          : <WorkoutSession>[session];
     }
 
     if (!mounted) {
@@ -71,6 +74,69 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
       return;
     }
     final seed = _sessions.first;
+    final activeDraft = await context
+        .read<AppServices>()
+        .workoutDraftRepository
+        .getActiveDraft();
+    if (!mounted) {
+      return;
+    }
+    if (activeDraft != null && !_matchesCurrentDraft(activeDraft, seed)) {
+      final strings = context.stringsRead;
+      final decision =
+          await showDialog<_WorkoutPlanDraftAction>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text(strings.workoutDraftExistsTitle),
+                content: Text(strings.workoutEditDraftConflictMessage),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop(_WorkoutPlanDraftAction.cancel),
+                    child: Text(strings.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop(_WorkoutPlanDraftAction.resumeExisting),
+                    child: Text(strings.continueEditing),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop(_WorkoutPlanDraftAction.discardAndEditCurrent),
+                    child: Text(strings.discardAndEditWorkout),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          _WorkoutPlanDraftAction.cancel;
+      if (!mounted) {
+        return;
+      }
+      if (decision == _WorkoutPlanDraftAction.resumeExisting) {
+        await Navigator.of(context).push<bool>(
+          MaterialPageRoute<bool>(
+            builder: (_) => AddWorkoutPage(initialDate: activeDraft.date),
+          ),
+        );
+        return;
+      }
+      if (decision != _WorkoutPlanDraftAction.discardAndEditCurrent) {
+        return;
+      }
+      await context
+          .read<AppServices>()
+          .workoutDraftRepository
+          .deleteActiveDraft();
+      if (!mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+    }
 
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -86,6 +152,18 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
       context.read<RefreshNotifier>().markDataChanged();
       await _load();
     }
+  }
+
+  bool _matchesCurrentDraft(WorkoutRecordDraft draft, WorkoutSession seed) {
+    if (!draft.isEditDraft) {
+      return false;
+    }
+    final activePlanId = (draft.sourcePlanId ?? '').trim();
+    final currentPlanId = (seed.planId ?? '').trim();
+    if (currentPlanId.isNotEmpty) {
+      return activePlanId == currentPlanId;
+    }
+    return activePlanId.isEmpty && draft.sourceSessionId == seed.id;
   }
 
   DateTime _createdAtRaw(WorkoutSession session) {
@@ -310,6 +388,8 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
     );
   }
 }
+
+enum _WorkoutPlanDraftAction { cancel, resumeExisting, discardAndEditCurrent }
 
 class _MetricBlock extends StatelessWidget {
   const _MetricBlock({required this.label, required this.value});

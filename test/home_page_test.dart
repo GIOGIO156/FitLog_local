@@ -4,6 +4,7 @@ import 'package:fitlog_local/core/localization/language_controller.dart';
 import 'package:fitlog_local/data/db/app_database.dart';
 import 'package:fitlog_local/data/repositories/food_repository.dart';
 import 'package:fitlog_local/data/repositories/profile_repository.dart';
+import 'package:fitlog_local/data/repositories/workout_draft_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_repository.dart';
 import 'package:fitlog_local/domain/models/calorie_calibration_state.dart';
 import 'package:fitlog_local/domain/models/diet_adjustment_review.dart';
@@ -161,6 +162,7 @@ Widget _buildHomeTestApp({
     ..recordsByDate[_referenceDay] = foodRecords;
   final workoutRepository = _FakeWorkoutRepository(database)
     ..sessionsByDate[_referenceDay] = workoutSessions;
+  final workoutDraftRepository = WorkoutDraftRepository(database);
   final profileRepository = _FakeProfileRepository(database)..profile = profile;
   final trainingFrequencySelfCheckService = TrainingFrequencySelfCheckService(
     workoutRepository: workoutRepository,
@@ -189,6 +191,7 @@ Widget _buildHomeTestApp({
         value: AppServices(
           foodRepository: foodRepository,
           workoutRepository: workoutRepository,
+          workoutDraftRepository: workoutDraftRepository,
           profileRepository: profileRepository,
           dailySummaryService: dailySummaryService,
           xlsxExportService: XlsxExportService(

@@ -1,10 +1,10 @@
-# App Guide
+# 应用指南
 
-## Purpose
+## 目的
 
-本文档解释 FitLog Local 每个 App 板块做什么、背后大致如何工作、以及应去哪里继续阅读。它是给用户和维护者看的地图，不替代 Product、Methodology、Algorithm、Database、Agent 或 References。
+本文档解释 FitLog Local 每个 App 板块做什么、背后大致如何工作、以及应去哪里继续阅读。它是给用户和维护者看的地图，不替代 Product、Methodology、Algorithm、Database、AgentDesign 或 References。
 
-## App-wide Rules
+## 全局规则
 
 - FitLog Local 是 local-first：业务数据存储在 SQLite，除非用户主动导出。
 - Home、Food Log 和 Workout Log 共享选中日期。
@@ -13,17 +13,17 @@
 - `diet_goal_phase` 控制 cutting/bulking 语义。
 - `energy_ratio` 和 `gram_per_kg` 保持分离。
 
-Read more:
+延伸阅读：
 
 - 产品范围：[Product](Product.md)
 - 方法原因：[Methodology](Methodology.md)
-- AI 边界：[Agent](Agent.md)
+- AI 边界：[AgentDesign](AgentDesign.md)
 
-## Home
+## 首页
 
 Home 是选中日期的每日入口页。
 
-What users see:
+用户可见内容：
 
 - 根据本地时间变化的问候语；当昵称过长时，昵称会单独从第二行开始显示
 - 已保存昵称；若为空则使用本地 fallback
@@ -34,7 +34,7 @@ What users see:
 - 当前 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy`
 - 简洁的当日饮食/训练摘要，并可跳转到副页
 
-How it works:
+工作方式：
 
 - `DailySummaryService` 读取 Profile、Food、Workout、校准、自检和策略数据。
 - 食物总量来自已保存的 `food_records`。
@@ -51,18 +51,18 @@ How it works:
 - 在 `gram_per_kg` 下，策略卡片之所以位于首屏之后，主要来自专属宏量 dashboard 自身的大区域容器，而不是使用 `energy_ratio` 那种先测量内容再计算留白的方式。
 - BMR、TDEE、校准细节和长表单设置不堆在 Home。
 
-Read more:
+延伸阅读：
 
-- 每日看板行为：[Product](Product.md#daily-dashboard-behavior)
+- 每日看板行为：[Product](Product.md#每日看板行为)
 - 计算原因：[Methodology](Methodology.md)
 - 公式：[Algorithm](Algorithm.md)
-- 运行时聚合字段：[Database](Database.md#runtime-aggregates)
+- 运行时聚合字段：[Database](Database.md#运行时聚合)
 
-## Food Log
+## 饮食记录
 
 Food Log 是选中日期的饮食记录列表。
 
-What users can do:
+用户可执行操作：
 
 - 查看选中日期的已保存餐食
 - 打开并编辑一条记录
@@ -71,7 +71,7 @@ What users can do:
 - 进入 Add Food
 - 滑到当天记录列表底部后查看估算说明
 
-How it works:
+工作方式：
 
 - 一餐存为一条 `FoodRecord`。
 - 可选 item 行存为 `FoodItem`。
@@ -79,67 +79,70 @@ How it works:
 - 复制会创建新的本地记录和新的 id/timestamp。
 - 删除一条饮食记录会级联删除其 item 行。
 
-Read more:
+延伸阅读：
 
-- 饮食流程：[Product](Product.md#food-workflow)
+- 饮食流程：[Product](Product.md#饮食流程)
 - 数据表：[Database](Database.md#food_records)、[Database](Database.md#food_items)
-- AI 相邻边界：[Agent](Agent.md)
+- AI 相邻边界：[AgentDesign](AgentDesign.md)
 
-## Add Food
+## 添加饮食
 
 Add Food 是饮食录入入口页。
 
-Entry options:
+入口选项：
 
 - `Paste AI Result`：粘贴 App 外部生成的 JSON。
 - `Manual Entry`：手动输入食物数据。
 - `Photo AI Analysis`：可见占位入口，尚未实现 App 内图片识别。
 - Prompt copy：复制中英文静态 prompt 给外部模型使用。
 
-How it works:
+工作方式：
 
 - Prompt copy 是静态文本复制，不是 AI 调用。
 - 粘贴的 JSON 由 `NutritionCalculator` 在本地解析。
 - 预览页允许用户修正解析结果后再保存。
 - 手动录入会直接写入本地记录。
 
-Read more:
+延伸阅读：
 
-- 产品行为：[Product](Product.md#food-workflow)
-- AI 边界：[Agent](Agent.md)
+- 产品行为：[Product](Product.md#饮食流程)
+- AI 边界：[AgentDesign](AgentDesign.md)
 - 解析与汇总公式：[Algorithm](Algorithm.md#food-intake-summary)
 
-## Workout Log
+## 训练记录
 
 Workout Log 是选中日期的训练记录列表。
 
 页面标题下方直接进入共享日期条，不再额外放置日历前说明文字。
 
-What users can do:
+用户可执行操作：
 
 - 查看选中日期的训练记录
 - 打开一条已保存记录
 - 删除已保存记录
 - 进入 Add/Edit Workout Record
+- 从 `添加训练` 上方的浮动草稿条恢复一条未保存训练
+- 在确认后从浮动草稿条直接舍弃这条草稿
 
-How it works:
+工作方式：
 
 - 一条面向用户的 `Workout Record` 可以包含多个动作。
 - 在存储层，一个多动作记录是多条共享 `plan_id` 的 `workout_sessions`。
 - 同一记录内每条 session 也保存相同的 `record_name`。
+- 训练模块还可以单独保留一条未保存草稿；它不属于正式训练列表，也不算已保存训练记录。
 - 记录级摘要由已保存的 session 和 set 推导而来。
 - 动作缩略图现在会优先使用已匹配动作的透明 PNG 资产；未匹配到具体动作图标时，仍回退到按身体部位区分的共享 SVG 图标。
 
-Read more:
+延伸阅读：
 
-- 训练流程：[Product](Product.md#workout-workflow)
+- 训练流程：[Product](Product.md#训练流程)
 - 训练表：[Database](Database.md#workout_sessions)、[Database](Database.md#workout_sets)
 
-## Add/Edit Workout Record
+## 添加/编辑训练记录
 
 Add/Edit Workout Record 是创建或修改训练记录的页面。
 
-What users can do:
+用户可执行操作：
 
 - 给训练记录命名
 - 从当前胸部、背部、腿部、臀部、肩部、手臂、核心、全身和有氧动作库中选择一个或多个动作
@@ -147,30 +150,33 @@ What users can do:
 - 输入每个动作的时长
 - 输入力量组的重量、次数和完成状态
 - 添加备注
+- 暂时离开编辑页，稍后通过训练页浮动草稿条继续回来编辑
+- 通过编辑页内的红色危险操作舍弃新建草稿，或放弃对已保存记录的未保存修改
 - 保存已完成的力量组
 
-How it works:
+工作方式：
 
 - 动作选择支持按部位筛选、搜索和多选顺序。
 - 有氧动作只需要时长，不需要组清单。
 - 力量动作使用组行。
 - 辅助类自重动作在重量字段里记录的是辅助重量；估算消耗时按 `体重 - 辅助重量` 计算实际负重。
-- 保存前先完成校验。
+- 编辑过程中会自动保存草稿；只有用户显式保存且校验通过后，才会写入正式记录。
+- 返回或手势退出时保留草稿，不再弹出保存/舍弃模态框。
 - 只有已完成的力量组会被保存；未勾选组会被丢弃。
 - 编辑已保存记录时，会事务性替换整个 `plan_id` 分组。
 
-Read more:
+延伸阅读：
 
-- 产品流程：[Product](Product.md#workout-workflow)
-- 运动消耗原因：[Methodology](Methodology.md#为什么运动消耗使用净消耗)、[Methodology](Methodology.md#为什么力量训练不简单按分钟计算)
+- 产品流程：[Product](Product.md#训练流程)
+- 运动消耗原因：[Methodology](Methodology.md#为什么运动消耗使用净消耗)、[Methodology](Methodology.md#为什么力量训练不按分钟线性算)
 - 公式：[Algorithm](Algorithm.md#workout-calories)
 - 存储模型：[Database](Database.md#workout_sessions)
 
-## Workout Record Detail
+## 训练记录详情
 
 Workout Record Detail 用来解释一条已保存训练记录。
 
-What users see:
+用户可见内容：
 
 - 记录名
 - 日期和开始时间
@@ -181,23 +187,23 @@ What users see:
 - 记录中的动作
 - 已保存的力量组细节
 
-How it works:
+工作方式：
 
 - 摘要指标由已保存的 session 和 set 推导。
 - 总训练量基于已保存的力量组。
 - 组数是已保存力量组的数量。
 - 在当前记录流中，已保存力量详情的完成状态是只读的。
 
-Read more:
+延伸阅读：
 
-- 产品行为：[Product](Product.md#workout-workflow)
+- 产品行为：[Product](Product.md#训练流程)
 - 数据模型：[Database](Database.md#workout_sessions)、[Database](Database.md#workout_sets)
 
-## Profile
+## 我的资料
 
 Profile 用于配置本地身份、身体资料、饮食行为、语言、导出和本地数据操作。
 
-What users can set:
+用户可设置内容：
 
 - 仅用于本地 UI 展示的昵称
 - 年龄、身高、体重和公式性别
@@ -210,7 +216,7 @@ What users can set:
 - carb cycling pattern 和 multiplier
 - carb taper review 周期、目标减重速度、步长和当前 offset
 
-How it works:
+工作方式：
 
 - Profile 保存到单例 `user_profile`。
 - `nickname` 是本地 UI 数据，不是账号名。
@@ -219,18 +225,18 @@ How it works:
 - g/kg 自检可以根据最近有效训练日推荐训练频率档位。
 - Carb taper review 可以给出本地建议，但必须由用户确认。
 
-Read more:
+延伸阅读：
 
-- 产品行为：[Product](Product.md#diet-setup-ux)
+- 产品行为：[Product](Product.md#饮食设置交互)
 - 面向用户的方法解释：[Methodology](Methodology.md)
 - 算法细节：[Algorithm](Algorithm.md)
 - Profile 表：[Database](Database.md#user_profile)
 
-## Export
+## 导出
 
 Export 为用户记录生成本地文件。
 
-What exports include:
+导出内容包括：
 
 - food records
 - food items
@@ -241,39 +247,39 @@ What exports include:
 - diet adjustment review history
 - 策略、校准和自检字段，以及本地 nickname 等相关字段
 
-How it works:
+工作方式：
 
 - XLSX 和 CSV ZIP 写入 app documents directory。
 - Daily summary export 在导出时由 repositories 和 `DailySummaryService` 生成。
 - Export 不会上传任何数据。
 
-Read more:
+延伸阅读：
 
-- 导出覆盖：[Database](Database.md#export-coverage)
-- 产品边界：[Product](Product.md#implemented-boundaries)
+- 导出覆盖：[Database](Database.md#导出覆盖)
+- 产品边界：[Product](Product.md#已实现边界)
 
-## Language
+## 语言
 
 Language 负责切换中英文 UI。
 
-What users can do:
+用户可执行操作：
 
 - 切换 English 和 中文
 
-How it works:
+工作方式：
 
 - 语言偏好保存到 `SharedPreferences`。
 - Prompt 文案和普通 UI 文案都随语言切换。
 
-## Privacy And Local-first Boundary
+## 隐私与本地优先边界
 
 - 业务数据保存在本地 SQLite。
 - 导出生成本地文件，不做云上传。
 - `Photo AI Analysis` 仍是占位入口，不代表 App 内部具备识图能力。
 - Prompt 复制和 JSON 粘贴是用户驱动的外部 AI 辅助流程，不是 App 内 AI。
 
-Read more:
+延伸阅读：
 
 - 数据库存储：[Database](Database.md)
-- AI 边界：[Agent](Agent.md)
+- AI 边界：[AgentDesign](AgentDesign.md)
 - 证据和安全边界：[References](References.md)

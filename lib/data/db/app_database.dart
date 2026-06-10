@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int dbVersion = 9;
+  static const int dbVersion = 10;
 
   Database? _database;
 
@@ -116,6 +116,9 @@ class AppDatabase {
         if (oldVersion < 9) {
           await db.execute('ALTER TABLE user_profile ADD COLUMN nickname TEXT');
         }
+        if (oldVersion < 10) {
+          await _createWorkoutDraftTable(db);
+        }
       },
     );
   }
@@ -222,6 +225,7 @@ class AppDatabase {
 
     await _createWeightAndCalibrationTables(db);
     await _createDietAdjustmentReviewTable(db);
+    await _createWorkoutDraftTable(db);
   }
 
   Future<void> _createWeightAndCalibrationTables(Database db) async {
@@ -278,6 +282,23 @@ class AppDatabase {
     ''');
   }
 
+  Future<void> _createWorkoutDraftTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS workout_record_drafts (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        source_plan_id TEXT,
+        source_session_id INTEGER,
+        date TEXT NOT NULL,
+        record_name TEXT NOT NULL,
+        notes TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
   Future<void> clearAllLocalData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -285,6 +306,7 @@ class AppDatabase {
       await txn.delete('food_records');
       await txn.delete('workout_sets');
       await txn.delete('workout_sessions');
+      await txn.delete('workout_record_drafts');
       await txn.delete('user_weight_logs');
       await txn.delete('calorie_calibration_state');
       await txn.delete('diet_adjustment_reviews');

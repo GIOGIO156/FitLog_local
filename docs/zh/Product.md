@@ -1,12 +1,12 @@
-# Product Design
+# 产品设计
 
-## Purpose
+## 目的
 
 FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的产品价值不是单纯“记录 kcal”，而是把食物估算、结构化记录、每日目标、剩余宏量、训练消耗、饮食策略、复盘和导出串成一个可长期使用的本地工作流。
 
 这个 App 面向的用户可以借助外部多模态 AI 估算复杂餐食，但需要把这些估算结果沉淀成可编辑、可查询、可导出的本地记录。
 
-## Product Principles
+## 产品原则
 
 - 本地优先：业务数据保存在 SQLite，除非用户主动导出。
 - 确定性行为：核心计算由本地 Dart 逻辑完成，不依赖 App 内部 LLM 推理。
@@ -15,9 +15,9 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 饮食模式保持分离：`gram_per_kg` 和 `energy_ratio` 是并列方法，不得合并。
 - 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
 
-## Current Modules
+## 当前模块
 
-| Module | Current capability | Main code |
+| 模块 | 当前能力 | 主要代码 |
 | --- | --- | --- |
 | Home | 低信息密度的每日入口页，展示问候语、主 calorie/macro 概览、当前饮食上下文和简洁的饮食/训练摘要。 | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | 按日期查看饮食记录，支持打开/编辑、复制到指定日期、删除和新增入口。 | `lib/features/food/food_log_page.dart`, `FoodRepository` |
@@ -30,7 +30,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | Profile | 本地昵称、身体资料、语言、饮食阶段、饮食模式、策略设置、g/kg 自检、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
 | Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、每日汇总、资料、策略字段和 review 历史。 | `lib/export/*` |
 
-## Food Workflow
+## 饮食流程
 
 1. 用户打开 Food Log 并选择日期。
 2. 用户选择 Add Food。
@@ -41,20 +41,23 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 7. 保存后的记录可以编辑、删除或复制到用户选择的目标日期。
 8. Home 和 Food Log 通过本地 Repository 与刷新状态重新加载。
 
-## Workout Workflow
+## 训练流程
 
 1. 用户打开 Workout Log 并选择日期。
 2. 用户创建 `Workout Record`，填写名称，并选择一个或多个动作。
 3. 动作库支持按部位筛选、搜索、多选和显示选择顺序。
 4. 有氧动作需要每个动作自己的时长，不使用组清单。
 5. 力量动作使用包含重量、次数和完成状态的组行。
-6. 保存前先完成所有校验，再执行任何持久化。
-7. 力量训练保存时只持久化已完成组；未勾选组会被移除，保存后的组号按 `1..n` 重排。
-8. 一条多动作记录存储为多条共享同一 `plan_id` 的 `workout_sessions`；每条 session 也保存相同的 `record_name`。
-9. 保存后的记录展示总时长、总训练量、总组数、估算消耗和动作卡片。
-10. 编辑保存后的记录会重新进入创建页面，并以事务替换整个 `plan_id` 分组。
+6. 用户编辑时，FitLog 会先把当前状态持久化为一条本地训练草稿，而不是立刻创建或覆盖正式训练记录。
+7. 用户通过应用返回键或系统返回手势离开编辑页时，会保留草稿，而不是强制弹出保存/舍弃弹窗。
+8. Workout Log 会在 `添加训练` 上方显示一条紧凑的草稿恢复条；点整条可继续编辑，点删除图标会在确认后舍弃草稿。
+9. 只有用户显式点击保存且校验通过后，才会写入正式训练记录。
+10. 力量训练保存时只持久化已完成组；未勾选组会被移除，保存后的组号按 `1..n` 重排。
+11. 一条多动作记录存储为多条共享同一 `plan_id` 的 `workout_sessions`；每条 session 也保存相同的 `record_name`。
+12. 保存后的记录展示总时长、总训练量、总组数、估算消耗和动作卡片。
+13. 编辑已保存记录时，正式保存仍会以事务替换整个 `plan_id` 分组；未保存改动在用户保存或舍弃前只停留在草稿层。
 
-## Daily Dashboard Behavior
+## 每日看板行为
 
 - Home、Food Log 和 Workout Log 共享选中日期。
 - Home 的信息密度刻意低于其他副页。
@@ -68,7 +71,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - `carb_cycling` 展示碳水日类型和碳水调整上下文。
 - `carb_tapering` 在有数据时展示当前 taper 偏移和待处理 review 上下文。
 
-## Diet Setup UX
+## 饮食设置交互
 
 Profile 按以下顺序展示饮食设置：
 
@@ -79,7 +82,7 @@ Profile 按以下顺序展示饮食设置：
 5. 可选策略：`none`、`carb_cycling` 或 `carb_tapering`。
 6. 阶段/模式/策略专属设置。
 
-Expected behavior:
+预期行为：
 
 - `cutting + gram_per_kg`：展示训练频率档位、自检设置、减脂 g/kg 表上下文和宏量目标预览。
 - `bulking + gram_per_kg`：展示训练频率档位、自检设置、增肌 g/kg 表上下文和宏量目标预览。
@@ -88,9 +91,9 @@ Expected behavior:
 - `carb_cycling`：展示每周 high/medium/low 日选择、倍率和本周预览。
 - `carb_tapering`：展示 review 周期、目标减重速度、taper 步长、当前碳水偏移和本地 review 的 Apply/Dismiss 流程。
 
-## Implemented Boundaries
+## 已实现边界
 
-Implemented:
+已实现：
 
 - 本地饮食记录 CRUD 和复制到指定日期
 - 外部 AI JSON 粘贴和本地解析
@@ -106,7 +109,7 @@ Implemented:
 - 语言切换
 - 二次确认后清空本地数据
 
-Not implemented:
+未实现：
 
 - 后端、云同步、账号系统、远程数据库或数据导入
 - App 内图片识别
@@ -115,7 +118,7 @@ Not implemented:
 - 自动配餐、AI Coach 或自动修改目标
 - 医疗建议
 
-## Code References
+## 代码引用
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
 - Home：`lib/features/home/home_page.dart`

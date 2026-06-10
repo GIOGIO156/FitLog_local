@@ -1,27 +1,27 @@
-# Database Design
+# 数据库设计
 
-## Storage Overview
+## 存储概览
 
 FitLog Local 将业务数据保存在本地。
 
-| Storage | Purpose | Remote sync |
+| 存储 | 用途 | 远程同步 |
 | --- | --- | --- |
-| SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、weight logs、calibration state、diet adjustment reviews。 | No |
+| SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
 | SharedPreferences | UI 语言偏好，目前是 `language_code`。 | No |
 | Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件。 | No |
 | In-memory providers | App services、refresh version、selected date、language state。 | No |
 
-Database name: `fitlog_local.db`.
+数据库名：`fitlog_local.db`。
 
-Current SQLite schema version: `9`.
+当前 SQLite schema 版本：`10`。
 
 通过 `PRAGMA foreign_keys = ON` 启用外键。
 
-## Migration Policy
+## 迁移策略
 
 迁移必须保持加法式，并保留现有本地数据。
 
-| Version | Change |
+| 版本 | 变更 |
 | ---: | --- |
 | 1 | 初始 profile、food、workout 和 set 表。 |
 | 2 | 添加 `workout_sessions.plan_id`。 |
@@ -32,6 +32,7 @@ Current SQLite schema version: `9`.
 | 7 | 添加饮食策略 profile 字段和 `diet_adjustment_reviews`。 |
 | 8 | 添加 `workout_sessions.record_name`。 |
 | 9 | 添加本地 UI 昵称字段 `user_profile.nickname`。 |
+| 10 | 添加 `workout_record_drafts`，用于保存一条活动中的未保存训练编辑状态。 |
 
 兼容规则：
 
@@ -40,13 +41,13 @@ Current SQLite schema version: `9`.
 - 现有用户使用安全兼容默认值，例如 `cutting`、`energy_ratio`、`none`。
 - `daily_energy_goal_type` 继续保留用于兼容，但 `diet_goal_phase` 是阶段语义的来源。
 
-## Tables
+## 数据表
 
 ### `user_profile`
 
 用途：单例用户资料、饮食设置、策略设置和自检设置。Repository 使用 `id = 1`。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY | 单例 profile id。 |
 | `nickname` | TEXT | 仅用于本地 UI 的昵称，例如 Home 问候语；不是账号字段。 |
@@ -83,7 +84,7 @@ Current SQLite schema version: `9`.
 
 用途：餐级饮食记录。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | record id。 |
 | `date` | TEXT NOT NULL | `yyyy-MM-dd`。 |
@@ -103,7 +104,7 @@ Current SQLite schema version: `9`.
 
 用途：餐内 item 行。随父 food record 级联删除。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | item id。 |
 | `food_record_id` | INTEGER NOT NULL | FK 到 `food_records.id`，ON DELETE CASCADE。 |
@@ -119,7 +120,7 @@ Current SQLite schema version: `9`.
 
 用途：单个已保存动作 session。一个多动作 `Workout Record` 在存储层是多条共享 `plan_id` 的 session。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | session id。 |
 | `plan_id` | TEXT | 同一训练记录分组键。 |
@@ -139,7 +140,7 @@ Current SQLite schema version: `9`.
 
 用途：力量训练组行。跟随父 session 级联删除。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | set id。 |
 | `workout_session_id` | INTEGER NOT NULL | FK 到 `workout_sessions.id`。 |
@@ -149,11 +150,34 @@ Current SQLite schema version: `9`.
 | `is_completed` | INTEGER NOT NULL | bool 以 0/1 存储。 |
 | `completed_at` | TEXT | 完成时间，可为空。 |
 
+### `workout_record_drafts`
+
+用途：单独保存一条活动中的未保存训练编辑状态，与正式训练历史分离。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | TEXT PRIMARY KEY | 固定的活动草稿 id。 |
+| `kind` | TEXT NOT NULL | `new_record` 或 `edit_record`。 |
+| `source_plan_id` | TEXT | 当草稿来自已保存的分组训练记录时，对应原始 `plan_id`。 |
+| `source_session_id` | INTEGER | 当草稿来自旧的单条非分组训练记录时，对应原始 session id。 |
+| `date` | TEXT NOT NULL | 编辑页里显示的草稿日期。 |
+| `record_name` | TEXT NOT NULL | 草稿训练记录名。 |
+| `notes` | TEXT NOT NULL | 草稿备注。 |
+| `payload_json` | TEXT NOT NULL | 序列化后的动作顺序、时长、组行、默认提示状态和完成标记。 |
+| `created_at` | TEXT NOT NULL | 草稿创建时间。 |
+| `updated_at` | TEXT NOT NULL | 最近一次自动保存时间。 |
+
+草稿行为：
+
+- 草稿表不属于正式训练历史，也不会出现在已保存训练列表里。
+- 草稿表不会参与 Home 的训练汇总，也不进入导出覆盖。
+- 用户显式保存时，会先校验当前编辑状态，再写入 `workout_sessions` 和 `workout_sets`，最后删除草稿行。
+
 ### `user_weight_logs`
 
 用途：体重日志，用于趋势和校准。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | log id。 |
 | `date` | TEXT NOT NULL UNIQUE | `yyyy-MM-dd`。 |
@@ -166,7 +190,7 @@ Current SQLite schema version: `9`.
 
 用途：动态生活系数校准状态，主键固定为 `id = 1`。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY CHECK (id = 1) | 单例状态。 |
 | `lifestyle_factor` | REAL NOT NULL | 校准后的非运动生活系数。 |
@@ -181,7 +205,7 @@ Current SQLite schema version: `9`.
 
 用途：本地 carb taper review 历史。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | review id。 |
 | `review_date` | TEXT NOT NULL | review 参考日。 |
@@ -205,7 +229,7 @@ Current SQLite schema version: `9`.
 | `created_at` | TEXT NOT NULL | ISO datetime。 |
 | `updated_at` | TEXT NOT NULL | ISO datetime。 |
 
-## Runtime Aggregates
+## 运行时聚合
 
 这些字段不单独持久化，而是在运行时由 `DailySummaryService` 聚合：
 
@@ -216,7 +240,7 @@ Current SQLite schema version: `9`.
 - calibration confidence、window、valid-day 摘要
 - Home 和 Export 用到的 selected-day food/workout 汇总
 
-## Data Flows
+## 数据流
 
 Profile：
 
@@ -243,6 +267,9 @@ Workout：
 
 ```text
 AddWorkoutPage
+-> workout draft snapshot
+-> workout_record_drafts
+-> explicit save validation
 -> WorkoutCalorieCalculator
 -> WorkoutRepository
 -> workout_sessions + workout_sets
@@ -258,11 +285,11 @@ ProfilePage export action
 -> local .xlsx or .zip file
 ```
 
-## Export Coverage
+## 导出覆盖
 
 导出包含 food records、food items、workout records、workout sets、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、g/kg 自检字段、本地 `nickname` 和 `record_name`。
 
-## Not Implemented
+## 未实现
 
 - cloud sync
 - accounts
@@ -271,10 +298,10 @@ ProfilePage export action
 - vector database
 - embedding storage
 - AI conversation history
-- Agent action logs
+- Agent 行为日志
 - semantic memory
 
-## Code References
+## 代码引用
 
 - Database：`lib/data/db/app_database.dart`
 - Repositories：`lib/data/repositories/food_repository.dart`、`workout_repository.dart`、`profile_repository.dart`

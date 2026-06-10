@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +13,7 @@ import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../core/widgets/exercise_thumbnail.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
@@ -30,7 +34,8 @@ class AddWorkoutPage extends StatefulWidget {
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
 }
 
-class _AddWorkoutPageState extends State<AddWorkoutPage> {
+class _AddWorkoutPageState extends State<AddWorkoutPage>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _recordNameController = TextEditingController();
   final _notesController = TextEditingController();
@@ -42,19 +47,33 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   late final Map<String, _ExerciseOption> _exerciseOptionsByKey;
 
   late String _date;
+  late final String _entryDate;
   double _profileWeightKg = 65;
-  bool _loadingExistingRecord = false;
+  bool _loadingPage = true;
   bool _saving = false;
   bool _updatingExerciseSelection = false;
+  bool _suspendAutoSave = false;
+  bool _allowPop = false;
+  String _activeDraftKind = WorkoutRecordDraft.kindNewRecord;
+  String _baselineSnapshotJson = '{}';
+  String? _editingPlanId;
+  int? _editingSeedSessionId;
+  String? _draftCreatedAt;
+  Timer? _draftSaveDebounce;
 
   bool get _isEditing =>
-      (widget.editingPlanId ?? '').trim().isNotEmpty ||
-      widget.seedSessionId != null;
+      (_editingPlanId ?? '').trim().isNotEmpty ||
+      _editingSeedSessionId != null ||
+      _activeDraftKind == WorkoutRecordDraft.kindEditRecord;
 
   @override
   void initState() {
     super.initState();
-    _date = widget.initialDate ?? DateUtilsX.todayKey();
+    WidgetsBinding.instance.addObserver(this);
+    _entryDate = widget.initialDate ?? DateUtilsX.todayKey();
+    _date = _entryDate;
+    _editingPlanId = _normalizePlanId(widget.editingPlanId);
+    _editingSeedSessionId = widget.seedSessionId;
     _exerciseOptions = AppConstants.bodyPartExercises.entries
         .expand(
           (entry) => entry.value.map(
@@ -66,14 +85,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       for (final option in _exerciseOptions)
         _exerciseKey(option.bodyPart, option.name): option,
     };
-    _loadProfileWeight();
-    if (_isEditing) {
-      _loadExistingRecord();
-    }
+    _recordNameController.addListener(_scheduleDraftSave);
+    _notesController.addListener(_scheduleDraftSave);
+    _loadInitialState();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _draftSaveDebounce?.cancel();
     _recordNameController.dispose();
     _notesController.dispose();
     for (final draft in _selectedPlans.values) {
@@ -85,67 +105,55 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   List<_ExercisePlanDraft> get _selectedDrafts =>
       _selectedPlans.values.toList();
 
-  Future<void> _loadProfileWeight() async {
-    final profile = await context
-        .read<AppServices>()
-        .profileRepository
-        .getProfile();
-    if (profile == null || !mounted) {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      unawaited(_persistDraftNow());
+    }
+  }
+
+  Future<void> _loadInitialState() async {
+    final services = context.read<AppServices>();
+    final profileFuture = services.profileRepository.getProfile();
+    final draftFuture = services.workoutDraftRepository.getActiveDraft();
+    final sessionsFuture = _loadSeedSessions(services);
+
+    final profile = await profileFuture;
+    final activeDraft = await draftFuture;
+    final sessions = await sessionsFuture;
+
+    if (!mounted) {
       return;
     }
 
-    setState(() {
-      _profileWeightKg = profile.weightKg;
-    });
-  }
+    _suspendAutoSave = true;
+    try {
+      if (profile != null) {
+        _profileWeightKg = profile.weightKg;
+      }
 
-  Future<void> _loadExistingRecord() async {
-    setState(() => _loadingExistingRecord = true);
+      if (sessions.isNotEmpty) {
+        _applySessions(sessions);
+      } else {
+        _resetToEmptyState();
+      }
+      _baselineSnapshotJson = _buildSnapshotJson();
 
-    final repository = context.read<AppServices>().workoutRepository;
-    List<WorkoutSession> sessions;
-    final planId = (widget.editingPlanId ?? '').trim();
-    if (planId.isNotEmpty) {
-      sessions = await repository.getWorkoutSessionsByPlanId(planId);
-    } else if (widget.seedSessionId != null) {
-      final session = await repository.getWorkoutSessionById(
-        widget.seedSessionId!,
-      );
-      sessions = session == null
-          ? <WorkoutSession>[]
-          : <WorkoutSession>[session];
-    } else {
-      sessions = <WorkoutSession>[];
+      final restorableDraft = _resolveRestorableDraft(activeDraft);
+      if (restorableDraft != null) {
+        _applyStoredDraft(restorableDraft);
+      }
+    } finally {
+      _suspendAutoSave = false;
     }
 
     if (!mounted) {
       return;
     }
 
-    sessions.sort((a, b) => _createdAtRaw(a).compareTo(_createdAtRaw(b)));
-    if (sessions.isEmpty) {
-      setState(() => _loadingExistingRecord = false);
-      return;
-    }
-
-    final reordered = <String, _ExercisePlanDraft>{};
-    for (final session in sessions) {
-      final optionKey = _exerciseKey(session.bodyPart, session.exerciseName);
-      reordered[optionKey] = _ExercisePlanDraft.fromSession(session);
-    }
-
-    setState(() {
-      _date = sessions.first.date;
-      _recordNameController.text = sessions.first.recordName?.trim() ?? '';
-      _notesController.text = sessions.first.notes;
-      for (final draft in _selectedPlans.values) {
-        draft.dispose();
-      }
-      _selectedPlans
-        ..clear()
-        ..addAll(reordered);
-      _loadingExistingRecord = false;
-    });
+    setState(() => _loadingPage = false);
   }
 
   DateTime _createdAtRaw(WorkoutSession session) {
@@ -166,6 +174,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
 
     if (selected != null && mounted) {
       setState(() => _date = DateUtilsX.formatDate(selected));
+      _scheduleDraftSave();
     }
   }
 
@@ -173,6 +182,258 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       '$bodyPart::$exerciseName';
 
   String _createPlanId() => DateTime.now().microsecondsSinceEpoch.toString();
+
+  String? _normalizePlanId(String? value) {
+    final trimmed = (value ?? '').trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<List<WorkoutSession>> _loadSeedSessions(AppServices services) async {
+    if ((_editingPlanId ?? '').isNotEmpty) {
+      final sessions = await services.workoutRepository
+          .getWorkoutSessionsByPlanId(_editingPlanId!);
+      sessions.sort((a, b) => _createdAtRaw(a).compareTo(_createdAtRaw(b)));
+      return sessions;
+    }
+    if (_editingSeedSessionId != null) {
+      final session = await services.workoutRepository.getWorkoutSessionById(
+        _editingSeedSessionId!,
+      );
+      if (session == null) {
+        return const <WorkoutSession>[];
+      }
+      return <WorkoutSession>[session];
+    }
+    return const <WorkoutSession>[];
+  }
+
+  WorkoutRecordDraft? _resolveRestorableDraft(WorkoutRecordDraft? activeDraft) {
+    if (activeDraft == null) {
+      return null;
+    }
+    if ((_editingPlanId ?? '').isEmpty && _editingSeedSessionId == null) {
+      return activeDraft;
+    }
+    if (!activeDraft.isEditDraft) {
+      return null;
+    }
+    final activePlanId = _normalizePlanId(activeDraft.sourcePlanId);
+    if ((_editingPlanId ?? '').isNotEmpty) {
+      return activePlanId == _editingPlanId ? activeDraft : null;
+    }
+    return activePlanId == null &&
+            activeDraft.sourceSessionId == _editingSeedSessionId
+        ? activeDraft
+        : null;
+  }
+
+  void _resetToEmptyState() {
+    _date = _entryDate;
+    _recordNameController.text = '';
+    _notesController.text = '';
+    _replaceSelectedPlans(const <String, _ExercisePlanDraft>{});
+  }
+
+  void _applySessions(List<WorkoutSession> sessions) {
+    if (sessions.isEmpty) {
+      _resetToEmptyState();
+      return;
+    }
+    final reordered = <String, _ExercisePlanDraft>{};
+    for (final session in sessions) {
+      final optionKey = _exerciseKey(session.bodyPart, session.exerciseName);
+      reordered[optionKey] = _ExercisePlanDraft.fromSession(session);
+    }
+    _date = sessions.first.date;
+    _recordNameController.text = sessions.first.recordName?.trim() ?? '';
+    _notesController.text = sessions.first.notes;
+    _replaceSelectedPlans(reordered);
+  }
+
+  void _applyStoredDraft(WorkoutRecordDraft draft) {
+    final payload = draft.payload;
+    final rawExercises = payload['exercises'];
+    final reordered = <String, _ExercisePlanDraft>{};
+    if (rawExercises is List) {
+      for (final entry in rawExercises.whereType<Map>()) {
+        final exerciseDraft = _ExercisePlanDraft.fromJson(
+          entry.cast<String, dynamic>(),
+        );
+        reordered[_exerciseKey(
+              exerciseDraft.bodyPart,
+              exerciseDraft.exerciseName,
+            )] =
+            exerciseDraft;
+      }
+    }
+    _activeDraftKind = draft.kind;
+    _editingPlanId = _normalizePlanId(draft.sourcePlanId) ?? _editingPlanId;
+    _editingSeedSessionId = draft.sourceSessionId ?? _editingSeedSessionId;
+    _draftCreatedAt = draft.createdAt;
+    _date = draft.date;
+    _recordNameController.text = draft.recordName;
+    _notesController.text = draft.notes;
+    _replaceSelectedPlans(reordered);
+  }
+
+  void _replaceSelectedPlans(Map<String, _ExercisePlanDraft> drafts) {
+    for (final draft in _selectedPlans.values) {
+      draft.dispose();
+    }
+    _selectedPlans
+      ..clear()
+      ..addAll(drafts);
+  }
+
+  Map<String, dynamic> _buildSnapshotMap() {
+    return <String, dynamic>{
+      'kind': _isEditing
+          ? WorkoutRecordDraft.kindEditRecord
+          : WorkoutRecordDraft.kindNewRecord,
+      'date': _date,
+      'record_name': _recordNameController.text.trim(),
+      'notes': _notesController.text.trim(),
+      'exercises': _selectedDrafts
+          .map((draft) => draft.snapshotJson())
+          .toList(),
+    };
+  }
+
+  String _buildSnapshotJson() => jsonEncode(_buildSnapshotMap());
+
+  bool get _hasDraftChanges => _buildSnapshotJson() != _baselineSnapshotJson;
+
+  bool get _hasMeaningfulDraftContent {
+    if (_recordNameController.text.trim().isNotEmpty ||
+        _notesController.text.trim().isNotEmpty ||
+        _selectedPlans.isNotEmpty) {
+      return true;
+    }
+    return _date != _entryDate;
+  }
+
+  bool get _shouldPersistDraft =>
+      _hasMeaningfulDraftContent && _hasDraftChanges;
+
+  void _scheduleDraftSave() {
+    if (_suspendAutoSave || _loadingPage) {
+      return;
+    }
+    _draftSaveDebounce?.cancel();
+    _draftSaveDebounce = Timer(const Duration(milliseconds: 500), () {
+      unawaited(_saveOrClearDraft());
+    });
+  }
+
+  Future<void> _persistDraftNow() async {
+    _draftSaveDebounce?.cancel();
+    await _saveOrClearDraft();
+  }
+
+  Future<void> _saveOrClearDraft({bool notifyRefresh = false}) async {
+    if (!mounted || _loadingPage) {
+      return;
+    }
+    final services = context.read<AppServices>();
+    if (!_shouldPersistDraft) {
+      await services.workoutDraftRepository.deleteActiveDraft();
+      _draftCreatedAt = null;
+      if (notifyRefresh && mounted) {
+        context.read<RefreshNotifier>().markDataChanged();
+      }
+      return;
+    }
+
+    final now = DateTime.now().toIso8601String();
+    final createdAt = _draftCreatedAt ?? now;
+    _draftCreatedAt = createdAt;
+    final draft = WorkoutRecordDraft(
+      id: WorkoutRecordDraft.activeDraftId,
+      kind: _isEditing
+          ? WorkoutRecordDraft.kindEditRecord
+          : WorkoutRecordDraft.kindNewRecord,
+      sourcePlanId: _editingPlanId,
+      sourceSessionId: _editingSeedSessionId,
+      date: _date,
+      recordName: _recordNameController.text.trim(),
+      notes: _notesController.text.trim(),
+      payloadJson: jsonEncode(_buildPersistencePayload()),
+      createdAt: createdAt,
+      updatedAt: now,
+    );
+    await services.workoutDraftRepository.saveActiveDraft(draft);
+    if (notifyRefresh && mounted) {
+      context.read<RefreshNotifier>().markDataChanged();
+    }
+  }
+
+  Map<String, dynamic> _buildPersistencePayload() {
+    return <String, dynamic>{
+      'exercises': _selectedDrafts.map((draft) => draft.toJson()).toList(),
+    };
+  }
+
+  Future<void> _exitPage() async {
+    if (_saving) {
+      return;
+    }
+    await _persistDraftNow();
+    if (!mounted) {
+      return;
+    }
+    context.read<RefreshNotifier>().markDataChanged();
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop(false);
+  }
+
+  Future<void> _discardCurrentDraft() async {
+    final strings = context.stringsRead;
+    final refreshNotifier = context.read<RefreshNotifier>();
+    final services = context.read<AppServices>();
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(
+                _isEditing
+                    ? strings.discardWorkoutChangesTitle
+                    : strings.discardWorkoutDraftTitle,
+              ),
+              content: Text(
+                _isEditing
+                    ? strings.discardWorkoutChangesMessage
+                    : strings.discardWorkoutDraftMessage,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(strings.cancel),
+                ),
+                FilledButton.tonal(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(
+                    _isEditing
+                        ? strings.discardWorkoutChangesAction
+                        : strings.discardWorkoutDraftAction,
+                  ),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+    if (!confirmed) {
+      return;
+    }
+    await services.workoutDraftRepository.deleteActiveDraft();
+    if (!mounted) {
+      return;
+    }
+    refreshNotifier.markDataChanged();
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop(false);
+  }
 
   Future<void> _openExerciseLibraryPicker() async {
     final selectedKeys = _selectedPlans.keys.toList();
@@ -247,6 +508,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         ..addAll(reordered);
       _updatingExerciseSelection = false;
     });
+    _scheduleDraftSave();
   }
 
   void _addSet(_ExercisePlanDraft draft) {
@@ -263,12 +525,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
         _SetDraft(defaultWeight: defaultWeight, defaultReps: defaultReps),
       );
     });
+    _scheduleDraftSave();
   }
 
   void _removeSet(_ExercisePlanDraft draft, int index) {
     final target = draft.sets.removeAt(index);
     target.dispose();
     setState(() {});
+    _scheduleDraftSave();
   }
 
   void _removeExercise(_ExercisePlanDraft draft) {
@@ -276,12 +540,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     final target = _selectedPlans.remove(key);
     target?.dispose();
     setState(() {});
+    _scheduleDraftSave();
   }
 
   void _toggleSetCompleted(_SetDraft draft) {
     setState(() {
       draft.isCompleted = !draft.isCompleted;
     });
+    _scheduleDraftSave();
   }
 
   int _durationForDraft(_ExercisePlanDraft draft) {
@@ -375,6 +641,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       onChanged: (value) {
         onValueChanged?.call(value);
         setState(() {});
+        _scheduleDraftSave();
       },
       style: TextStyle(
         fontSize: 22,
@@ -400,150 +667,158 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     );
   }
 
-  Future<void> _save() async {
-    final strings = context.stringsRead;
+  String? _validateWorkoutRecord(AppStrings strings) {
     if (!_formKey.currentState!.validate()) {
-      return;
+      return null;
     }
-
     if (_selectedPlans.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(strings.chooseAtLeastOneExercise)));
-      return;
+      return strings.chooseAtLeastOneExercise;
+    }
+    if (_recordNameController.text.trim().isEmpty) {
+      return strings.workoutRecordNameRequired;
     }
 
-    final recordName = _recordNameController.text.trim();
-    if (recordName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(strings.workoutRecordNameRequired)),
+    for (final draft in _selectedDrafts) {
+      final durationMinutes = _durationForDraft(draft);
+      if (durationMinutes <= 0) {
+        return strings.invalidDurationForExercise(
+          strings.exerciseDisplayName(draft.exerciseName),
+        );
+      }
+      if (draft.isCardio) {
+        continue;
+      }
+      for (final setDraft in draft.completedSets) {
+        final reps = NumberUtils.toInt(
+          setDraft.effectiveRepsText,
+          fallback: -1,
+        );
+        final weight = NumberUtils.toDouble(
+          setDraft.effectiveWeightText,
+          fallback: double.nan,
+        );
+        if (reps <= 0 || weight.isNaN || weight < 0) {
+          return strings.invalidSetValue(
+            strings.exerciseDisplayName(draft.exerciseName),
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  List<WorkoutSession> _buildSessionsForCommit({
+    required String planId,
+    required String now,
+    required String recordName,
+    required String notes,
+  }) {
+    final sessions = <WorkoutSession>[];
+    for (final draft in _selectedDrafts) {
+      final durationMinutes = _durationForDraft(draft);
+      final sets = <WorkoutSet>[];
+      if (!draft.isCardio) {
+        final completedSets = draft.completedSets;
+        for (var i = 0; i < completedSets.length; i++) {
+          final setDraft = completedSets[i];
+          sets.add(
+            WorkoutSet(
+              setNumber: i + 1,
+              weightKg: NumberUtils.toDouble(setDraft.effectiveWeightText),
+              reps: NumberUtils.toInt(setDraft.effectiveRepsText),
+              isCompleted: setDraft.isCompleted,
+              completedAt: setDraft.isCompleted ? now : null,
+            ),
+          );
+        }
+      }
+
+      if (!draft.isCardio && sets.isEmpty) {
+        continue;
+      }
+
+      sessions.add(
+        WorkoutSession(
+          planId: planId,
+          recordName: recordName,
+          date: _date,
+          bodyPart: draft.bodyPart,
+          exerciseName: draft.exerciseName,
+          exerciseType: draft.isCardio ? 'cardio' : 'strength',
+          durationMinutes: durationMinutes,
+          intensity: 'medium',
+          estimatedCalories: draft.isCardio
+              ? WorkoutCalorieCalculator.estimateCardioCalories(
+                  exerciseName: draft.exerciseName,
+                  bodyWeightKg: _profileWeightKg,
+                  durationMinutes: durationMinutes,
+                )
+              : WorkoutCalorieCalculator.estimateStrengthCalories(
+                  exerciseName: draft.exerciseName,
+                  bodyWeightKg: _profileWeightKg,
+                  sets: sets,
+                  totalSessionDurationMinutes: durationMinutes,
+                ),
+          notes: notes,
+          sets: sets,
+        ),
       );
+    }
+    return sessions;
+  }
+
+  Future<void> _save() async {
+    if (_saving) {
+      return;
+    }
+    final strings = context.stringsRead;
+    final messenger = ScaffoldMessenger.of(context);
+    final validationMessage = _validateWorkoutRecord(strings);
+    if (validationMessage != null) {
+      messenger.showSnackBar(SnackBar(content: Text(validationMessage)));
       return;
     }
 
     final now = DateTime.now().toIso8601String();
-    final planId = (widget.editingPlanId ?? '').trim().isNotEmpty
-        ? widget.editingPlanId!.trim()
+    final planId = (_editingPlanId ?? '').isNotEmpty
+        ? _editingPlanId!
         : _createPlanId();
+    final recordName = _recordNameController.text.trim();
     final notes = _notesController.text.trim();
+    final sessions = _buildSessionsForCommit(
+      planId: planId,
+      now: now,
+      recordName: recordName,
+      notes: notes,
+    );
+    if (sessions.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(strings.noCompletedSetsToSave)),
+      );
+      return;
+    }
+
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
-    final messenger = ScaffoldMessenger.of(context);
 
-    final drafts = _selectedDrafts;
     setState(() => _saving = true);
-
     try {
-      for (final draft in drafts) {
-        final durationMinutes = _durationForDraft(draft);
-        if (durationMinutes <= 0) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                strings.invalidDurationForExercise(
-                  strings.exerciseDisplayName(draft.exerciseName),
-                ),
-              ),
-            ),
-          );
-          return;
-        }
-
-        if (draft.isCardio) {
-          continue;
-        }
-
-        for (final setDraft in draft.completedSets) {
-          final reps = NumberUtils.toInt(
-            setDraft.effectiveRepsText,
-            fallback: -1,
-          );
-          final weight = NumberUtils.toDouble(
-            setDraft.effectiveWeightText,
-            fallback: double.nan,
-          );
-          if (reps <= 0 || weight.isNaN || weight < 0) {
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(
-                  strings.invalidSetValue(
-                    strings.exerciseDisplayName(draft.exerciseName),
-                  ),
-                ),
-              ),
-            );
-            return;
-          }
-        }
-      }
-
-      final sessions = <WorkoutSession>[];
-      for (final draft in drafts) {
-        final durationMinutes = _durationForDraft(draft);
-        final sets = <WorkoutSet>[];
-        if (!draft.isCardio) {
-          final completedSets = draft.completedSets;
-          for (var i = 0; i < completedSets.length; i++) {
-            final setDraft = completedSets[i];
-            sets.add(
-              WorkoutSet(
-                setNumber: i + 1,
-                weightKg: NumberUtils.toDouble(setDraft.effectiveWeightText),
-                reps: NumberUtils.toInt(setDraft.effectiveRepsText),
-                isCompleted: setDraft.isCompleted,
-                completedAt: setDraft.isCompleted ? now : null,
-              ),
-            );
-          }
-        }
-
-        if (!draft.isCardio && sets.isEmpty) {
-          continue;
-        }
-
-        sessions.add(
-          WorkoutSession(
-            planId: planId,
-            recordName: recordName,
-            date: _date,
-            bodyPart: draft.bodyPart,
-            exerciseName: draft.exerciseName,
-            exerciseType: draft.isCardio ? 'cardio' : 'strength',
-            durationMinutes: durationMinutes,
-            intensity: 'medium',
-            estimatedCalories: draft.isCardio
-                ? WorkoutCalorieCalculator.estimateCardioCalories(
-                    exerciseName: draft.exerciseName,
-                    bodyWeightKg: _profileWeightKg,
-                    durationMinutes: durationMinutes,
-                  )
-                : WorkoutCalorieCalculator.estimateStrengthCalories(
-                    exerciseName: draft.exerciseName,
-                    bodyWeightKg: _profileWeightKg,
-                    sets: sets,
-                    totalSessionDurationMinutes: durationMinutes,
-                  ),
-            notes: notes,
-            sets: sets,
-          ),
-        );
-      }
-
-      if (sessions.isEmpty) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(strings.noCompletedSetsToSave)),
-        );
-        return;
-      }
-
-      if (_isEditing) {
+      if ((_editingPlanId ?? '').isNotEmpty) {
         await services.workoutRepository.replaceWorkoutPlan(
-          planId: planId,
+          planId: _editingPlanId!,
+          sessions: sessions,
+        );
+      } else if (_editingSeedSessionId != null) {
+        await services.workoutRepository.replaceSingleWorkoutRecord(
+          sessionId: _editingSeedSessionId!,
           sessions: sessions,
         );
       } else {
         await services.workoutRepository.insertWorkoutPlan(sessions);
       }
+
+      await services.workoutDraftRepository.deleteActiveDraft();
+      _draftCreatedAt = null;
 
       messenger.showSnackBar(
         SnackBar(
@@ -568,6 +843,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
     }
 
     refreshNotifier.markDataChanged();
+    setState(() => _allowPop = true);
     Navigator.of(context).pop(true);
   }
 
@@ -575,7 +851,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
   Widget build(BuildContext context) {
     final strings = context.strings;
 
-    if (_loadingExistingRecord) {
+    if (_loadingPage) {
       return Scaffold(
         appBar: AppBar(
           title: Text(
@@ -586,517 +862,567 @@ class _AddWorkoutPageState extends State<AddWorkoutPage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? strings.editWorkoutRecord : strings.addWorkout,
-        ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.only(
-            bottom:
-                MediaQuery.paddingOf(context).bottom +
-                kBottomNavigationBarHeight +
-                18,
+    return PopScope<bool>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        await _exitPage();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(onPressed: _exitPage),
+          title: Text(
+            _isEditing ? strings.editWorkoutRecord : strings.addWorkout,
           ),
-          children: <Widget>[
-            GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        strings.selectedExercises,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: 0.7),
-                        ),
-                        child: Text(
-                          strings.selectedExercisesCount(_selectedPlans.length),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    strings.exercisePickerCollapsedHint,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: (_saving || _updatingExerciseSelection)
-                          ? null
-                          : _openExerciseLibraryPicker,
-                      icon: _updatingExerciseSelection
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.fitness_center),
-                      label: Text(strings.addExercises),
-                    ),
-                  ),
-                ],
-              ),
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.only(
+              bottom:
+                  MediaQuery.paddingOf(context).bottom +
+                  kBottomNavigationBarHeight +
+                  100,
             ),
-            GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    strings.workoutRecordDetails,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_selectedPlans.isEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              GlassPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
                       children: <Widget>[
-                        Text(strings.noExerciseSelectedYet),
-                        const SizedBox(height: 4),
                         Text(
-                          strings.tapAddExerciseToBuildPlan,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          strings.selectedExercises,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
+                                .withValues(alpha: 0.7),
+                          ),
+                          child: Text(
+                            strings.selectedExercisesCount(
+                              _selectedPlans.length,
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ],
-                    )
-                  else ...<Widget>[
+                    ),
+                    const SizedBox(height: 10),
                     Text(
-                      strings.completeBeforeSaveHint,
+                      strings.exercisePickerCollapsedHint,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 10),
-                    ..._selectedDrafts.map((draft) {
-                      final color = ExerciseVisuals.colorForBodyPart(
-                        draft.bodyPart,
-                        context,
-                      );
-                      final durationHint = draft.defaultDurationHint.isEmpty
-                          ? '--'
-                          : draft.defaultDurationHint;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withValues(alpha: 0.24),
-                            border: Border.all(
-                              color: color.withValues(alpha: 0.16),
-                            ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: (_saving || _updatingExerciseSelection)
+                            ? null
+                            : _openExerciseLibraryPicker,
+                        icon: _updatingExerciseSelection
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.fitness_center),
+                        label: Text(strings.addExercises),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GlassPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      strings.workoutRecordDetails,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_selectedPlans.isEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(strings.noExerciseSelectedYet),
+                          const SizedBox(height: 4),
+                          Text(
+                            strings.tapAddExerciseToBuildPlan,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  ExerciseThumbnail(
-                                    bodyPart: draft.bodyPart,
-                                    exerciseName: draft.exerciseName,
-                                    color: color,
-                                    size: 48,
+                        ],
+                      )
+                    else ...<Widget>[
+                      Text(
+                        strings.completeBeforeSaveHint,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 10),
+                      ..._selectedDrafts.map((draft) {
+                        final color = ExerciseVisuals.colorForBodyPart(
+                          draft.bodyPart,
+                          context,
+                        );
+                        final durationHint = draft.defaultDurationHint.isEmpty
+                            ? '--'
+                            : draft.defaultDurationHint;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.24),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.16),
+                              ),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    ExerciseThumbnail(
+                                      bodyPart: draft.bodyPart,
+                                      exerciseName: draft.exerciseName,
+                                      color: color,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Text(
+                                            strings.exerciseDisplayName(
+                                              draft.exerciseName,
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          Text(
+                                            strings.bodyPartLabel(
+                                              draft.bodyPart,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => _removeExercise(draft),
+                                      icon: const Icon(Icons.close_rounded),
+                                      tooltip: strings.removeExercise,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                  controller: draft.durationController,
+                                  keyboardType: TextInputType.number,
+                                  selectAllOnFocus: true,
+                                  enabled: !_saving,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    labelText: strings.durationMinutesLabel,
+                                    hintText: durationHint,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                  onChanged: (_) {
+                                    setState(() {});
+                                    _scheduleDraftSave();
+                                  },
+                                ),
+                                const SizedBox(height: 6),
+                                if (draft.isCardio)
+                                  Text(
+                                    strings.cardioDurationHint,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                if (!draft.isCardio) ...<Widget>[
+                                  const SizedBox(height: 10),
+                                  if (draft.isBodyweight)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: Text(
+                                        draft.isAssistedBodyweight
+                                            ? strings.bodyweightAssistLoadHint
+                                            : strings.bodyweightAddedLoadHint,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Row(
                                       children: <Widget>[
-                                        Text(
-                                          strings.exerciseDisplayName(
-                                            draft.exerciseName,
-                                          ),
-                                          style: const TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w700,
+                                        SizedBox(
+                                          width: 30,
+                                          child: Text(
+                                            '#',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                           ),
                                         ),
-                                        Text(
-                                          strings.bodyPartLabel(draft.bodyPart),
+                                        Expanded(
+                                          flex: 6,
+                                          child: Text(
+                                            draft.isAssistedBodyweight
+                                                ? strings
+                                                      .assistWeightKgShortLabel
+                                                : draft.isBodyweight
+                                                ? strings
+                                                      .addedWeightKgShortLabel
+                                                : strings.weightKgShortLabel,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
                                         ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            strings.repsLabel,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 68),
                                       ],
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: () => _removeExercise(draft),
-                                    icon: const Icon(Icons.close_rounded),
-                                    tooltip: strings.removeExercise,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: draft.durationController,
-                                keyboardType: TextInputType.number,
-                                selectAllOnFocus: true,
-                                enabled: !_saving,
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  labelText: strings.durationMinutesLabel,
-                                  hintText: durationHint,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                onChanged: (_) => setState(() {}),
-                              ),
-                              const SizedBox(height: 6),
-                              if (draft.isCardio)
-                                Text(
-                                  strings.cardioDurationHint,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              if (!draft.isCardio) ...<Widget>[
-                                const SizedBox(height: 10),
-                                if (draft.isBodyweight)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 6),
-                                    child: Text(
-                                      draft.isAssistedBodyweight
-                                          ? strings.bodyweightAssistLoadHint
-                                          : strings.bodyweightAddedLoadHint,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                    ),
-                                  ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Row(
-                                    children: <Widget>[
-                                      SizedBox(
-                                        width: 30,
-                                        child: Text(
-                                          '#',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 6,
-                                        child: Text(
-                                          draft.isAssistedBodyweight
-                                              ? strings.assistWeightKgShortLabel
-                                              : draft.isBodyweight
-                                              ? strings.addedWeightKgShortLabel
-                                              : strings.weightKgShortLabel,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(
-                                          strings.repsLabel,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 68),
-                                    ],
-                                  ),
-                                ),
-                                ...draft.sets.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final setDraft = entry.value;
-                                  final isLast = index == draft.sets.length - 1;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    child: Column(
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 3,
-                                          ),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: setDraft.isCompleted
-                                                  ? Theme.of(context)
-                                                        .colorScheme
-                                                        .primary
-                                                        .withValues(alpha: 0.18)
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
+                                  ...draft.sets.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final setDraft = entry.value;
+                                    final isLast =
+                                        index == draft.sets.length - 1;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 2),
+                                      child: Column(
+                                        children: <Widget>[
+                                          Padding(
                                             padding: const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                              vertical: 2,
+                                              vertical: 3,
                                             ),
-                                            child: Row(
-                                              children: <Widget>[
-                                                SizedBox(
-                                                  width: 30,
-                                                  child: Text(
-                                                    '${index + 1}',
-                                                    style: const TextStyle(
-                                                      fontSize: 17,
-                                                      fontWeight:
-                                                          FontWeight.w700,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: setDraft.isCompleted
+                                                    ? Theme.of(context)
+                                                          .colorScheme
+                                                          .primary
+                                                          .withValues(
+                                                            alpha: 0.18,
+                                                          )
+                                                    : Colors.transparent,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                    vertical: 2,
+                                                  ),
+                                              child: Row(
+                                                children: <Widget>[
+                                                  SizedBox(
+                                                    width: 30,
+                                                    child: Text(
+                                                      '${index + 1}',
+                                                      style: const TextStyle(
+                                                        fontSize: 17,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  flex: 6,
-                                                  child: _buildSetValueInput(
-                                                    context: context,
-                                                    controller: setDraft
-                                                        .weightController,
-                                                    keyboardType:
-                                                        const TextInputType.numberWithOptions(
-                                                          decimal: true,
+                                                  Expanded(
+                                                    flex: 6,
+                                                    child: _buildSetValueInput(
+                                                      context: context,
+                                                      controller: setDraft
+                                                          .weightController,
+                                                      keyboardType:
+                                                          const TextInputType.numberWithOptions(
+                                                            decimal: true,
+                                                          ),
+                                                      hintText: setDraft
+                                                          .defaultWeightHint,
+                                                      showAsDefaultValue: setDraft
+                                                          .showWeightAsDefault,
+                                                      enabled: !_saving,
+                                                      onInputTap: setDraft
+                                                          .prepareWeightForEditing,
+                                                      onValueChanged: setDraft
+                                                          .markWeightInput,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    flex: 3,
+                                                    child: _buildSetValueInput(
+                                                      context: context,
+                                                      controller: setDraft
+                                                          .repsController,
+                                                      keyboardType:
+                                                          TextInputType.number,
+                                                      hintText: setDraft
+                                                          .defaultRepsHint,
+                                                      showAsDefaultValue:
+                                                          setDraft
+                                                              .showRepsAsDefault,
+                                                      enabled: !_saving,
+                                                      onInputTap: setDraft
+                                                          .prepareRepsForEditing,
+                                                      onValueChanged: setDraft
+                                                          .markRepsInput,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  IconButton(
+                                                    onPressed: _saving
+                                                        ? null
+                                                        : () =>
+                                                              _toggleSetCompleted(
+                                                                setDraft,
+                                                              ),
+                                                    icon: Icon(
+                                                      setDraft.isCompleted
+                                                          ? Icons.check_circle
+                                                          : Icons
+                                                                .radio_button_unchecked,
+                                                    ),
+                                                    color: setDraft.isCompleted
+                                                        ? Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary
+                                                        : null,
+                                                    tooltip:
+                                                        setDraft.isCompleted
+                                                        ? strings.completed
+                                                        : strings.completeSet,
+                                                    iconSize: 24,
+                                                    padding: EdgeInsets.zero,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    constraints:
+                                                        const BoxConstraints.tightFor(
+                                                          width: 32,
+                                                          height: 32,
                                                         ),
-                                                    hintText: setDraft
-                                                        .defaultWeightHint,
-                                                    showAsDefaultValue: setDraft
-                                                        .showWeightAsDefault,
-                                                    enabled: !_saving,
-                                                    onInputTap: setDraft
-                                                        .prepareWeightForEditing,
-                                                    onValueChanged: setDraft
-                                                        .markWeightInput,
                                                   ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  flex: 3,
-                                                  child: _buildSetValueInput(
-                                                    context: context,
-                                                    controller:
-                                                        setDraft.repsController,
-                                                    keyboardType:
-                                                        TextInputType.number,
-                                                    hintText: setDraft
-                                                        .defaultRepsHint,
-                                                    showAsDefaultValue: setDraft
-                                                        .showRepsAsDefault,
-                                                    enabled: !_saving,
-                                                    onInputTap: setDraft
-                                                        .prepareRepsForEditing,
-                                                    onValueChanged:
-                                                        setDraft.markRepsInput,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                IconButton(
-                                                  onPressed: _saving
-                                                      ? null
-                                                      : () =>
-                                                            _toggleSetCompleted(
-                                                              setDraft,
-                                                            ),
-                                                  icon: Icon(
-                                                    setDraft.isCompleted
-                                                        ? Icons.check_circle
-                                                        : Icons
-                                                              .radio_button_unchecked,
-                                                  ),
-                                                  color: setDraft.isCompleted
-                                                      ? Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary
-                                                      : null,
-                                                  tooltip: setDraft.isCompleted
-                                                      ? strings.completed
-                                                      : strings.completeSet,
-                                                  iconSize: 24,
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints.tightFor(
-                                                        width: 32,
-                                                        height: 32,
-                                                      ),
-                                                ),
-                                                const SizedBox(width: 2),
-                                                IconButton(
-                                                  onPressed: _saving
-                                                      ? null
-                                                      : () => _removeSet(
-                                                          draft,
-                                                          index,
+                                                  const SizedBox(width: 2),
+                                                  IconButton(
+                                                    onPressed: _saving
+                                                        ? null
+                                                        : () => _removeSet(
+                                                            draft,
+                                                            index,
+                                                          ),
+                                                    icon: const Icon(
+                                                      Icons
+                                                          .remove_circle_outline,
+                                                    ),
+                                                    tooltip: strings.removeSet,
+                                                    iconSize: 24,
+                                                    padding: EdgeInsets.zero,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    constraints:
+                                                        const BoxConstraints.tightFor(
+                                                          width: 32,
+                                                          height: 32,
                                                         ),
-                                                  icon: const Icon(
-                                                    Icons.remove_circle_outline,
                                                   ),
-                                                  tooltip: strings.removeSet,
-                                                  iconSize: 24,
-                                                  padding: EdgeInsets.zero,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  constraints:
-                                                      const BoxConstraints.tightFor(
-                                                        width: 32,
-                                                        height: 32,
-                                                      ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        if (!isLast)
-                                          Divider(
-                                            height: 1,
-                                            color: Theme.of(context)
-                                                .dividerColor
-                                                .withValues(alpha: 0.18),
-                                          ),
-                                      ],
-                                    ),
-                                  );
-                                }),
-                                TextButton.icon(
-                                  onPressed: _saving
-                                      ? null
-                                      : () => _addSet(draft),
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  label: Text(strings.addSet),
-                                ),
+                                          if (!isLast)
+                                            Divider(
+                                              height: 1,
+                                              color: Theme.of(context)
+                                                  .dividerColor
+                                                  .withValues(alpha: 0.18),
+                                            ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                  TextButton.icon(
+                                    onPressed: _saving
+                                        ? null
+                                        : () => _addSet(draft),
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    label: Text(strings.addSet),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    strings.workoutRecordMeta,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _recordNameController,
-                    decoration: InputDecoration(
-                      labelText: strings.workoutRecordNameLabel,
-                    ),
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(strings.date),
-                    subtitle: Text(DateUtilsX.formatReadable(_date)),
-                    trailing: TextButton(
-                      onPressed: _pickDate,
-                      child: Text(strings.change),
-                    ),
-                  ),
-                  if (_hasSelectedStrengthExercise) ...<Widget>[
-                    const SizedBox(height: 4),
+              GlassPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     Text(
-                      strings.strengthDurationNotice,
+                      strings.workoutRecordMeta,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _recordNameController,
+                      decoration: InputDecoration(
+                        labelText: strings.workoutRecordNameLabel,
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(strings.date),
+                      subtitle: Text(DateUtilsX.formatReadable(_date)),
+                      trailing: TextButton(
+                        onPressed: _pickDate,
+                        child: Text(strings.change),
+                      ),
+                    ),
+                    if (_hasSelectedStrengthExercise) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        strings.strengthDurationNotice,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    Text(
+                      strings.usingProfileWeight(_profileWeightKg),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                  ],
-                  const SizedBox(height: 10),
-                  Text(
-                    strings.usingProfileWeight(_profileWeightKg),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${strings.estimatedTotalCaloriesLabel}: ${_estimatedTotalCalories.toStringAsFixed(0)} kcal',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-            GlassPanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    strings.notesLabel,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(height: 8),
+                    Text(
+                      '${strings.estimatedTotalCaloriesLabel}: ${_estimatedTotalCalories.toStringAsFixed(0)} kcal',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _notesController,
-                    decoration: InputDecoration(labelText: strings.notesLabel),
-                    maxLines: 2,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              GlassPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      strings.notesLabel,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: InputDecoration(
+                        labelText: strings.notesLabel,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: OutlinedButton.icon(
+                  onPressed: _saving ? null : _discardCurrentDraft,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: Text(
+                    _isEditing
+                        ? strings.discardWorkoutChangesAction
+                        : strings.discardWorkoutDraftAction,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade200),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined),
-            label: Text(_saving ? strings.saving : strings.saveWorkoutPlan),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: FilledButton.icon(
+              onPressed: _saving ? null : _save,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_saving ? strings.saving : strings.saveWorkoutPlan),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 54),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -1125,6 +1451,22 @@ class _SetDraft {
        repsController = TextEditingController(text: reps.trim()),
        _showWeightAsDefault = false,
        _showRepsAsDefault = false;
+
+  factory _SetDraft.fromJson(Map<String, dynamic> map) {
+    final draft = _SetDraft(
+      defaultWeight: (map['default_weight'] ?? '').toString(),
+      defaultReps: (map['default_reps'] ?? '').toString(),
+    );
+    draft.weightController.text = (map['weight_text'] ?? '').toString();
+    draft.repsController.text = (map['reps_text'] ?? '').toString();
+    draft.isCompleted = map['is_completed'] == true || map['is_completed'] == 1;
+    draft._showWeightAsDefault =
+        map['show_weight_as_default'] == true ||
+        map['show_weight_as_default'] == 1;
+    draft._showRepsAsDefault =
+        map['show_reps_as_default'] == true || map['show_reps_as_default'] == 1;
+    return draft;
+  }
 
   final String _defaultWeight;
   final String _defaultReps;
@@ -1172,6 +1514,26 @@ class _SetDraft {
 
   String get effectiveRepsText {
     return repsController.text.trim();
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'default_weight': _defaultWeight,
+      'default_reps': _defaultReps,
+      'weight_text': weightController.text.trim(),
+      'reps_text': repsController.text.trim(),
+      'is_completed': isCompleted,
+      'show_weight_as_default': _showWeightAsDefault,
+      'show_reps_as_default': _showRepsAsDefault,
+    };
+  }
+
+  Map<String, dynamic> snapshotJson() {
+    return <String, dynamic>{
+      'weight_text': effectiveWeightText,
+      'reps_text': effectiveRepsText,
+      'is_completed': isCompleted,
+    };
   }
 
   void _selectDefaultValueIfNeeded({
@@ -1262,6 +1624,24 @@ class _ExercisePlanDraft {
     return draft;
   }
 
+  factory _ExercisePlanDraft.fromJson(Map<String, dynamic> map) {
+    final rawSets = map['sets'];
+    final sets = rawSets is List
+        ? rawSets
+              .whereType<Map>()
+              .map((entry) => _SetDraft.fromJson(entry.cast<String, dynamic>()))
+              .toList()
+        : <_SetDraft>[];
+    final draft = _ExercisePlanDraft(
+      bodyPart: (map['body_part'] ?? '').toString(),
+      exerciseName: (map['exercise_name'] ?? '').toString(),
+      sets: sets,
+      defaultDuration: (map['default_duration'] ?? '').toString(),
+    );
+    draft.durationController.text = (map['duration_text'] ?? '').toString();
+    return draft;
+  }
+
   final String bodyPart;
   final String exerciseName;
   final List<_SetDraft> sets;
@@ -1279,6 +1659,25 @@ class _ExercisePlanDraft {
   String get effectiveDurationText {
     final typed = durationController.text.trim();
     return typed.isNotEmpty ? typed : _defaultDuration;
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'body_part': bodyPart,
+      'exercise_name': exerciseName,
+      'default_duration': _defaultDuration,
+      'duration_text': durationController.text.trim(),
+      'sets': sets.map((set) => set.toJson()).toList(),
+    };
+  }
+
+  Map<String, dynamic> snapshotJson() {
+    return <String, dynamic>{
+      'body_part': bodyPart,
+      'exercise_name': exerciseName,
+      'duration_text': effectiveDurationText,
+      'sets': sets.map((set) => set.snapshotJson()).toList(),
+    };
   }
 
   static String _formatWeight(double value) {

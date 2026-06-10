@@ -48,11 +48,14 @@ The app is designed for users who may use external multimodal AI to estimate com
 3. The exercise library supports body-part filtering, search, multi-select, and visible selection order.
 4. Cardio exercises require per-exercise duration and have no set checklist.
 5. Strength exercises use set rows with weight, reps, and completed state.
-6. Save validation completes before any persistence happens.
-7. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
-8. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
-9. Saved records show duration, total volume, total sets, estimated calories, and exercise cards.
-10. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally.
+6. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
+7. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
+8. Workout Log shows a compact draft-resume bar above `Add Workout`; tapping the bar resumes editing, and tapping its delete icon discards the draft after confirmation.
+9. Save validation completes before any saved-record persistence happens.
+10. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
+11. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
+12. Saved records show duration, total volume, total sets, estimated calories, and exercise cards.
+13. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
 
 ## Daily Dashboard Behavior
 

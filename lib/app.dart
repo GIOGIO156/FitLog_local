@@ -7,6 +7,7 @@ import 'core/utils/date_utils.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/food_repository.dart';
 import 'data/repositories/profile_repository.dart';
+import 'data/repositories/workout_draft_repository.dart';
 import 'data/repositories/workout_repository.dart';
 import 'domain/services/daily_summary_service.dart';
 import 'domain/services/diet_plan_strategy_service.dart';
@@ -48,6 +49,7 @@ class _FitLogAppState extends State<FitLogApp> {
     final database = AppDatabase.instance;
     final foodRepository = FoodRepository(database);
     final workoutRepository = WorkoutRepository(database);
+    final workoutDraftRepository = WorkoutDraftRepository(database);
     final profileRepository = ProfileRepository(database);
     final trainingFrequencySelfCheckService = TrainingFrequencySelfCheckService(
       workoutRepository: workoutRepository,
@@ -72,6 +74,7 @@ class _FitLogAppState extends State<FitLogApp> {
     _services = AppServices(
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
+      workoutDraftRepository: workoutDraftRepository,
       profileRepository: profileRepository,
       dailySummaryService: dailySummaryService,
       xlsxExportService: XlsxExportService(
@@ -462,6 +465,7 @@ class AppServices {
   const AppServices({
     required this.foodRepository,
     required this.workoutRepository,
+    required this.workoutDraftRepository,
     required this.profileRepository,
     required this.dailySummaryService,
     required this.xlsxExportService,
@@ -474,6 +478,7 @@ class AppServices {
 
   final FoodRepository foodRepository;
   final WorkoutRepository workoutRepository;
+  final WorkoutDraftRepository workoutDraftRepository;
   final ProfileRepository profileRepository;
   final DailySummaryService dailySummaryService;
   final XlsxExportService xlsxExportService;

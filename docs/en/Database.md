@@ -6,14 +6,14 @@ FitLog Local stores business data locally.
 
 | Storage | Purpose | Remote sync |
 | --- | --- | --- |
-| SQLite / `sqflite` | Profile, food records, food items, workout sessions, workout sets, weight logs, calibration state, diet adjustment reviews. | No |
+| SQLite / `sqflite` | Profile, food records, food items, workout sessions, workout sets, workout record drafts, weight logs, calibration state, diet adjustment reviews. | No |
 | SharedPreferences | UI language preference, currently `language_code`. | No |
 | Local files | XLSX and CSV ZIP exports in the app documents directory. | No |
 | In-memory providers | App services, refresh version, selected date, language state. | No |
 
 Database name: `fitlog_local.db`.
 
-Current SQLite schema version: `9`.
+Current SQLite schema version: `10`.
 
 Foreign keys are enabled with `PRAGMA foreign_keys = ON`.
 
@@ -32,6 +32,7 @@ Migrations are additive and must preserve existing local data.
 | 7 | Added diet strategy profile fields and `diet_adjustment_reviews`. |
 | 8 | Added `workout_sessions.record_name`. |
 | 9 | Added local-only `user_profile.nickname`. |
+| 10 | Added `workout_record_drafts` for one active unsaved workout editor state. |
 
 Compatibility rules:
 
@@ -163,6 +164,29 @@ Current save behavior:
 - Remaining sets are renumbered from `1..n`.
 - `is_completed` remains stored for compatibility, but saved strength sets are expected to be completed sets.
 
+### `workout_record_drafts`
+
+Purpose: one active unsaved workout editor state, stored separately from saved workout history.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | TEXT PRIMARY KEY | Fixed active draft id. |
+| `kind` | TEXT NOT NULL | `new_record` or `edit_record`. |
+| `source_plan_id` | TEXT | Saved-record `plan_id` when the draft started from an existing grouped workout record. |
+| `source_session_id` | INTEGER | Saved single-session id when the draft started from an older non-grouped workout record. |
+| `date` | TEXT NOT NULL | Draft date shown in the editor. |
+| `record_name` | TEXT NOT NULL | Draft workout-record name. |
+| `notes` | TEXT NOT NULL | Draft notes. |
+| `payload_json` | TEXT NOT NULL | Serialized exercise order, duration values, set rows, default-hint state, and completed flags. |
+| `created_at` | TEXT NOT NULL | Draft creation timestamp. |
+| `updated_at` | TEXT NOT NULL | Last draft autosave timestamp. |
+
+Draft behavior:
+
+- The draft table is not part of workout history and does not appear in saved workout lists.
+- The draft table does not feed Home workout totals or export coverage.
+- Explicit save validates current editor state first, then writes `workout_sessions` and `workout_sets`, then deletes the draft row.
+
 ### `user_weight_logs`
 
 Purpose: daily bodyweight history for calibration and review.
@@ -264,6 +288,9 @@ Workout:
 
 ```text
 AddWorkoutPage
+-> workout draft snapshot
+-> workout_record_drafts
+-> explicit save validation
 -> WorkoutCalorieCalculator
 -> WorkoutSession + WorkoutSet
 -> WorkoutRepository

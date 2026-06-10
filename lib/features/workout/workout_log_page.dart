@@ -9,6 +9,7 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
+import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import 'add_workout_page.dart';
 import 'workout_plan_page.dart';
@@ -23,23 +24,161 @@ class WorkoutLogPage extends StatefulWidget {
 class _WorkoutLogPageState extends State<WorkoutLogPage> {
   static final DateFormat _timeFormat = DateFormat('HH:mm');
 
-  Future<List<WorkoutSession>> _loadSessions(BuildContext context, String day) {
-    return context
-        .read<AppServices>()
-        .workoutRepository
-        .getWorkoutSessionsByDate(day);
+  Future<_WorkoutLogData> _loadPageData(
+    BuildContext context,
+    String day,
+  ) async {
+    final services = context.read<AppServices>();
+    final sessionsFuture = services.workoutRepository.getWorkoutSessionsByDate(
+      day,
+    );
+    final draftFuture = services.workoutDraftRepository.getActiveDraft();
+    final sessions = await sessionsFuture;
+    final draft = await draftFuture;
+    return _WorkoutLogData(sessions: sessions, activeDraft: draft);
+  }
+
+  String _draftSummary(WorkoutRecordDraft draft, AppStrings strings) {
+    final recordName = draft.recordName.trim();
+    if (recordName.isNotEmpty) {
+      return recordName;
+    }
+    final firstExercise = draft.firstExerciseName;
+    if (firstExercise != null) {
+      return strings.workoutDraftExerciseSummary(
+        strings.exerciseDisplayName(firstExercise),
+        draft.exerciseCount,
+      );
+    }
+    return strings.workoutDraftUntitled;
+  }
+
+  Future<void> _resumeDraft(
+    BuildContext context,
+    WorkoutRecordDraft draft,
+  ) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AddWorkoutPage(initialDate: draft.date),
+      ),
+    );
+  }
+
+  Future<void> _discardDraft(
+    BuildContext context,
+    WorkoutRecordDraft draft,
+  ) async {
+    final strings = context.stringsRead;
+    final refreshNotifier = context.read<RefreshNotifier>();
+    final services = context.read<AppServices>();
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(
+                draft.isEditDraft
+                    ? strings.discardWorkoutChangesTitle
+                    : strings.discardWorkoutDraftTitle,
+              ),
+              content: Text(
+                draft.isEditDraft
+                    ? strings.discardWorkoutChangesMessage
+                    : strings.discardWorkoutDraftMessage,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(strings.cancel),
+                ),
+                FilledButton.tonal(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(
+                    draft.isEditDraft
+                        ? strings.discardWorkoutChangesAction
+                        : strings.discardWorkoutDraftAction,
+                  ),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+    if (!confirmed) {
+      return;
+    }
+    await services.workoutDraftRepository.deleteActiveDraft();
+    if (!context.mounted) {
+      return;
+    }
+    refreshNotifier.markDataChanged();
   }
 
   Future<void> _openAddWorkout(BuildContext context, String initialDate) async {
-    final saved = await Navigator.of(context).push<bool>(
+    final activeDraft = await context
+        .read<AppServices>()
+        .workoutDraftRepository
+        .getActiveDraft();
+    if (!context.mounted) {
+      return;
+    }
+    if (activeDraft != null) {
+      final strings = context.stringsRead;
+      final decision =
+          await showDialog<_DraftConflictAction>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text(strings.workoutDraftExistsTitle),
+                content: Text(strings.workoutDraftExistsMessage),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(_DraftConflictAction.cancel),
+                    child: Text(strings.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop(_DraftConflictAction.resumeExisting),
+                    child: Text(strings.continueEditing),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pop(_DraftConflictAction.discardAndOpen),
+                    child: Text(strings.discardAndStartNewWorkout),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          _DraftConflictAction.cancel;
+      if (!context.mounted) {
+        return;
+      }
+      if (decision == _DraftConflictAction.resumeExisting) {
+        await _resumeDraft(context, activeDraft);
+        return;
+      }
+      if (decision != _DraftConflictAction.discardAndOpen) {
+        return;
+      }
+      await context
+          .read<AppServices>()
+          .workoutDraftRepository
+          .deleteActiveDraft();
+      if (!context.mounted) {
+        return;
+      }
+      context.read<RefreshNotifier>().markDataChanged();
+    }
+
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => AddWorkoutPage(initialDate: initialDate),
       ),
     );
-
-    if (saved == true && context.mounted) {
-      context.read<RefreshNotifier>().markDataChanged();
-    }
   }
 
   Future<void> _openPlan(BuildContext context, _WorkoutPlanGroup group) async {
@@ -177,8 +316,8 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                 ),
               ),
               Expanded(
-                child: FutureBuilder<List<WorkoutSession>>(
-                  future: _loadSessions(context, selectedDate),
+                child: FutureBuilder<_WorkoutLogData>(
+                  future: _loadPageData(context, selectedDate),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const Center(child: CircularProgressIndicator());
@@ -196,7 +335,13 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                       );
                     }
 
-                    final sessions = snapshot.data ?? <WorkoutSession>[];
+                    final pageData =
+                        snapshot.data ??
+                        const _WorkoutLogData(
+                          sessions: <WorkoutSession>[],
+                          activeDraft: null,
+                        );
+                    final sessions = pageData.sessions;
                     final plans = _groupSessions(sessions);
                     if (plans.isEmpty) {
                       return Center(
@@ -334,6 +479,70 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                   },
                 ),
               ),
+              FutureBuilder<WorkoutRecordDraft?>(
+                future: context
+                    .read<AppServices>()
+                    .workoutDraftRepository
+                    .getActiveDraft(),
+                builder: (context, snapshot) {
+                  final draft = snapshot.data;
+                  if (draft == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () => _resumeDraft(context, draft),
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.82),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF74BF56),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  strings.workoutDraftBanner(
+                                    _draftSummary(draft, strings),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => _discardDraft(context, draft),
+                                icon: const Icon(Icons.delete_outline_rounded),
+                                tooltip: strings.delete,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: FilledButton.icon(
@@ -386,6 +595,15 @@ class _WorkoutMetric extends StatelessWidget {
     );
   }
 }
+
+class _WorkoutLogData {
+  const _WorkoutLogData({required this.sessions, required this.activeDraft});
+
+  final List<WorkoutSession> sessions;
+  final WorkoutRecordDraft? activeDraft;
+}
+
+enum _DraftConflictAction { cancel, resumeExisting, discardAndOpen }
 
 class _WorkoutPlanGroup {
   _WorkoutPlanGroup({
