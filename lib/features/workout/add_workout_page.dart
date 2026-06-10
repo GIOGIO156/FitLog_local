@@ -52,9 +52,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   bool _loadingPage = true;
   bool _saving = false;
   bool _updatingExerciseSelection = false;
-  bool _suspendAutoSave = false;
   bool _allowPop = false;
-  String _activeDraftKind = WorkoutRecordDraft.kindNewRecord;
   String _baselineSnapshotJson = '{}';
   String? _editingPlanId;
   int? _editingSeedSessionId;
@@ -62,9 +60,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   Timer? _draftSaveDebounce;
 
   bool get _isEditing =>
-      (_editingPlanId ?? '').trim().isNotEmpty ||
-      _editingSeedSessionId != null ||
-      _activeDraftKind == WorkoutRecordDraft.kindEditRecord;
+      (_editingPlanId ?? '').trim().isNotEmpty || _editingSeedSessionId != null;
 
   @override
   void initState() {
@@ -128,25 +124,20 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       return;
     }
 
-    _suspendAutoSave = true;
-    try {
-      if (profile != null) {
-        _profileWeightKg = profile.weightKg;
-      }
+    if (profile != null) {
+      _profileWeightKg = profile.weightKg;
+    }
 
-      if (sessions.isNotEmpty) {
-        _applySessions(sessions);
-      } else {
-        _resetToEmptyState();
-      }
-      _baselineSnapshotJson = _buildSnapshotJson();
+    if (sessions.isNotEmpty) {
+      _applySessions(sessions);
+    } else {
+      _resetToEmptyState();
+    }
+    _baselineSnapshotJson = _buildSnapshotJson();
 
-      final restorableDraft = _resolveRestorableDraft(activeDraft);
-      if (restorableDraft != null) {
-        _applyStoredDraft(restorableDraft);
-      }
-    } finally {
-      _suspendAutoSave = false;
+    final restorableDraft = _resolveRestorableDraft(activeDraft);
+    if (restorableDraft != null) {
+      _applyStoredDraft(restorableDraft);
     }
 
     if (!mounted) {
@@ -266,7 +257,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
             exerciseDraft;
       }
     }
-    _activeDraftKind = draft.kind;
     _editingPlanId = _normalizePlanId(draft.sourcePlanId) ?? _editingPlanId;
     _editingSeedSessionId = draft.sourceSessionId ?? _editingSeedSessionId;
     _draftCreatedAt = draft.createdAt;
@@ -285,7 +275,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       ..addAll(drafts);
   }
 
-  Map<String, dynamic> _buildSnapshotMap() {
+  Map<String, dynamic> _buildDraftPayload() {
     return <String, dynamic>{
       'kind': _isEditing
           ? WorkoutRecordDraft.kindEditRecord
@@ -293,13 +283,11 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       'date': _date,
       'record_name': _recordNameController.text.trim(),
       'notes': _notesController.text.trim(),
-      'exercises': _selectedDrafts
-          .map((draft) => draft.snapshotJson())
-          .toList(),
+      'exercises': _selectedDrafts.map((draft) => draft.toJson()).toList(),
     };
   }
 
-  String _buildSnapshotJson() => jsonEncode(_buildSnapshotMap());
+  String _buildSnapshotJson() => jsonEncode(_buildDraftPayload());
 
   bool get _hasDraftChanges => _buildSnapshotJson() != _baselineSnapshotJson;
 
@@ -316,7 +304,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       _hasMeaningfulDraftContent && _hasDraftChanges;
 
   void _scheduleDraftSave() {
-    if (_suspendAutoSave || _loadingPage) {
+    if (_loadingPage) {
       return;
     }
     _draftSaveDebounce?.cancel();
@@ -357,7 +345,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       date: _date,
       recordName: _recordNameController.text.trim(),
       notes: _notesController.text.trim(),
-      payloadJson: jsonEncode(_buildPersistencePayload()),
+      payloadJson: jsonEncode(_buildDraftPayload()),
       createdAt: createdAt,
       updatedAt: now,
     );
@@ -365,12 +353,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     if (notifyRefresh && mounted) {
       context.read<RefreshNotifier>().markDataChanged();
     }
-  }
-
-  Map<String, dynamic> _buildPersistencePayload() {
-    return <String, dynamic>{
-      'exercises': _selectedDrafts.map((draft) => draft.toJson()).toList(),
-    };
   }
 
   Future<void> _exitPage() async {
@@ -1528,14 +1510,6 @@ class _SetDraft {
     };
   }
 
-  Map<String, dynamic> snapshotJson() {
-    return <String, dynamic>{
-      'weight_text': effectiveWeightText,
-      'reps_text': effectiveRepsText,
-      'is_completed': isCompleted,
-    };
-  }
-
   void _selectDefaultValueIfNeeded({
     required TextEditingController controller,
     required String defaultValue,
@@ -1668,15 +1642,6 @@ class _ExercisePlanDraft {
       'default_duration': _defaultDuration,
       'duration_text': durationController.text.trim(),
       'sets': sets.map((set) => set.toJson()).toList(),
-    };
-  }
-
-  Map<String, dynamic> snapshotJson() {
-    return <String, dynamic>{
-      'body_part': bodyPart,
-      'exercise_name': exerciseName,
-      'duration_text': effectiveDurationText,
-      'sets': sets.map((set) => set.snapshotJson()).toList(),
     };
   }
 

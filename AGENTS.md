@@ -93,7 +93,7 @@ docs/
     Methodology.md
     Algorithm.md
     Database.md
-    Agent.md
+    AgentDesign.md
     References.md
   zh/
     Product.md
@@ -101,7 +101,7 @@ docs/
     Methodology.md
     Algorithm.md
     Database.md
-    Agent.md
+    AgentDesign.md
     References.md
 ```
 
@@ -114,7 +114,7 @@ File responsibilities:
 - `docs/en/Methodology.md` and `docs/zh/Methodology.md`: user-facing method explanation. Explain why the app uses `energy_ratio`, `gram_per_kg`, carb cycling, carb tapering, net exercise calories, and strength calorie heuristics. Keep it understandable, evidence-aware, and honest about limitations.
 - `docs/en/Algorithm.md` and `docs/zh/Algorithm.md`: stable algorithm design. Cover inputs, formulas, diet phase/mode/strategy separation, workout calorie logic, calibration, self-check, boundaries, and code references. Do not merge `gram_per_kg` and `energy_ratio`.
 - `docs/en/Database.md` and `docs/zh/Database.md`: stable database design. Cover current schema version, additive migrations, tables, fields, runtime aggregates, data flows, export coverage, non-implemented storage capabilities, and code references. Preserve migration compatibility.
-- `docs/en/Agent.md` and `docs/zh/Agent.md`: current AI/Agent boundary. State clearly that the local app has no internal LLM/API/Agent loop unless code actually adds one. External AI prompt copy and JSON paste are not app-internal AI.
+- `docs/en/AgentDesign.md` and `docs/zh/AgentDesign.md`: current AI/Agent boundary. State clearly that the local app has no internal LLM/API/Agent loop unless code actually adds one. External AI prompt copy and JSON paste are not app-internal AI.
 - `docs/en/References.md` and `docs/zh/References.md`: evidence and citation boundaries. Keep reference IDs stable. Cite narrow claims only. Do not turn this file into a literature review or changelog.
 
 Language and sync rules:

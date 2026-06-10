@@ -153,7 +153,7 @@ flutter build apk --debug
 | [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | User-facing explanation of why FitLog uses these diet, carb strategy, and workout calorie methods. |
 | [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | Engineering-level formulas, diet modes, workout calorie logic, calibration, self-check, and algorithm boundaries. |
 | [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema, migrations, tables, fields, runtime aggregates, data flows, and export coverage. |
-| [docs/en/Agent.md](docs/en/Agent.md) / [docs/zh/Agent.md](docs/zh/Agent.md) | Current AI/Agent boundary: external AI-assisted input versus app-internal deterministic logic. |
+| [docs/en/AgentDesign.md](docs/en/AgentDesign.md) / [docs/zh/AgentDesign.md](docs/zh/AgentDesign.md) | Current AI/Agent boundary: external AI-assisted input versus app-internal deterministic logic. |
 | [docs/en/References.md](docs/en/References.md) / [docs/zh/References.md](docs/zh/References.md) | External evidence, citation boundaries, and what each source supports. |
 
 Chinese design documents mirror the same content under `docs/zh/`.
@@ -319,7 +319,7 @@ flutter build apk --debug
 | [docs/en/Methodology.md](docs/en/Methodology.md) / [docs/zh/Methodology.md](docs/zh/Methodology.md) | 面向用户解释 FitLog 为什么使用这些饮食、碳水策略和运动消耗方法。 |
 | [docs/en/Algorithm.md](docs/en/Algorithm.md) / [docs/zh/Algorithm.md](docs/zh/Algorithm.md) | 工程级公式、饮食模式、运动消耗逻辑、校准、自检和算法边界。 |
 | [docs/en/Database.md](docs/en/Database.md) / [docs/zh/Database.md](docs/zh/Database.md) | SQLite schema、迁移、表、字段、运行时聚合、数据流和导出覆盖。 |
-| [docs/en/Agent.md](docs/en/Agent.md) / [docs/zh/Agent.md](docs/zh/Agent.md) | 当前 AI/Agent 边界：外部 AI 辅助输入和 App 内本地确定性逻辑的区别。 |
+| [docs/en/AgentDesign.md](docs/en/AgentDesign.md) / [docs/zh/AgentDesign.md](docs/zh/AgentDesign.md) | 当前 AI/Agent 边界：外部 AI 辅助输入和 App 内本地确定性逻辑的区别。 |
 | [docs/en/References.md](docs/en/References.md) / [docs/zh/References.md](docs/zh/References.md) | 外部证据、引用边界和每个来源支持的具体内容。 |
 
 英文设计文档在 `docs/en/` 下保持同等内容。

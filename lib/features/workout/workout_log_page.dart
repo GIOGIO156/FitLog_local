@@ -114,6 +114,60 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
     refreshNotifier.markDataChanged();
   }
 
+  Widget _buildDraftBar(
+    BuildContext context,
+    WorkoutRecordDraft draft,
+    AppStrings strings,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _resumeDraft(context, draft),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.82),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF74BF56),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    strings.workoutDraftBanner(_draftSummary(draft, strings)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _discardDraft(context, draft),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: strings.delete,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openAddWorkout(BuildContext context, String initialDate) async {
     final activeDraft = await context
         .read<AppServices>()
@@ -300,6 +354,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
         builder: (context, refresh, selectedDateNotifier, _) {
           refresh.version;
           final selectedDate = selectedDateNotifier.selectedDate;
+          final pageDataFuture = _loadPageData(context, selectedDate);
           return Column(
             children: <Widget>[
               FitLogPageHeader(
@@ -317,7 +372,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
               ),
               Expanded(
                 child: FutureBuilder<_WorkoutLogData>(
-                  future: _loadPageData(context, selectedDate),
+                  future: pageDataFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const Center(child: CircularProgressIndicator());
@@ -479,68 +534,14 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                   },
                 ),
               ),
-              FutureBuilder<WorkoutRecordDraft?>(
-                future: context
-                    .read<AppServices>()
-                    .workoutDraftRepository
-                    .getActiveDraft(),
+              FutureBuilder<_WorkoutLogData>(
+                future: pageDataFuture,
                 builder: (context, snapshot) {
-                  final draft = snapshot.data;
+                  final draft = snapshot.data?.activeDraft;
                   if (draft == null) {
                     return const SizedBox.shrink();
                   }
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
-                        onTap: () => _resumeDraft(context, draft),
-                        child: Ink(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withValues(alpha: 0.82),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF74BF56),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  strings.workoutDraftBanner(
-                                    _draftSummary(draft, strings),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => _discardDraft(context, draft),
-                                icon: const Icon(Icons.delete_outline_rounded),
-                                tooltip: strings.delete,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildDraftBar(context, draft, strings);
                 },
               ),
               Padding(

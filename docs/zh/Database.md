@@ -163,7 +163,7 @@ FitLog Local 将业务数据保存在本地。
 | `date` | TEXT NOT NULL | 编辑页里显示的草稿日期。 |
 | `record_name` | TEXT NOT NULL | 草稿训练记录名。 |
 | `notes` | TEXT NOT NULL | 草稿备注。 |
-| `payload_json` | TEXT NOT NULL | 序列化后的动作顺序、时长、组行、默认提示状态和完成标记。 |
+| `payload_json` | TEXT NOT NULL | 序列化后的编辑器快照，包含草稿元数据、动作顺序、时长、组行、默认提示状态和完成标记。 |
 | `created_at` | TEXT NOT NULL | 草稿创建时间。 |
 | `updated_at` | TEXT NOT NULL | 最近一次自动保存时间。 |
 

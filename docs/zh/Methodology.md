@@ -302,4 +302,4 @@ FitLog 对不确定性的处理方式：
 - 工程公式和实现边界：[Algorithm](Algorithm.md)
 - 证据来源和引用边界：[References](References.md)
 - 产品行为和 UX 范围：[Product](Product.md)
-- AI/Agent 边界：[Agent](Agent.md)
+- AI/Agent 边界：[AgentDesign](AgentDesign.md)

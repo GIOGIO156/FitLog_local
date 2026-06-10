@@ -24,9 +24,10 @@ class WorkoutDraftRepository {
 
   Future<void> saveActiveDraft(WorkoutRecordDraft draft) async {
     final db = await _database.database;
+    final map = draft.toMap()..['id'] = WorkoutRecordDraft.activeDraftId;
     await db.insert(
       'workout_record_drafts',
-      draft.copyWith(id: WorkoutRecordDraft.activeDraftId).toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }

@@ -12,6 +12,7 @@
 
 - Reworked `AddWorkoutPage` so editor exit now keeps a local draft instead of forcing immediate save/discard handling on back navigation.
 - Split workout editor persistence into draft autosave and explicit saved-record commit paths, keeping validation on the explicit save path only.
+- Simplified workout draft internals by sharing one editor snapshot for draft comparison and persistence, and by reusing the Workout Log page data load for the draft bar.
 - Added red in-editor discard actions for both new workout drafts and unsaved edits to existing workout records.
 - Updated bilingual workout design docs to describe the draft bar, autosave behavior, and schema version `10`.
 
@@ -24,6 +25,7 @@
 
 - `flutter analyze`: success.
 - `flutter test`: success.
+- `flutter build apk --debug`: success.
 
 ## 2026-06-11 Documentation Naming And Chinese Doc Polish
 

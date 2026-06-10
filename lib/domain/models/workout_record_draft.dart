@@ -64,38 +64,6 @@ class WorkoutRecordDraft {
     return name.isEmpty ? null : name;
   }
 
-  WorkoutRecordDraft copyWith({
-    String? id,
-    String? kind,
-    String? sourcePlanId,
-    int? sourceSessionId,
-    String? date,
-    String? recordName,
-    String? notes,
-    String? payloadJson,
-    String? createdAt,
-    String? updatedAt,
-    bool clearSourcePlanId = false,
-    bool clearSourceSessionId = false,
-  }) {
-    return WorkoutRecordDraft(
-      id: id ?? this.id,
-      kind: kind ?? this.kind,
-      sourcePlanId: clearSourcePlanId
-          ? null
-          : (sourcePlanId ?? this.sourcePlanId),
-      sourceSessionId: clearSourceSessionId
-          ? null
-          : (sourceSessionId ?? this.sourceSessionId),
-      date: date ?? this.date,
-      recordName: recordName ?? this.recordName,
-      notes: notes ?? this.notes,
-      payloadJson: payloadJson ?? this.payloadJson,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,

@@ -301,4 +301,4 @@ FitLog's response to uncertainty:
 - Engineering formulas and implementation boundaries: [Algorithm](Algorithm.md)
 - Evidence and source boundaries: [References](References.md)
 - Product behavior and UX scope: [Product](Product.md)
-- AI/Agent boundary: [Agent](Agent.md)
+- AI/Agent boundary: [AgentDesign](AgentDesign.md)

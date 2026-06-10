@@ -177,7 +177,7 @@ Purpose: one active unsaved workout editor state, stored separately from saved w
 | `date` | TEXT NOT NULL | Draft date shown in the editor. |
 | `record_name` | TEXT NOT NULL | Draft workout-record name. |
 | `notes` | TEXT NOT NULL | Draft notes. |
-| `payload_json` | TEXT NOT NULL | Serialized exercise order, duration values, set rows, default-hint state, and completed flags. |
+| `payload_json` | TEXT NOT NULL | Serialized editor snapshot with draft metadata, exercise order, duration values, set rows, default-hint state, and completed flags. |
 | `created_at` | TEXT NOT NULL | Draft creation timestamp. |
 | `updated_at` | TEXT NOT NULL | Last draft autosave timestamp. |
 
