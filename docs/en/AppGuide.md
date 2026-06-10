@@ -120,7 +120,7 @@ What users can do:
 - open a saved record
 - delete a saved record
 - start Add/Edit Workout Record
-- resume one unsaved workout draft from the floating draft bar above `Add Workout`
+- resume one unsaved workout draft from the two-line floating draft bar above `Add Workout`
 - discard that draft from the floating bar after confirmation
 
 How it works:
@@ -128,7 +128,7 @@ How it works:
 - A user-facing `Workout Record` can contain multiple exercises.
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
-- One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately and does not count as a saved workout record.
+- One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately, does not count as a saved workout record, and appears as a title/subtitle draft bar that uses short body-part labels and caps direct body-part display at three names before `+n`.
 - Record-level summaries are derived from persisted sessions and sets.
 - Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
 

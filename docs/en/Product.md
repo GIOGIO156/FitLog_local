@@ -50,7 +50,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 5. Strength exercises use set rows with weight, reps, and completed state.
 6. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
 7. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
-8. Workout Log shows a compact draft-resume bar above `Add Workout`; tapping the bar resumes editing, and tapping its delete icon discards the draft after confirmation.
+8. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
 9. Save validation completes before any saved-record persistence happens.
 10. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
 11. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.

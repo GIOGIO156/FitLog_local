@@ -13,6 +13,8 @@
 - Reworked `AddWorkoutPage` so editor exit now keeps a local draft instead of forcing immediate save/discard handling on back navigation.
 - Split workout editor persistence into draft autosave and explicit saved-record commit paths, keeping validation on the explicit save path only.
 - Simplified workout draft internals by sharing one editor snapshot for draft comparison and persistence, and by reusing the Workout Log page data load for the draft bar.
+- Refined the Workout Log draft bar into a two-line title/subtitle summary that prioritizes record name, body-part summary, and exercise count over a single-line unsaved warning label.
+- Tightened the draft bar subtitle so it uses short body-part labels and shows at most three body parts before collapsing the remainder into `+n`.
 - Added red in-editor discard actions for both new workout drafts and unsaved edits to existing workout records.
 - Updated bilingual workout design docs to describe the draft bar, autosave behavior, and schema version `10`.
 

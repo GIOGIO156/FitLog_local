@@ -38,19 +38,45 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
     return _WorkoutLogData(sessions: sessions, activeDraft: draft);
   }
 
-  String _draftSummary(WorkoutRecordDraft draft, AppStrings strings) {
+  _WorkoutDraftDisplay _draftDisplay(
+    WorkoutRecordDraft draft,
+    AppStrings strings,
+  ) {
     final recordName = draft.recordName.trim();
-    if (recordName.isNotEmpty) {
-      return recordName;
-    }
-    final firstExercise = draft.firstExerciseName;
-    if (firstExercise != null) {
-      return strings.workoutDraftExerciseSummary(
-        strings.exerciseDisplayName(firstExercise),
-        draft.exerciseCount,
+    final title = recordName.isNotEmpty
+        ? recordName
+        : strings.workoutDraftLabel;
+    if (draft.exerciseCount <= 0) {
+      return _WorkoutDraftDisplay(
+        title: title,
+        subtitle: strings.workoutDraftUntitled,
       );
     }
-    return strings.workoutDraftUntitled;
+
+    final bodyParts = <String>[];
+    final seen = <String>{};
+    for (final exercise in draft.exercisePayloads) {
+      final rawBodyPart = exercise['body_part']?.toString().trim() ?? '';
+      if (rawBodyPart.isEmpty || !seen.add(rawBodyPart)) {
+        continue;
+      }
+      bodyParts.add(strings.shortBodyPartLabel(rawBodyPart));
+    }
+
+    final subtitle = bodyParts.isEmpty
+        ? strings.workoutDraftCountSummary(draft.exerciseCount)
+        : strings.workoutDraftBodyPartSummary(
+            _compactBodyPartSummary(bodyParts),
+            draft.exerciseCount,
+          );
+    return _WorkoutDraftDisplay(title: title, subtitle: subtitle);
+  }
+
+  String _compactBodyPartSummary(List<String> bodyParts) {
+    if (bodyParts.length <= 3) {
+      return bodyParts.join('/');
+    }
+    return '${bodyParts.take(3).join('/')} +${bodyParts.length - 3}';
   }
 
   Future<void> _resumeDraft(
@@ -119,6 +145,9 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
     WorkoutRecordDraft draft,
     AppStrings strings,
   ) {
+    final display = _draftDisplay(draft, strings);
+    final theme = Theme.of(context);
+    final surfaceColor = theme.colorScheme.surfaceContainerHighest;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Material(
@@ -128,37 +157,81 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
           onTap: () => _resumeDraft(context, draft),
           child: Ink(
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.82),
-              borderRadius: BorderRadius.circular(18),
+              color: Color.alphaBlend(
+                const Color(0x1474BF56),
+                surfaceColor.withValues(alpha: 0.9),
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Container(
-                  width: 10,
-                  height: 10,
+                  width: 4,
+                  height: 42,
                   decoration: const BoxDecoration(
                     color: Color(0xFF74BF56),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.all(Radius.circular(999)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    strings.workoutDraftBanner(_draftSummary(draft, strings)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF74BF56),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              display.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 17,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 20),
+                        child: Text(
+                          display.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.68),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _discardDraft(context, draft),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  tooltip: strings.delete,
+                const SizedBox(width: 10),
+                Material(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.75),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    onPressed: () => _discardDraft(context, draft),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    tooltip: strings.delete,
+                  ),
                 ),
               ],
             ),
@@ -605,6 +678,13 @@ class _WorkoutLogData {
 }
 
 enum _DraftConflictAction { cancel, resumeExisting, discardAndOpen }
+
+class _WorkoutDraftDisplay {
+  const _WorkoutDraftDisplay({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+}
 
 class _WorkoutPlanGroup {
   _WorkoutPlanGroup({

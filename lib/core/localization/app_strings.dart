@@ -511,11 +511,12 @@ class AppStrings {
   );
 
   String get unsavedWorkoutDraftTitle => _t('Unsaved workout draft', '未保存训练');
-  String workoutDraftBanner(String summary) =>
-      _t('Unsaved workout · $summary', '未保存训练 · $summary');
-  String workoutDraftExerciseSummary(String exerciseName, int count) => _t(
-    '$exerciseName · $count exercise${count == 1 ? '' : 's'}',
-    '$exerciseName · $count 个动作',
+  String get workoutDraftLabel => _t('Workout draft', '训练草稿');
+  String workoutDraftCountSummary(int count) =>
+      _t('$count exercise${count == 1 ? '' : 's'}', '$count 个动作');
+  String workoutDraftBodyPartSummary(String bodyParts, int count) => _t(
+    '$bodyParts · $count exercise${count == 1 ? '' : 's'}',
+    '$bodyParts · $count 个动作',
   );
   String get workoutDraftUntitled => _t('Tap to continue editing', '点击继续编辑');
   String get workoutDraftExistsTitle =>
@@ -929,6 +930,35 @@ class AppStrings {
       return bodyPart;
     }
     return map[bodyPart] ?? bodyPart;
+  }
+
+  String shortBodyPartLabel(String bodyPart) {
+    const zhMap = <String, String>{
+      'Chest': '胸',
+      'Back': '背',
+      'Legs': '腿',
+      'Glutes': '臀',
+      'Shoulders': '肩',
+      'Arms': '臂',
+      'Core': '核心',
+      'Cardio': '有氧',
+      'Full Body': '全身',
+    };
+    const enMap = <String, String>{
+      'Chest': 'Chest',
+      'Back': 'Back',
+      'Legs': 'Legs',
+      'Glutes': 'Glutes',
+      'Shoulders': 'Shoulders',
+      'Arms': 'Arms',
+      'Core': 'Core',
+      'Cardio': 'Cardio',
+      'Full Body': 'Full',
+    };
+    if (isChinese) {
+      return zhMap[bodyPart] ?? bodyPart;
+    }
+    return enMap[bodyPart] ?? bodyPart;
   }
 
   String exerciseDisplayName(String exerciseName) {
