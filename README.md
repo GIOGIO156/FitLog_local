@@ -28,7 +28,7 @@ FitLog Local currently provides:
 - local food records, manual food entry, external AI JSON paste, preview/edit, copy-to-date, and delete
 - local workout records with named multi-exercise records, cardio duration, strength sets, completed-set persistence, saved-record summaries, and record editing
 - a daily dashboard for intake, exercise calories, BMR, no-exercise TDEE reference, targets, remaining kcal/macros, and selected-day records
-- Profile settings for body data, language, diet phase, diet calculation mode, diet plan strategy, g/kg self-check, export, and local data clearing
+- Profile settings for body data, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
 - local deterministic diet strategy support for `carb_cycling` and `carb_tapering`
 - XLSX export and CSV ZIP export
 
@@ -70,7 +70,7 @@ Home:
 
 Profile:
 
-- Stores age, height, weight, sex option, activity level, diet phase, calculation mode, macro ratios, g/kg training-frequency tier, self-check settings, and strategy settings.
+- Stores age, height, weight, sex option, a shared training-frequency setting, diet phase, calculation mode, macro ratios, self-check settings, compatibility activity metadata, and strategy settings.
 - `diet_goal_phase` is the source of truth for cutting/bulking semantics.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.
 - Export and clear-local-data actions stay local.
@@ -97,16 +97,17 @@ diet_plan_strategy:
 Important boundaries:
 
 - `diet_goal_phase` controls whether `daily_energy_goal_kcal` means deficit or surplus.
-- `energy_ratio` uses BMR, non-exercise activity factor, `daily_energy_goal_kcal`, logged net exercise, and macro percentages.
+- `energy_ratio` uses BMR, a training-frequency-based default non-exercise factor, `daily_energy_goal_kcal`, logged net exercise, and macro percentages.
 - `gram_per_kg` uses bodyweight, sex option, and `training_frequency_per_week` table lookup.
 - `gram_per_kg` does not use BMR, activity level, daily energy goal, logged exercise calories, or macro-ratio percentages.
+- Training-frequency self-check can review recent workout history in both diet modes and suggest the shared `training_frequency_per_week` setting.
 - In `gram_per_kg` mode, `macro_energy_equivalent_kcal = protein*4 + carbs*4 + fat*9` is auxiliary analysis/export data, not the kcal target counter.
 - `carb_cycling` and `carb_tapering` are local deterministic strategy layers applied after the base target is calculated.
 - `carb_tapering` can suggest a review action, but it never applies a change without user confirmation.
 
 ### Why These Methods
 
-FitLog keeps its methods separated so users can tell which number is the source of truth. `energy_ratio` is kcal-first: it starts from estimated baseline energy, applies a cutting deficit or bulking surplus, adds logged net exercise, and then converts the result into macro grams. `gram_per_kg` is macro-first: it sets protein, carbs, and fat from bodyweight and a coarse training-frequency tier, so kcal is auxiliary instead of the main counter.
+FitLog keeps its methods separated so users can tell which number is the source of truth. `energy_ratio` is kcal-first: it starts from estimated baseline energy, applies a cutting deficit or bulking surplus, adds logged net exercise, and then converts the result into macro grams. In this mode, the default no-exercise factor now comes from the shared training-frequency setting unless local calibration has already learned a better factor from history. `gram_per_kg` is macro-first: it sets protein, carbs, and fat from bodyweight and a coarse training-frequency tier, so kcal is auxiliary instead of the main counter.
 
 Carb strategies are also deliberately limited. `carb_cycling` redistributes weekly carbs across high/medium/low days; it is not a magic fat-loss rule. `carb_tapering` reviews rolling weight trend, food-log coverage, and training stability, then waits for user confirmation before applying any carb reduction.
 
@@ -194,7 +195,7 @@ FitLog Local 当前提供：
 - 本地饮食记录、手动录入、外部 AI JSON 粘贴、预览编辑、复制到指定日期和删除
 - 本地训练记录，支持命名的多动作训练记录、有氧时长、力量组、仅保存已完成组、保存后摘要和记录编辑
 - 每日看板，展示摄入、运动消耗、BMR、非运动 TDEE 参考、目标、剩余 kcal/宏量和选中日期记录
-- Profile 设置，管理身体数据、语言、饮食阶段、饮食计算模式、饮食策略、g/kg 自检、导出和清空本地数据
+- Profile 设置，管理身体数据、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
 - 本地确定性饮食策略：`carb_cycling` 和 `carb_tapering`
 - XLSX 导出和 CSV ZIP 导出
 
@@ -236,7 +237,7 @@ FitLog Local 当前不提供：
 
 Profile：
 
-- 保存年龄、身高、体重、性别选项、活动水平、饮食阶段、计算模式、宏量比例、g/kg 训练频率档位、自检设置和策略设置。
+- 保存年龄、身高、体重、性别选项、共享训练频率设置、饮食阶段、计算模式、宏量比例、自检设置、兼容活动元数据和策略设置。
 - `diet_goal_phase` 是 cutting/bulking 语义的唯一来源。
 - 未成年人保护会阻止成人式减脂赤字行为和减脂碳水策略。
 - 导出和清空本地数据都只作用于本地。
@@ -263,16 +264,17 @@ diet_plan_strategy:
 关键边界：
 
 - `diet_goal_phase` 决定 `daily_energy_goal_kcal` 表示赤字还是盈余。
-- `energy_ratio` 使用 BMR、非运动活动系数、`daily_energy_goal_kcal`、已记录净运动消耗和宏量百分比。
+- `energy_ratio` 使用 BMR、基于训练频率的默认非运动系数、`daily_energy_goal_kcal`、已记录净运动消耗和宏量百分比。
 - `gram_per_kg` 使用体重、性别选项和 `training_frequency_per_week` 查表。
 - `gram_per_kg` 不使用 BMR、活动水平、每日热量目标、已记录运动热量或宏量百分比。
+- 训练频率自检会在两种饮食模式下复盘近期训练记录，并对共享的 `training_frequency_per_week` 设置给出建议。
 - 在 `gram_per_kg` 模式下，`macro_energy_equivalent_kcal = protein*4 + carbs*4 + fat*9` 只是辅助分析/导出数据，不是 kcal 目标计数器。
 - `carb_cycling` 和 `carb_tapering` 是本地确定性策略层，只在基础目标算出后应用。
 - `carb_tapering` 可以提出复盘建议，但不会在没有用户确认的情况下自动应用。
 
 ### 为什么这样计算
 
-FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来源。`energy_ratio` 是 kcal 优先：它从估算的基础能量开始，应用减脂赤字或增肌盈余，加上已记录净运动消耗，再把结果换算成宏量克数。`gram_per_kg` 是宏量优先：它用体重和粗略训练频率档位设定蛋白质、碳水和脂肪，所以 kcal 是辅助信息，不是主计数器。
+FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来源。`energy_ratio` 是 kcal 优先：它从估算的基础能量开始，应用减脂赤字或增肌盈余，加上已记录净运动消耗，再把结果换算成宏量克数。在这个模式里，默认非运动系数现在来自共享训练频率设置；如果本地校准已经根据历史学到更合适的系数，则仍以校准值优先。`gram_per_kg` 是宏量优先：它用体重和粗略训练频率档位设定蛋白质、碳水和脂肪，所以 kcal 是辅助信息，不是主计数器。
 
 碳水策略也被有意限制。`carb_cycling` 只是在 high/medium/low 日之间重新分配一周碳水；它不是神奇燃脂规则。`carb_tapering` 会复盘滚动体重趋势、饮食记录覆盖率和训练稳定性，然后等待用户确认，才会应用任何碳水下调。
 

@@ -27,7 +27,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, cardio duration, strength sets, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Local identity nickname, body profile, language, diet phase, diet mode, strategy settings, g/kg self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
+| Profile | Local identity nickname, body profile, language, diet phase, diet mode, strategy settings, shared training-frequency self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
 | Export | XLSX and CSV ZIP exports for raw records, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
@@ -84,10 +84,10 @@ Profile presents diet setup in this order:
 
 Expected behavior:
 
-- `cutting + gram_per_kg`: show training-frequency tier, self-check settings, cutting g/kg table context, and macro target preview.
-- `bulking + gram_per_kg`: show training-frequency tier, self-check settings, bulking g/kg table context, and macro target preview.
-- `cutting + energy_ratio`: show activity level, daily deficit, macro ratios, and target preview.
-- `bulking + energy_ratio`: show activity level, daily surplus, macro ratios, default 25/50/25 suggestion, and target preview.
+- `cutting + gram_per_kg`: show the shared training-frequency setting, self-check settings, cutting g/kg table context, and macro target preview.
+- `bulking + gram_per_kg`: show the shared training-frequency setting, self-check settings, bulking g/kg table context, and macro target preview.
+- `cutting + energy_ratio`: show the shared training-frequency setting, daily deficit, macro ratios, and target preview.
+- `bulking + energy_ratio`: show the shared training-frequency setting, daily surplus, macro ratios, default 25/50/25 suggestion, and target preview.
 - `carb_cycling`: show weekly high/medium/low day selectors, multipliers, and current-week preview.
 - `carb_tapering`: show review period, target loss rate, taper step, current carb offset, and local review Apply/Dismiss flow.
 
@@ -101,7 +101,7 @@ Implemented:
 - local workout record creation, editing, grouping, summary, and deletion
 - daily summary calculation and display
 - dynamic calorie calibration
-- g/kg training-frequency self-check
+- shared training-frequency self-check across both diet modes
 - cutting/bulking phase split
 - `energy_ratio` and `gram_per_kg` diet calculation modes
 - local deterministic `carb_cycling` and `carb_tapering`

@@ -21,25 +21,7 @@ class TrainingFrequencySelfCheckService {
       profile.trainingFrequencyPerWeek,
     );
     final periodDays = _resolvePeriodDays(profile.macroSelfCheckPeriodDays);
-    final isGramMode =
-        profile.dietCalculationMode ==
-        AppConstants.dietCalculationModeGramPerKg;
     final isEnabled = profile.macroSelfCheckEnabled;
-
-    if (!isGramMode) {
-      return TrainingFrequencySelfCheckResult(
-        isApplicable: false,
-        isEnabled: isEnabled,
-        periodDays: periodDays,
-        activeTrainingDays: 0,
-        averageWeeklyTrainingFrequency: 0,
-        currentTrainingFrequency: currentFrequency,
-        recommendedTrainingFrequency: currentFrequency,
-        hasValidTrainingData: false,
-        shouldSuggestAdjustment: false,
-        belowRecommendedRange: false,
-      );
-    }
 
     final end = DateUtilsX.parseDay(referenceDay);
     final start = end.subtract(Duration(days: periodDays - 1));

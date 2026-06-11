@@ -26,7 +26,7 @@ FitLog 把三件经常被混在一起的事拆开：
 
 ```text
 BMR 估算
--> 非运动日常活动基线
+-> 由共享训练频率得到默认非运动基线
 -> 减脂赤字或增肌盈余
 -> 加上已记录的净运动消耗
 -> 按百分比分配到蛋白质/碳水/脂肪
@@ -44,7 +44,8 @@ BMR 估算
 - `diet_goal_phase = bulking` 时，`daily_energy_goal_kcal` 会被当成盈余。
 - 在这个模式里，`kcal` 目标、摄入和剩余是主计数器。
 - 宏量克数是由 `kcal` 目标和宏量百分比换算出来的。
-- BMR 和活动系数只是估算，不是精确测量 [REF-ALG-01](References.md), [REF-ALG-02](References.md)。
+- BMR 和默认生活系数只是估算，不是精确测量 [REF-ALG-01](References.md), [REF-ALG-02](References.md)。
+- 共享训练频率设置是两种饮食模式共同使用的用户输入，但在 `energy_ratio` 里，只要本地校准积累了足够历史，运行时仍会优先使用校准出的系数。
 
 主要证据背景：
 

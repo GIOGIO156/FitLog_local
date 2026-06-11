@@ -85,7 +85,7 @@ Current local facts:
 - SQLite migration statements themselves.
 - `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy` names.
 - `prefer_not_to_say` averaging.
-- g/kg self-check thresholds and cooldown.
+- Training-frequency self-check thresholds and cooldown.
 - Strength calorie coefficients.
 - `DailySummary` being runtime-only.
 - The absence of Agent/RAG/vector/semantic-memory features.

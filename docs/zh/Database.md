@@ -55,7 +55,7 @@ FitLog Local 将业务数据保存在本地。
 | `height_cm` | REAL NOT NULL | BMR。 |
 | `weight_kg` | REAL NOT NULL | BMR、g/kg 宏量、运动消耗。 |
 | `sex_for_formula` | TEXT NOT NULL | `male`、`female`、`prefer_not_to_say`。 |
-| `activity_level` | TEXT NOT NULL | `energy_ratio` 使用的非运动活动档位。 |
+| `activity_level` | TEXT NOT NULL | 保存 Profile 时根据 `training_frequency_per_week` 派生出的兼容/导出活动档位。 |
 | `daily_energy_goal_type` | TEXT NOT NULL | 兼容字段：`maintenance`、`deficit`、`surplus`。 |
 | `daily_energy_goal_kcal` | REAL NOT NULL | 根据 `diet_goal_phase` 表示赤字或盈余。 |
 | `protein_ratio_percent` | REAL NOT NULL | `energy_ratio` 宏量比例。 |
@@ -73,10 +73,10 @@ FitLog Local 将业务数据保存在本地。
 | `carb_taper_step_g` | REAL NOT NULL DEFAULT 10.0 | 5/10/15/20 风格步长。 |
 | `carb_taper_current_delta_g` | REAL NOT NULL DEFAULT 0.0 | 累计碳水偏移。 |
 | `last_carb_taper_review_at` | TEXT | 上次 taper review 时间/日期。 |
-| `training_frequency_per_week` | INTEGER NOT NULL DEFAULT 3 | g/kg 查表档位 2/3/4/5。 |
+| `training_frequency_per_week` | INTEGER NOT NULL DEFAULT 3 | 共享 2/3/4/5 训练频率设置；用于 g/kg 查表、`energy_ratio` 默认系数回退和自检。 |
 | `macro_self_check_period_days` | INTEGER NOT NULL DEFAULT 14 | 7/14/21/28。 |
 | `macro_self_check_enabled` | INTEGER NOT NULL DEFAULT 1 | bool 以 0/1 存储。 |
-| `last_macro_self_check_at` | TEXT | 自检冷却时间/日期。 |
+| `last_macro_self_check_at` | TEXT | 共享训练频率自检的冷却时间/日期。 |
 | `created_at` | TEXT NOT NULL | ISO datetime。 |
 | `updated_at` | TEXT NOT NULL | ISO datetime。 |
 
@@ -236,7 +236,7 @@ FitLog Local 将业务数据保存在本地。
 - `energy_ratio` 下的目标摄入和剩余 kcal
 - base/final target calories 与 base/final protein/carbs/fat
 - `carb_day_type`、`carb_adjustment_g`、`carb_taper_current_delta_g`
-- g/kg 自检摘要字段
+- 训练频率自检摘要字段
 - calibration confidence、window、valid-day 摘要
 - Home 和 Export 用到的 selected-day food/workout 汇总
 
@@ -287,7 +287,7 @@ ProfilePage export action
 
 ## 导出覆盖
 
-导出包含 food records、food items、workout records、workout sets、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、g/kg 自检字段、本地 `nickname` 和 `record_name`。
+导出包含 food records、food items、workout records、workout sets、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname` 和 `record_name`。
 
 ## 未实现
 

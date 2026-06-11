@@ -27,7 +27,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、有氧时长、力量组、已完成组持久化、备注和摘要计算。 | `add_workout_page.dart` |
 | Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
 | Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
-| Profile | 本地昵称、身体资料、语言、饮食阶段、饮食模式、策略设置、g/kg 自检、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
+| Profile | 本地昵称、身体资料、语言、饮食阶段、饮食模式、策略设置、共享训练频率自检、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
 | Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、每日汇总、资料、策略字段和 review 历史。 | `lib/export/*` |
 
 ## 饮食流程
@@ -84,10 +84,10 @@ Profile 按以下顺序展示饮食设置：
 
 预期行为：
 
-- `cutting + gram_per_kg`：展示训练频率档位、自检设置、减脂 g/kg 表上下文和宏量目标预览。
-- `bulking + gram_per_kg`：展示训练频率档位、自检设置、增肌 g/kg 表上下文和宏量目标预览。
-- `cutting + energy_ratio`：展示活动水平、每日赤字、宏量比例和目标预览。
-- `bulking + energy_ratio`：展示活动水平、每日盈余、宏量比例、默认 25/50/25 建议和目标预览。
+- `cutting + gram_per_kg`：展示共享训练频率设置、自检设置、减脂 g/kg 表上下文和宏量目标预览。
+- `bulking + gram_per_kg`：展示共享训练频率设置、自检设置、增肌 g/kg 表上下文和宏量目标预览。
+- `cutting + energy_ratio`：展示共享训练频率设置、每日赤字、宏量比例和目标预览。
+- `bulking + energy_ratio`：展示共享训练频率设置、每日盈余、宏量比例、默认 25/50/25 建议和目标预览。
 - `carb_cycling`：展示每周 high/medium/low 日选择、倍率和本周预览。
 - `carb_tapering`：展示 review 周期、目标减重速度、taper 步长、当前碳水偏移和本地 review 的 Apply/Dismiss 流程。
 
@@ -101,7 +101,7 @@ Profile 按以下顺序展示饮食设置：
 - 本地训练记录创建、编辑、分组、摘要和删除
 - 每日汇总计算与展示
 - 动态热量校准
-- g/kg 训练频率自检
+- 两种饮食模式共享的训练频率自检
 - cutting/bulking 阶段拆分
 - `energy_ratio` 和 `gram_per_kg` 饮食计算模式
 - 本地确定性的 `carb_cycling` 和 `carb_tapering`

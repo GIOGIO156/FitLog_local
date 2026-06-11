@@ -42,7 +42,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final _fatRatioController = TextEditingController();
 
   String _sexForFormula = AppConstants.sexOptions.last;
-  String _activityLevel = AppConstants.activityLevels[2];
   String _dailyGoalType = 'maintenance';
   String _dietGoalPhase = AppConstants.dietGoalPhaseCutting;
   String _dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio;
@@ -147,7 +146,6 @@ class _ProfilePageState extends State<ProfilePage> {
       _carbsRatioController.text = profile.carbsRatioPercent.toStringAsFixed(0);
       _fatRatioController.text = profile.fatRatioPercent.toStringAsFixed(0);
       _sexForFormula = profile.sexForFormula;
-      _activityLevel = profile.activityLevel;
       _dailyGoalType = profile.dailyEnergyGoalType;
       _dietGoalPhase = profile.dietGoalPhase;
       _dietCalculationMode = profile.dietCalculationMode;
@@ -273,13 +271,16 @@ class _ProfilePageState extends State<ProfilePage> {
     final safeStrategy = _canUseCuttingStrategy
         ? _dietPlanStrategy
         : AppConstants.dietPlanStrategyNone;
+    final activityLevel = AppConstants.activityLevelForTrainingFrequency(
+      _trainingFrequencyPerWeek,
+    );
     return UserProfile(
       nickname: _nicknameController.text.trim(),
       age: _age,
       heightCm: _heightCm,
       weightKg: _weightKg,
       sexForFormula: _sexForFormula,
-      activityLevel: _activityLevel,
+      activityLevel: activityLevel,
       dailyEnergyGoalType: _dailyGoalType,
       dailyEnergyGoalKcal: _goalKcal,
       proteinRatioPercent: _proteinRatioPercent,
@@ -395,7 +396,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return context
         .read<AppServices>()
         .dailySummaryService
-        .defaultLifestyleFactorForActivity(_activityLevel);
+        .defaultLifestyleFactorForTrainingFrequency(_trainingFrequencyPerWeek);
   }
 
   double _calculateTargetIntake(double bmr) {
@@ -1023,18 +1024,41 @@ class _ProfilePageState extends State<ProfilePage> {
                       : null,
                 ),
                 const SizedBox(height: 10),
+                ProfileOptionField<int>(
+                  value: _trainingFrequencyPerWeek,
+                  labelText: strings.trainingFrequencyPerWeekLabel,
+                  options: AppConstants.trainingFrequencyPerWeekOptions,
+                  labelBuilder: strings.trainingFrequencyOptionLabel,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _trainingFrequencyPerWeek = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                ProfileOptionField<int>(
+                  value: _macroSelfCheckPeriodDays,
+                  labelText: strings.macroSelfCheckPeriodLabel,
+                  options: AppConstants.macroSelfCheckPeriodDayOptions,
+                  labelBuilder: strings.macroSelfCheckPeriodOptionLabel,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _macroSelfCheckPeriodDays = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _macroSelfCheckEnabled,
+                  title: Text(strings.macroSelfCheckEnabledLabel),
+                  onChanged: (value) {
+                    setState(() => _macroSelfCheckEnabled = value);
+                  },
+                ),
                 if (!_isGramPerKgMode) ...<Widget>[
-                  ProfileOptionField<String>(
-                    value: _activityLevel,
-                    labelText: strings.activityLevelLabel,
-                    options: AppConstants.activityLevels,
-                    labelBuilder: strings.activityOptionLabel,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _activityLevel = value);
-                      }
-                    },
-                  ),
                   const SizedBox(height: 10),
                   ProfileNumericField(
                     controller: _goalKcalController,
@@ -1142,39 +1166,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     strings.gramPerKgPhaseNotice(_dietGoalPhase),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 10),
-                  ProfileOptionField<int>(
-                    value: _trainingFrequencyPerWeek,
-                    labelText: strings.trainingFrequencyPerWeekLabel,
-                    options: AppConstants.trainingFrequencyPerWeekOptions,
-                    labelBuilder: strings.trainingFrequencyOptionLabel,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _trainingFrequencyPerWeek = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  ProfileOptionField<int>(
-                    value: _macroSelfCheckPeriodDays,
-                    labelText: strings.macroSelfCheckPeriodLabel,
-                    options: AppConstants.macroSelfCheckPeriodDayOptions,
-                    labelBuilder: strings.macroSelfCheckPeriodOptionLabel,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _macroSelfCheckPeriodDays = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _macroSelfCheckEnabled,
-                    title: Text(strings.macroSelfCheckEnabledLabel),
-                    onChanged: (value) {
-                      setState(() => _macroSelfCheckEnabled = value);
-                    },
-                  ),
                 ],
                 if (_isMinor)
                   Padding(
@@ -1197,7 +1188,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
-        if (_isGramPerKgMode && _trainingSelfCheckResult != null)
+        if (_trainingSelfCheckResult != null)
           GlassPanel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1319,6 +1310,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 value: strings.phaseLabel(_dietGoalPhase),
               ),
               _Line(
+                label: strings.trainingFrequencyPerWeekLabel,
+                value: strings.trainingFrequencyOptionLabel(
+                  _trainingFrequencyPerWeek,
+                ),
+              ),
+              _Line(
                 label: strings.todayExerciseCaloriesLabel,
                 value: _todayExerciseCalories.toStringAsFixed(0),
               ),
@@ -1341,12 +1338,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
               if (_isGramPerKgMode && macroTargets != null) ...<Widget>[
                 const SizedBox(height: 8),
-                _Line(
-                  label: strings.trainingFrequencyPerWeekLabel,
-                  value: strings.trainingFrequencyOptionLabel(
-                    _trainingFrequencyPerWeek,
-                  ),
-                ),
                 _Line(
                   label: '${strings.proteinLabel} (g)',
                   value: macroTargets.proteinTargetG.toStringAsFixed(1),

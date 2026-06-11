@@ -75,7 +75,7 @@ class UserProfile {
     heightCm: 170,
     weightKg: 65,
     sexForFormula: 'prefer_not_to_say',
-    activityLevel: 'moderately_active',
+    activityLevel: 'lightly_active',
     dailyEnergyGoalType: 'maintenance',
     dailyEnergyGoalKcal: 300,
     proteinRatioPercent: AppConstants.defaultProteinRatioPercent,
@@ -175,7 +175,9 @@ class UserProfile {
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
       sexForFormula: sexForFormula ?? this.sexForFormula,
-      activityLevel: activityLevel ?? this.activityLevel,
+      activityLevel: AppConstants.resolveActivityLevel(
+        activityLevel ?? this.activityLevel,
+      ),
       dailyEnergyGoalType: AppConstants.dailyEnergyGoalTypes.contains(safeGoal)
           ? safeGoal
           : 'maintenance',
@@ -270,7 +272,13 @@ class UserProfile {
       heightCm: NumberUtils.toDouble(map['height_cm'], fallback: 170),
       weightKg: NumberUtils.toDouble(map['weight_kg'], fallback: 65),
       sexForFormula: (map['sex_for_formula'] ?? 'prefer_not_to_say').toString(),
-      activityLevel: (map['activity_level'] ?? 'moderately_active').toString(),
+      activityLevel: AppConstants.resolveActivityLevel(
+        (map['activity_level'] ??
+                AppConstants.activityLevelForTrainingFrequency(
+                  AppConstants.defaultTrainingFrequencyPerWeek,
+                ))
+            .toString(),
+      ),
       dailyEnergyGoalType: (map['daily_energy_goal_type'] ?? 'maintenance')
           .toString(),
       dailyEnergyGoalKcal: NumberUtils.toDouble(

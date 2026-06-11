@@ -514,6 +514,53 @@ void main() {
         closeTo(summary.baseCarbsTargetG - 15, 0.001),
       );
     });
+
+    test(
+      'energy ratio baseline fallback follows training frequency tiers',
+      () async {
+        profileRepository.profile = _profile(
+          trainingFrequencyPerWeek: 2,
+          activityLevel: 'very_active',
+        );
+        final lowFrequencySummary = await service.getSummaryForDate(
+          _referenceDay,
+        );
+
+        profileRepository.profile = _profile(
+          trainingFrequencyPerWeek: 5,
+          activityLevel: 'sedentary',
+        );
+        final highFrequencySummary = await service.getSummaryForDate(
+          _referenceDay,
+        );
+
+        expect(lowFrequencySummary.lifestyleFactorUsed, closeTo(1.20, 0.001));
+        expect(highFrequencySummary.lifestyleFactorUsed, closeTo(1.60, 0.001));
+        expect(
+          highFrequencySummary.tdeeReference,
+          greaterThan(lowFrequencySummary.tdeeReference),
+        );
+      },
+    );
+
+    test(
+      'energy ratio summary still exposes training frequency self-check',
+      () async {
+        profileRepository.profile = _profile(
+          dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+          trainingFrequencyPerWeek: 3,
+        );
+
+        final summary = await service.getSummaryForDate(_referenceDay);
+
+        expect(summary.macroSelfCheckCurrentFrequency, 3);
+        expect(summary.macroSelfCheckRecommendedFrequency, 2);
+        expect(summary.macroSelfCheckActiveTrainingDays, 1);
+        expect(summary.macroSelfCheckHasValidTrainingData, isTrue);
+        expect(summary.macroSelfCheckShouldSuggest, isTrue);
+        expect(summary.macroSelfCheckBelowRecommendedRange, isTrue);
+      },
+    );
   });
 
   group('Migration compatibility', () {
@@ -570,6 +617,8 @@ UserProfile _profile({
   String dietGoalPhase = AppConstants.dietGoalPhaseCutting,
   String dietCalculationMode = AppConstants.dietCalculationModeEnergyRatio,
   String dietPlanStrategy = AppConstants.dietPlanStrategyNone,
+  String? activityLevel,
+  int? trainingFrequencyPerWeek,
   double carbTaperCurrentDeltaG = 0,
   Map<String, String>? carbCyclePattern,
 }) {
@@ -579,6 +628,8 @@ UserProfile _profile({
     dietGoalPhase: dietGoalPhase,
     dietCalculationMode: dietCalculationMode,
     dietPlanStrategy: dietPlanStrategy,
+    activityLevel: activityLevel,
+    trainingFrequencyPerWeek: trainingFrequencyPerWeek,
     carbCyclePatternJson: carbCyclePattern == null
         ? null
         : _encode(carbCyclePattern),

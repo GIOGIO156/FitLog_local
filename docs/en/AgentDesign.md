@@ -39,7 +39,7 @@ The app has local workflows that may feel automated, but they are deterministic 
 | BMR and target calculation | Profile, food, workout, calibration state | Daily target and remaining values | No |
 | Macro target calculation | Diet phase and calculation mode | Protein/carbs/fat targets | No |
 | Dynamic calibration | Food history and weight logs | Calibrated lifestyle factor | No |
-| g/kg self-check | Workout history | Suggested training-frequency tier | No |
+| Training-frequency self-check | Workout history | Suggested shared training-frequency setting | No |
 | Diet strategy review | Weight trend, food coverage, training stability | Local strategy result or review suggestion | No |
 | Export | SQLite records and runtime summaries | XLSX or CSV ZIP | No |
 | Clear local data | User confirmation | Local table deletion | No |

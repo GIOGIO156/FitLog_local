@@ -210,8 +210,9 @@ Profile 用于配置本地身份、身体资料、饮食行为、语言、导出
 - 语言
 - `diet_goal_phase`
 - `diet_calculation_mode`
-- `energy_ratio` 的活动水平、每日能量目标和宏量百分比
-- `gram_per_kg` 的训练频率档位和自检设置
+- 两种饮食模式共享的训练频率设置和自检设置
+- `energy_ratio` 的每日能量目标和宏量百分比
+- `gram_per_kg` 的表格上下文和宏量优先预览
 - `diet_plan_strategy`
 - carb cycling pattern 和 multiplier
 - carb taper review 周期、目标减重速度、步长和当前 offset
@@ -222,7 +223,7 @@ Profile 用于配置本地身份、身体资料、饮食行为、语言、导出
 - `nickname` 是本地 UI 数据，不是账号名。
 - 保存 Profile 也会 upsert 当天体重日志。
 - 未成年人保护会阻止成人式 cutting deficit 行为和 cutting carb 策略。
-- g/kg 自检可以根据最近有效训练日推荐训练频率档位。
+- 训练频率自检会在两种饮食模式下根据最近有效训练日推荐共享训练频率设置。
 - Carb taper review 可以给出本地建议，但必须由用户确认。
 
 延伸阅读：

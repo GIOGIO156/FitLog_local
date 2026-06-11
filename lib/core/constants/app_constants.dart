@@ -246,6 +246,14 @@ class AppConstants {
   static const double bulkingCarbsRatioPercent = 50;
   static const double bulkingFatRatioPercent = 25;
 
+  static const Map<String, double> defaultLifestyleFactorsByActivityLevel =
+      <String, double>{
+        'sedentary': 1.20,
+        'lightly_active': 1.30,
+        'moderately_active': 1.425,
+        'very_active': 1.60,
+      };
+
   static String resolveDietGoalPhase(String? value) {
     if (dietGoalPhases.contains(value)) {
       return value!;
@@ -267,6 +275,13 @@ class AppConstants {
     return dietPlanStrategyNone;
   }
 
+  static String resolveActivityLevel(String? value) {
+    if (activityLevels.contains(value)) {
+      return value!;
+    }
+    return activityLevelForTrainingFrequency(defaultTrainingFrequencyPerWeek);
+  }
+
   static String resolveCarbDayType(String? value) {
     if (carbDayTypes.contains(value)) {
       return value!;
@@ -279,6 +294,25 @@ class AppConstants {
       return value!;
     }
     return defaultTrainingFrequencyPerWeek;
+  }
+
+  static String activityLevelForTrainingFrequency(int? value) {
+    switch (resolveTrainingFrequencyPerWeek(value)) {
+      case 2:
+        return 'sedentary';
+      case 4:
+        return 'moderately_active';
+      case 5:
+        return 'very_active';
+      case 3:
+      default:
+        return 'lightly_active';
+    }
+  }
+
+  static double defaultLifestyleFactorForTrainingFrequency(int? value) {
+    final activityLevel = activityLevelForTrainingFrequency(value);
+    return defaultLifestyleFactorsByActivityLevel[activityLevel] ?? 1.30;
   }
 
   static int resolveMacroSelfCheckPeriodDays(int? value) {

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-06-11 Shared Training-frequency Diet Setup
+
+### Changed
+
+- Replaced the `energy_ratio` Profile activity-level selector with the shared `training_frequency_per_week` setting and exposed the same training-frequency self-check controls in both diet modes.
+- Updated the `energy_ratio` default no-exercise factor fallback so it now maps from the shared training-frequency setting, while keeping dynamic calibration as the higher-priority runtime source when local history is available.
+- Kept `activity_level` as a compatibility/export field by deriving it from the shared training-frequency setting on profile save instead of using it as the primary user-facing input.
+- Expanded training-frequency self-check so it can review workout history and suggest the shared setting in both `energy_ratio` and `gram_per_kg`.
+- Updated bilingual product, algorithm, methodology, app-guide, database, agent-boundary, and README docs to describe the shared training-frequency setup and compatibility boundary.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-11 Workout Draft Resume Flow
 
 ### Added

@@ -85,7 +85,7 @@
 - SQLite 迁移语句本身
 - `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy` 命名
 - `prefer_not_to_say` 平均规则
-- `g/kg` 自检阈值与冷却期
+- 训练频率自检阈值与冷却期
 - 力量消耗系数
 - `DailySummary` 是运行时聚合而不是表
 - 当前没有 Agent / RAG / vector / semantic-memory 功能这一事实

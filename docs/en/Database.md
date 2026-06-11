@@ -55,7 +55,7 @@ Purpose: singleton user profile, diet settings, strategy settings, and self-chec
 | `height_cm` | REAL NOT NULL | BMR. |
 | `weight_kg` | REAL NOT NULL | BMR, g/kg macros, workout calories. |
 | `sex_for_formula` | TEXT NOT NULL | `male`, `female`, `prefer_not_to_say`. |
-| `activity_level` | TEXT NOT NULL | Non-exercise activity tier for `energy_ratio`. |
+| `activity_level` | TEXT NOT NULL | Compatibility/export activity tier derived from `training_frequency_per_week` on profile save. |
 | `daily_energy_goal_type` | TEXT NOT NULL | Compatibility field: `maintenance`, `deficit`, `surplus`. |
 | `daily_energy_goal_kcal` | REAL NOT NULL | Deficit or surplus amount depending on `diet_goal_phase`. |
 | `protein_ratio_percent` | REAL NOT NULL | `energy_ratio` macro percentage. |
@@ -73,10 +73,10 @@ Purpose: singleton user profile, diet settings, strategy settings, and self-chec
 | `carb_taper_step_g` | REAL NOT NULL DEFAULT 10.0 | 5/10/15/20 style taper step. |
 | `carb_taper_current_delta_g` | REAL NOT NULL DEFAULT 0.0 | Cumulative carb offset. |
 | `last_carb_taper_review_at` | TEXT | Last taper review timestamp/date. |
-| `training_frequency_per_week` | INTEGER NOT NULL DEFAULT 3 | g/kg lookup tier 2/3/4/5. |
+| `training_frequency_per_week` | INTEGER NOT NULL DEFAULT 3 | Shared 2/3/4/5 training-frequency setting; used by g/kg tables, `energy_ratio` default-factor fallback, and self-check. |
 | `macro_self_check_period_days` | INTEGER NOT NULL DEFAULT 14 | 7/14/21/28. |
 | `macro_self_check_enabled` | INTEGER NOT NULL DEFAULT 1 | Boolean stored as 0/1. |
-| `last_macro_self_check_at` | TEXT | Self-check cooldown timestamp/date. |
+| `last_macro_self_check_at` | TEXT | Shared training-frequency self-check cooldown timestamp/date. |
 | `created_at` | TEXT NOT NULL | ISO datetime. |
 | `updated_at` | TEXT NOT NULL | ISO datetime. |
 
@@ -310,7 +310,7 @@ ProfilePage export action
 
 ## Export Coverage
 
-Exports include food records, food items, workout records, workout sets, daily summary, user profile, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, g/kg self-check fields, local-only `nickname`, and `record_name` are included where relevant.
+Exports include food records, food items, workout records, workout sets, daily summary, user profile, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, training-frequency self-check fields, local-only `nickname`, and `record_name` are included where relevant.
 
 ## Not Implemented
 

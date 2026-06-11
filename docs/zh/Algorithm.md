@@ -8,18 +8,18 @@
 | `height_cm` | 身高，单位厘米。 | BMR |
 | `weight_kg` | 体重，单位千克。 | BMR、g/kg 宏量、运动消耗 |
 | `sex_for_formula` | `male`、`female` 或 `prefer_not_to_say`。 | BMR、g/kg 表 |
-| `activity_level` | 非运动日常活动档位。 | `energy_ratio` 基线 |
+| `activity_level` | 保存时由共享训练频率派生出的兼容活动档位。 | `energy_ratio` 兼容/导出元数据 |
 | `diet_goal_phase` | `cutting` 或 `bulking`；阶段来源。 | 目标语义 |
 | `diet_calculation_mode` | `energy_ratio` 或 `gram_per_kg`。 | 基础目标选择 |
 | `daily_energy_goal_kcal` | 根据阶段表示每日赤字或盈余。 | `energy_ratio` |
 | `protein_ratio_percent`, `carbs_ratio_percent`, `fat_ratio_percent` | 宏量热量百分比。 | `energy_ratio` |
-| `training_frequency_per_week` | 粗略 2/3/4/5 查表档位。 | 仅 `gram_per_kg` |
+| `training_frequency_per_week` | 共享的 2/3/4/5 训练频率设置。 | g/kg 查表、`energy_ratio` 默认基线回退、自检 |
 | `diet_plan_strategy` | `none`、`carb_cycling` 或 `carb_tapering`。 | 策略层 |
 | 饮食记录 | 每日 kcal/蛋白质/碳水/脂肪摄入。 | 每日汇总 |
 | 训练 session/set | 已保存运动消耗和力量训练量输入。 | 运动消耗、每日汇总 |
 | 体重日志 | 每日体重历史。 | 动态热量校准和 taper review |
 
-`activity_level` 和 `training_frequency_per_week` 必须保持分离。前者估计非运动日常基线；后者只是 g/kg 表的粗略查表档位，不代表训练强度、训练年限、训练容量或运动表现需求。
+`training_frequency_per_week` 现在是面向用户的共享设置。在 `gram_per_kg` 中，它仍然只是粗略查表档位；在 `energy_ratio` 中，只有在本地校准尚未学到更合适结果时，它才用于选择默认非运动系数。无论在哪个模式里，它都不代表训练强度、训练年限、训练容量或运动表现需求。
 
 ## 饮食架构
 
@@ -46,14 +46,14 @@ prefer_not_to_say = average(male, female)
 baselineNoExerciseTdee = bmr * lifestyleFactorUsed
 ```
 
-`lifestyleFactorUsed` 优先使用有效动态校准结果；否则使用活动水平默认值：
+`lifestyleFactorUsed` 优先使用有效动态校准结果；否则使用共享训练频率对应的默认值：
 
-| `activity_level` | 默认非运动系数 |
+| `training_frequency_per_week` | 默认非运动系数 | 兼容 `activity_level` |
 | --- | ---: |
-| `sedentary` | 1.20 |
-| `lightly_active` | 1.30 |
-| `moderately_active` | 1.425 |
-| `very_active` | 1.60 |
+| 2 | 1.20 | `sedentary` |
+| 3 | 1.30 | `lightly_active` |
+| 4 | 1.425 | `moderately_active` |
+| 5 | 1.60 | `very_active` |
 
 ## `energy_ratio`
 
@@ -295,11 +295,11 @@ newFactor = oldFactor * 0.8 + observedLifestyleFactor * 0.2
 - 全局系数范围：1.10 到 1.70
 - 最低置信度：0.35
 
-校准与 g/kg 自检相互独立。
+校准与训练频率自检相互独立。
 
-## g/kg 训练频率自检
+## 共享训练频率自检
 
-自检只适用于 `gram_per_kg`。
+自检同时适用于 `energy_ratio` 和 `gram_per_kg`。
 
 有效训练日规则：按不同日期计数，不按 session 数计数。满足任一条件即为有效日：
 
@@ -318,7 +318,7 @@ recommended = clamp(round(averageWeekly), 2, 5)
 
 冷却：通过 `last_macro_self_check_at` 控制，展示/应用反馈不应频繁于每 7 天一次。
 
-自检不更新 `lifestyle_factor_non_exercise`，不使用体重变化公式，也不使用 observed TDEE EWMA。
+用户确认建议时，自检只会更新共享的 `training_frequency_per_week` 设置。它不会直接更新已校准的 `lifestyle_factor_non_exercise`，不使用体重变化公式，也不使用 observed TDEE EWMA。
 
 ## 算法边界
 

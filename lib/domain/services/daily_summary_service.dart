@@ -42,14 +42,6 @@ class DailySummaryService {
   final DietPlanStrategyService _dietPlanStrategyService;
   final TrainingFrequencySelfCheckService _trainingFrequencySelfCheckService;
 
-  static const Map<String, double> _defaultNoExerciseLifestyleFactor =
-      <String, double>{
-        'sedentary': 1.20,
-        'lightly_active': 1.30,
-        'moderately_active': 1.425,
-        'very_active': 1.60,
-      };
-
   static const double _minLifestyleFactor = 1.10;
   static const double _maxLifestyleFactor = 1.70;
   static const double _maxLifestyleUpdateStep = 0.03;
@@ -225,7 +217,14 @@ class DailySummaryService {
   }
 
   double defaultLifestyleFactorForActivity(String activityLevel) {
-    return _defaultNoExerciseLifestyleFactor[activityLevel] ?? 1.425;
+    return AppConstants.defaultLifestyleFactorsByActivityLevel[activityLevel] ??
+        1.30;
+  }
+
+  double defaultLifestyleFactorForTrainingFrequency(int frequencyPerWeek) {
+    return AppConstants.defaultLifestyleFactorForTrainingFrequency(
+      frequencyPerWeek,
+    );
   }
 
   double calculateNoExerciseTargetIntake({
@@ -268,7 +267,9 @@ class DailySummaryService {
     required String day,
   }) async {
     final defaultFactor = _clampDouble(
-      defaultLifestyleFactorForActivity(profile.activityLevel),
+      defaultLifestyleFactorForTrainingFrequency(
+        profile.trainingFrequencyPerWeek,
+      ),
       _minLifestyleFactor,
       _maxLifestyleFactor,
     );
@@ -477,10 +478,6 @@ class DailySummaryService {
     required UserProfile profile,
     required String day,
   }) async {
-    if (profile.dietCalculationMode !=
-        AppConstants.dietCalculationModeGramPerKg) {
-      return null;
-    }
     return _trainingFrequencySelfCheckService.evaluate(
       profile: profile,
       referenceDay: day,

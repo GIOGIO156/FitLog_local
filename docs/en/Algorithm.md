@@ -8,18 +8,18 @@
 | `height_cm` | Height in centimeters. | BMR |
 | `weight_kg` | Bodyweight in kilograms. | BMR, g/kg macros, workout calories |
 | `sex_for_formula` | `male`, `female`, or `prefer_not_to_say`. | BMR, g/kg tables |
-| `activity_level` | Non-exercise daily activity tier. | `energy_ratio` baseline |
+| `activity_level` | Compatibility activity tier derived from the shared training-frequency setting on save. | `energy_ratio` compatibility/export metadata |
 | `diet_goal_phase` | `cutting` or `bulking`; phase source of truth. | Target semantics |
 | `diet_calculation_mode` | `energy_ratio` or `gram_per_kg`. | Base target selection |
 | `daily_energy_goal_kcal` | Daily deficit or surplus amount depending on phase. | `energy_ratio` |
 | `protein_ratio_percent`, `carbs_ratio_percent`, `fat_ratio_percent` | Macro energy percentages. | `energy_ratio` |
-| `training_frequency_per_week` | Coarse 2/3/4/5 lookup tier. | `gram_per_kg` only |
+| `training_frequency_per_week` | Shared 2/3/4/5 training-frequency setting. | g/kg table lookup, `energy_ratio` default baseline fallback, self-check |
 | `diet_plan_strategy` | `none`, `carb_cycling`, or `carb_tapering`. | Strategy layer |
 | Food records | Daily kcal/protein/carbs/fat intake. | Daily summary |
 | Workout sessions/sets | Saved exercise calories and strength volume inputs. | Workout calories, daily summary |
 | Weight logs | Daily bodyweight history. | Dynamic calorie calibration and taper review |
 
-`activity_level` and `training_frequency_per_week` must stay separate. Activity level estimates non-exercise daily baseline. Training frequency is only a coarse g/kg table lookup tier, not a measure of intensity, training age, training volume, or performance demand.
+`training_frequency_per_week` is the user-facing shared setting. In `gram_per_kg` it stays a coarse table lookup tier; in `energy_ratio` it selects the default no-exercise factor only when local calibration has not already learned a better factor. It is still not a measure of intensity, training age, training volume, or performance demand.
 
 ## Diet Architecture
 
@@ -46,14 +46,14 @@ Non-exercise baseline:
 baselineNoExerciseTdee = bmr * lifestyleFactorUsed
 ```
 
-`lifestyleFactorUsed` comes from dynamic calibration when available and valid; otherwise it falls back to the activity-level default:
+`lifestyleFactorUsed` comes from dynamic calibration when available and valid; otherwise it falls back to the shared training-frequency default:
 
-| `activity_level` | Default non-exercise factor |
+| `training_frequency_per_week` | Default non-exercise factor | Compatibility `activity_level` |
 | --- | ---: |
-| `sedentary` | 1.20 |
-| `lightly_active` | 1.30 |
-| `moderately_active` | 1.425 |
-| `very_active` | 1.60 |
+| 2 | 1.20 | `sedentary` |
+| 3 | 1.30 | `lightly_active` |
+| 4 | 1.425 | `moderately_active` |
+| 5 | 1.60 | `very_active` |
 
 ## `energy_ratio`
 
@@ -295,11 +295,11 @@ Bounds:
 - global factor range: 1.10 to 1.70
 - minimum confidence: 0.35
 
-Calibration is independent from g/kg self-check.
+Calibration is independent from training-frequency self-check.
 
-## g/kg Training-frequency Self-check
+## Shared Training-frequency Self-check
 
-Self-check applies only in `gram_per_kg`.
+Self-check applies in both `energy_ratio` and `gram_per_kg`.
 
 Valid training day rule: count distinct dates, not sessions. A day is valid if any condition is true:
 
@@ -318,7 +318,7 @@ Periods: 7 / 14 / 21 / 28 days.
 
 Cooldown: show/apply feedback no more frequently than every 7 days through `last_macro_self_check_at`.
 
-Self-check does not update `lifestyle_factor_non_exercise`, does not use weight-change equations, and does not use observed TDEE EWMA.
+Self-check updates only the shared `training_frequency_per_week` setting when the user accepts a suggestion. It does not directly update calibrated `lifestyle_factor_non_exercise`, does not use weight-change equations, and does not use observed TDEE EWMA.
 
 ## Algorithm Boundaries
 

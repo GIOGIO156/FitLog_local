@@ -209,8 +209,9 @@ What users can set:
 - language
 - `diet_goal_phase`
 - `diet_calculation_mode`
-- `energy_ratio` activity level, daily energy goal, and macro percentages
-- `gram_per_kg` training-frequency tier and self-check settings
+- shared training-frequency setting and self-check settings for both diet modes
+- `energy_ratio` daily energy goal and macro percentages
+- `gram_per_kg` table context and macro-first preview
 - `diet_plan_strategy`
 - carb cycling pattern and multipliers
 - carb taper review period, target loss rate, step size, and current offset
@@ -221,7 +222,7 @@ How it works:
 - `nickname` is local-only profile data and is not an account identifier.
 - Saving Profile also upserts the current day's weight log.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.
-- g/kg self-check can recommend a training-frequency tier from recent valid training days.
+- Training-frequency self-check can recommend the shared training-frequency setting from recent valid training days in either diet mode.
 - Carb taper review can suggest a local action, but user confirmation is required.
 
 Read more:

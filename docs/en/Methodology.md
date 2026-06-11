@@ -26,7 +26,7 @@ It works like this:
 
 ```text
 BMR estimate
--> non-exercise daily activity baseline
+-> default no-exercise baseline from shared training frequency
 -> cutting deficit or bulking surplus
 -> add logged net exercise calories
 -> split the final kcal target into protein/carbs/fat by percentage
@@ -44,7 +44,8 @@ What users should know:
 - `diet_goal_phase = bulking` means `daily_energy_goal_kcal` is treated as a surplus.
 - In this mode, kcal target/intake/remaining is the main counter.
 - Macro grams are derived from the kcal target and macro percentages.
-- BMR and activity factors are estimates, not exact measurements [REF-ALG-01](References.md), [REF-ALG-02](References.md).
+- BMR and default lifestyle factors are estimates, not exact measurements [REF-ALG-01](References.md), [REF-ALG-02](References.md).
+- The shared training-frequency setting is the user-facing default input for both diet modes, but local calibration can still override the `energy_ratio` default factor after enough history exists.
 
 Main evidence context:
 

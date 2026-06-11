@@ -365,9 +365,9 @@ class AppStrings {
   String get energyRatioModeLabel => _t('Energy ratio method', '热量比例算法');
   String get gramPerKgModeLabel => _t('g/kg bodyweight method', 'g/kg 体重算法');
   String get trainingFrequencyPerWeekLabel =>
-      _t('Training Frequency Tier / Week', '每周训练频率档位');
+      _t('Training Frequency / Week', '每周训练频率');
   String trainingFrequencyOptionLabel(int value) =>
-      _t('$value sessions/week tier', '每周 $value 次档位');
+      _t('$value sessions/week', '每周 $value 次');
   String get macroSelfCheckPeriodLabel => _t('Self-check Period', '自检周期');
   String macroSelfCheckPeriodOptionLabel(int value) =>
       _t('$value days', '$value 天');
@@ -397,13 +397,11 @@ class AppStrings {
     'Logged frequency: about ${weeklyFrequency.toStringAsFixed(1)} sessions/week',
     '记录折算频率：约每周 ${weeklyFrequency.toStringAsFixed(1)} 次',
   );
-  String macroSelfCheckRecommendedText(int value) => _t(
-    'Suggested g/kg tier: $value sessions/week',
-    '建议将 g/kg 档位调整为：每周训练 $value 次',
-  );
+  String macroSelfCheckRecommendedText(int value) =>
+      _t('Suggested setting: $value sessions/week', '建议设置为：每周训练 $value 次');
   String get macroSelfCheckBelowRangeNotice => _t(
-    'Recent logged frequency is below the g/kg table range. Use the 2 sessions/week tier or switch back to Energy Ratio Deficit mode.',
-    '历史记录频率低于 g/kg 表格范围，建议使用每周 2 次档位，或切换回热量赤字比例算法。',
+    'Recent logged frequency is below the shared training-frequency range. FitLog keeps the 2 sessions/week tier as the minimum default.',
+    '最近记录频率低于共享训练频率范围，FitLog 会把每周 2 次作为最低默认档位。',
   );
   String get macroRatioSettingsLabel =>
       _t('Daily Macro Ratio (%)', '每日三大营养比例 (%)');
@@ -720,12 +718,12 @@ class AppStrings {
   String energyRatioPhaseNotice(String phase) {
     return phase == 'bulking'
         ? _t(
-            'Uses BMR, non-exercise lifestyle factor, daily calorie surplus, and logged net exercise to calculate target kcal.',
-            '按 BMR、非运动活动系数、每日热量盈余和当天已记录净运动消耗计算目标 kcal。',
+            'Uses BMR, a training-frequency-based default non-exercise factor, daily calorie surplus, and logged net exercise to calculate target kcal. Local calibration still overrides the default factor when available.',
+            '按 BMR、基于训练频率的默认非运动系数、每日热量盈余和当天已记录净运动消耗计算目标 kcal；有本地校准时仍以校准系数优先。',
           )
         : _t(
-            'Uses BMR, non-exercise lifestyle factor, daily calorie deficit, and logged net exercise to calculate target kcal.',
-            '按 BMR、非运动活动系数、每日热量赤字和当天已记录净运动消耗计算目标 kcal。',
+            'Uses BMR, a training-frequency-based default non-exercise factor, daily calorie deficit, and logged net exercise to calculate target kcal. Local calibration still overrides the default factor when available.',
+            '按 BMR、基于训练频率的默认非运动系数、每日热量赤字和当天已记录净运动消耗计算目标 kcal；有本地校准时仍以校准系数优先。',
           );
   }
 
