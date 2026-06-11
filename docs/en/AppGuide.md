@@ -144,10 +144,12 @@ Add/Edit Workout Record is where users create or revise a named workout record.
 What users can do:
 
 - name the workout record
-- choose one or more exercises from the current chest, back, legs, glutes, shoulders, arms, core, full-body, and cardio library
+- choose one or more exercises from the current chest, back, legs, glutes, shoulders, arms, core, full-body, cardio, and reusable custom library
+- add a temporary custom strength or cardio exercise to the current record
 - keep selected exercises in user-chosen order
 - enter per-exercise duration
-- enter strength sets with weight, reps, and completed state
+- choose cardio session intensity from a maintainable-duration basis
+- enter strength sets with weight, reps or single-set duration, and completed state
 - add notes
 - leave the editor and come back later through the Workout Log draft bar
 - discard a new draft or discard edits from inside the editor with the red danger action
@@ -156,8 +158,14 @@ What users can do:
 How it works:
 
 - Exercise selection supports body-part filtering, search, and multi-select order.
-- Cardio exercises use duration and have no set checklist.
-- Strength exercises use set rows.
+- Reusable custom exercises appear under their own `Custom exercises` filter instead of the built-in body-part filters.
+- Temporary custom exercises can be saved to the reusable local custom library when the user saves the workout record.
+- When the user is inside that dedicated custom filter, reusable custom exercises can be hidden from future selection through inline swipe-to-delete with confirmation.
+- Cardio exercises use duration and session intensity, and have no set checklist.
+- The cardio duration explanation sits above the duration field, and the cardio intensity question sits above the intensity picker, which keeps the dropdown readable on small screens.
+- The interval/very-high cardio option asks for active movement time so rest time is not overestimated.
+- Strength exercises use set rows and store the input mode used for that session.
+- Built-in and custom strength exercises can use total load, per-side load, added bodyweight load, assistance load, total reps, per-side reps, or single-set duration.
 - Assisted bodyweight exercises store assistance load in the weight field, and calorie estimation treats actual load as `bodyweight - assistance`.
 - Draft persistence happens while editing; saved-record persistence only happens after explicit save and successful validation.
 - Back/gesture exit keeps the draft instead of opening a save/discard modal.
@@ -185,13 +193,16 @@ What users see:
 - estimated calories
 - exercises in the record
 - saved strength set detail
+- saved strength input labels, such as per-side load, per-side reps, assistance load, or single-set duration
+- saved cardio intensity basis and active movement time when present
 
 How it works:
 
 - Summary metrics are derived from saved sessions and saved sets.
-- Total volume is based on saved strength sets.
+- Total volume is based on normalized calculation values saved on strength sets.
 - Set count is the number of saved strength sets.
 - Saved strength detail is read-only for completion state in the current record flow.
+- Detail views preserve what the user entered and the calculation mode used at save time, so later custom-exercise edits do not reinterpret old records.
 
 Read more:
 

@@ -35,6 +35,8 @@ The app has local workflows that may feel automated, but they are deterministic 
 | JSON parsing | User-pasted JSON string | `FoodRecord` and `FoodItem` data | No |
 | Food save | Food record and items | SQLite rows | No |
 | Food summary | Selected date records | Daily kcal/protein/carbs/fat totals | No |
+| Custom exercise save | User-entered exercise metadata | Local reusable exercise definition | No |
+| Workout exercise normalization | Exercise metadata, set input, duration, bodyweight | Saved raw input and normalized calculation values | No |
 | Workout summary | Selected date sessions | Daily net exercise kcal | No |
 | BMR and target calculation | Profile, food, workout, calibration state | Daily target and remaining values | No |
 | Macro target calculation | Diet phase and calculation mode | Protein/carbs/fat targets | No |
@@ -51,6 +53,7 @@ The app has local workflows that may feel automated, but they are deterministic 
 - Prompt templates are not app-internal AI.
 - JSON parsing is not app-internal AI.
 - `carb_tapering` is a deterministic local review flow, not an Agent that changes goals by itself.
+- Custom exercise creation, cardio-intensity selection, and workout-set normalization are deterministic local UI/database/calculator flows, not AI classification.
 - The app must not introduce backend, cloud sync, LLM API, vector database, RAG, tool calling, semantic memory, or Agent loop unless explicitly requested.
 - If a future Agent layer is added, it must be documented separately from current local deterministic algorithms.
 
@@ -79,4 +82,5 @@ FitLog Local does not currently provide:
 - JSON parser: `lib/domain/services/nutrition_calculator.dart`
 - Source marker: `AppConstants.sourceAiPaste` in `lib/core/constants/app_constants.dart`
 - Local deterministic services: `daily_summary_service.dart`, `macro_target_calculator.dart`, `workout_calorie_calculator.dart`, `training_frequency_self_check_service.dart`, `diet_plan_strategy_service.dart`, `carb_cycling_calculator.dart`, `carb_taper_review_service.dart`
+- Exercise metadata: `lib/core/constants/exercise_catalog.dart`, `lib/core/constants/exercise_definition.dart`, `lib/data/repositories/custom_exercise_repository.dart`
 - Dependency check: `pubspec.yaml`

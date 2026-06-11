@@ -1,3 +1,4 @@
+import '../data/repositories/custom_exercise_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/workout_repository.dart';
@@ -8,15 +9,18 @@ import '../domain/services/daily_summary_service.dart';
 class ExportTableBuilder {
   ExportTableBuilder({
     required FoodRepository foodRepository,
+    required CustomExerciseRepository customExerciseRepository,
     required WorkoutRepository workoutRepository,
     required ProfileRepository profileRepository,
     required DailySummaryService dailySummaryService,
   }) : _foodRepository = foodRepository,
+       _customExerciseRepository = customExerciseRepository,
        _workoutRepository = workoutRepository,
        _profileRepository = profileRepository,
        _dailySummaryService = dailySummaryService;
 
   final FoodRepository _foodRepository;
+  final CustomExerciseRepository _customExerciseRepository;
   final WorkoutRepository _workoutRepository;
   final ProfileRepository _profileRepository;
   final DailySummaryService _dailySummaryService;
@@ -24,6 +28,7 @@ class ExportTableBuilder {
   Future<List<ExportTable>> build() async {
     final foodRecords = await _foodRepository.getAllFoodRecords();
     final workoutSessions = await _workoutRepository.getAllWorkoutSessions();
+    final customExercises = await _customExerciseRepository.getAllDefinitions();
     final profile =
         await _profileRepository.getProfile() ?? UserProfile.defaults;
     final dietAdjustmentReviews = await _profileRepository
@@ -96,24 +101,50 @@ class ExportTableBuilder {
         rows: <List<dynamic>>[
           <dynamic>[
             'date',
+            'record_name',
             'body_part',
+            'secondary_body_part',
+            'exercise_key',
+            'exercise_source',
             'exercise_name',
             'exercise_type',
             'duration_minutes',
             'intensity',
+            'strength_profile',
+            'load_input_mode',
+            'reps_input_mode',
+            'set_metric_type',
+            'cardio_met',
+            'cardio_intensity_basis',
+            'cardio_active_minutes',
+            'body_weight_kg_at_calculation',
             'estimated_calories',
             'notes',
+            'exercise_snapshot_json',
           ],
           ...workoutSessions.map(
             (session) => <dynamic>[
               session.date,
+              session.recordName ?? '',
               session.bodyPart,
+              session.secondaryBodyPart ?? '',
+              session.exerciseKey ?? '',
+              session.exerciseSource ?? '',
               session.exerciseName,
               session.exerciseType,
               session.durationMinutes,
               session.intensity,
+              session.strengthProfile ?? '',
+              session.loadInputMode ?? '',
+              session.repsInputMode ?? '',
+              session.setMetricType ?? '',
+              session.cardioMet ?? '',
+              session.cardioIntensityBasis ?? '',
+              session.cardioActiveMinutes ?? '',
+              session.bodyWeightKgAtCalculation ?? '',
               session.estimatedCalories,
               session.notes,
+              session.exerciseSnapshotJson ?? '',
             ],
           ),
         ],
@@ -127,6 +158,14 @@ class ExportTableBuilder {
             'set_number',
             'weight_kg',
             'reps',
+            'input_weight_kg',
+            'input_reps',
+            'input_duration_seconds',
+            'calculation_load_kg',
+            'calculation_reps',
+            'load_input_mode',
+            'reps_input_mode',
+            'set_metric_type',
             'is_completed',
             'completed_at',
           ],
@@ -137,9 +176,53 @@ class ExportTableBuilder {
                 set.setNumber,
                 set.weightKg,
                 set.reps,
+                set.inputWeightKg ?? '',
+                set.inputReps ?? '',
+                set.inputDurationSeconds ?? '',
+                set.calculationLoadKg ?? '',
+                set.calculationReps ?? '',
+                set.loadInputMode ?? '',
+                set.repsInputMode ?? '',
+                set.setMetricType ?? '',
                 set.isCompleted ? 1 : 0,
                 set.completedAt ?? '',
               ],
+        ],
+      ),
+      ExportTable(
+        sheetName: 'Custom Exercises',
+        fileName: 'custom_exercises.csv',
+        rows: <List<dynamic>>[
+          <dynamic>[
+            'exercise_key',
+            'name',
+            'exercise_type',
+            'body_part',
+            'secondary_body_part',
+            'strength_structure',
+            'strength_profile',
+            'load_input_mode',
+            'reps_input_mode',
+            'set_metric_type',
+            'default_cardio_intensity',
+            'is_hidden',
+          ],
+          ...customExercises.map(
+            (exercise) => <dynamic>[
+              exercise.key,
+              exercise.name,
+              exercise.exerciseType,
+              exercise.bodyPart,
+              exercise.secondaryBodyPart ?? '',
+              exercise.strengthStructure,
+              exercise.strengthProfile,
+              exercise.loadInputMode,
+              exercise.repsInputMode,
+              exercise.setMetricType,
+              exercise.defaultCardioIntensity,
+              exercise.isHidden ? 1 : 0,
+            ],
+          ),
         ],
       ),
       ExportTable(

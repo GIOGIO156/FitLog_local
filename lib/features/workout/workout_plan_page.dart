@@ -213,7 +213,9 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
           sum +
           session.sets.fold<double>(
             0,
-            (setSum, set) => setSum + (set.weightKg * set.reps),
+            (setSum, set) =>
+                setSum +
+                (set.effectiveCalculationLoadKg * set.effectiveCalculationReps),
           ),
     );
 
@@ -312,7 +314,10 @@ class _WorkoutPlanPageState extends State<WorkoutPlanPage> {
                   );
                   final volume = session.sets.fold<double>(
                     0,
-                    (sum, set) => sum + (set.weightKg * set.reps),
+                    (sum, set) =>
+                        sum +
+                        (set.effectiveCalculationLoadKg *
+                            set.effectiveCalculationReps),
                   );
                   return InkWell(
                     borderRadius: BorderRadius.circular(14),

@@ -1,3 +1,5 @@
+import 'exercise_catalog.dart';
+
 class AppConstants {
   AppConstants._();
 
@@ -21,90 +23,10 @@ class AppConstants {
   static const String sourceAiPaste = 'ai_paste';
   static const String sourceManual = 'manual';
 
-  static const List<String> bodyParts = <String>[
-    'Chest',
-    'Back',
-    'Legs',
-    'Glutes',
-    'Shoulders',
-    'Arms',
-    'Core',
-    'Cardio',
-    'Full Body',
-  ];
+  static final List<String> bodyParts = ExerciseCatalog.bodyParts;
 
-  static const Map<String, List<String>> bodyPartExercises =
-      <String, List<String>>{
-        'Chest': <String>[
-          'Barbell Flat Bench Press',
-          'Barbell Incline Bench Press',
-          'Dumbbell Flat Bench Press',
-          'Dumbbell Fly',
-          'Cable Fly',
-          'Machine Chest Press',
-          'Machine Pec Fly',
-          'Kneeling Push-up',
-          'Bench Press',
-          'Incline Dumbbell Press',
-          'Push-up',
-          'Chest Fly',
-        ],
-        'Back': <String>[
-          'Pull-up',
-          'Assisted Pull-up',
-          'Lat Pulldown',
-          'Barbell Row',
-          'Seated Row',
-          'Bent-over Barbell Row',
-          'Underhand Barbell Row',
-          'Seal Barbell Row',
-          'Chest-supported T-Bar Row',
-          'Iso-lateral High Row',
-          'Hammer Strength High Row',
-          'Barbell High Pull',
-          'Barbell Pullover',
-          'Barbell Straight-leg Deadlift',
-          'Single-arm Dumbbell Row',
-        ],
-        'Legs': <String>[
-          'Squat',
-          'Bulgarian Split Squat',
-          'Deadlift',
-          'Leg Press',
-          'Romanian Deadlift',
-          'Leg Extension',
-          'Leg Curl',
-        ],
-        'Glutes': <String>['Barbell Hip Thrust'],
-        'Shoulders': <String>[
-          'Overhead Press',
-          'Lateral Raise',
-          'Rear Delt Fly',
-          'Standing Dumbbell Shoulder Press',
-          'Standing Barbell Shoulder Press',
-          'Seated Barbell Shoulder Press',
-          'Standing Barbell Front Raise',
-          'Barbell Upright Row',
-        ],
-        'Arms': <String>[
-          'Barbell Biceps Curl',
-          'Dumbbell Biceps Curl',
-          'Hammer Curl',
-          'Triceps Pushdown',
-          'Close-grip Bench Press',
-          'Dip',
-          'Assisted Dip',
-        ],
-        'Core': <String>['Plank', 'Crunch', 'Hanging Leg Raise'],
-        'Cardio': <String>[
-          'Walking',
-          'Running',
-          'Cycling',
-          'Rowing Machine',
-          'Stair Climber',
-        ],
-        'Full Body': <String>['Kettlebell Swing', 'Burpee', 'Jumping Jack'],
-      };
+  static final Map<String, List<String>> bodyPartExercises =
+      ExerciseCatalog.bodyPartExercises;
 
   static const Set<String> bodyweightExercises = <String>{
     'Pull-up',
@@ -126,11 +48,13 @@ class AppConstants {
   };
 
   static bool isBodyweightExercise(String exerciseName) {
-    return bodyweightExercises.contains(exerciseName);
+    return bodyweightExercises.contains(exerciseName) ||
+        ExerciseCatalog.isBodyweightExercise(exerciseName);
   }
 
   static bool isAssistedBodyweightExercise(String exerciseName) {
-    return assistedBodyweightExercises.contains(exerciseName);
+    return assistedBodyweightExercises.contains(exerciseName) ||
+        ExerciseCatalog.isAssistedBodyweightExercise(exerciseName);
   }
 
   static const List<String> intensityLevels = <String>['low', 'medium', 'high'];

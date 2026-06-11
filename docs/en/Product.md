@@ -24,11 +24,11 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | Editable saved food record and item rows. | `food_detail_page.dart` |
 | Workout Log | Date-filtered saved workout records grouped by internal `plan_id`. | `workout_log_page.dart`, `WorkoutRepository` |
-| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, cardio duration, strength sets, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
+| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
 | Profile | Local identity nickname, body profile, language, diet phase, diet mode, strategy settings, shared training-frequency self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
-| Export | XLSX and CSV ZIP exports for raw records, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
+| Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
 
@@ -45,17 +45,25 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 1. The user opens Workout Log and selects a date.
 2. The user creates a `Workout Record`, gives it a name, and selects one or more exercises.
-3. The exercise library supports body-part filtering, search, multi-select, and visible selection order.
-4. Cardio exercises require per-exercise duration and have no set checklist.
-5. Strength exercises use set rows with weight, reps, and completed state.
-6. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
-7. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
-8. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
-9. Save validation completes before any saved-record persistence happens.
-10. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
-11. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
-12. Saved records show duration, total volume, total sets, estimated calories, and exercise cards.
-13. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
+3. The exercise library supports body-part filtering, search, multi-select, visible selection order, and reusable custom exercises saved locally.
+4. The user can add a temporary custom exercise to the current record; on save, FitLog asks whether to keep it in the reusable custom library.
+5. Reusable custom exercises appear in a dedicated `Custom exercises` picker group instead of being merged into the built-in chest/back/legs/body-part groups.
+6. When the user is viewing that dedicated custom group, reusable custom exercises support inline swipe-to-delete with confirmation instead of a separate management page or a global library action.
+7. Cardio exercises require per-exercise duration and session intensity, and have no set checklist.
+8. The cardio duration helper is shown above the duration field, and the intensity explanation is shown above the intensity picker to avoid dropdown overflow and keep the question readable.
+9. Cardio intensity is entered as a maintainable-duration basis: 60+ minutes, 30-60 minutes, 10-30 minutes, 3-10 minutes, or under 3 minutes with rests.
+10. Interval or very-high-intensity cardio records active movement time so rest time is not treated as extreme-intensity work.
+11. Strength exercises use set rows with weight, reps or single-set duration, and completed state.
+12. Built-in and custom strength exercises store the input mode used for the session: total load, per-side load, bodyweight plus added load, assistance load, total reps, per-side reps, or duration-based sets.
+13. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
+14. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
+15. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
+16. Save validation completes before any saved-record persistence happens.
+17. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
+18. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
+19. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
+20. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
+21. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
 
 ## Daily Dashboard Behavior
 

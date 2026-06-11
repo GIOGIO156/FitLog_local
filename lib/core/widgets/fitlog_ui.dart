@@ -287,6 +287,7 @@ String? fitLogWorkoutAssetForExercise(String exerciseName) {
       return FitLogIconAssets.exerciseLateralRaise;
     case 'Lat Pulldown':
       return FitLogIconAssets.exerciseLatPulldown;
+    case 'Barbell Overhead Press':
     case 'Overhead Press':
       return FitLogIconAssets.exerciseOverheadPress;
     case 'Pull-up':

@@ -216,7 +216,7 @@ netMet = max(0, MET - 1)
 netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 ```
 
-当前有氧 MET：
+当计算器只收到动作名时，以下旧固定 MET 表仍作为兼容 fallback：
 
 | 动作 | MET |
 | --- | ---: |
@@ -226,15 +226,21 @@ netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 | Rowing Machine | 7 |
 | Stair Climber | 8 |
 
+保存后的内置和自定义有氧 session 也可以携带 `cardio_intensity_basis`、`cardio_met` 和可选 `cardio_active_minutes`。用户侧强度依据询问同一速度/节奏大概能连续维持多久：60 分钟以上、30-60 分钟、10-30 分钟、3-10 分钟，或小于 3 分钟且需要休息。选择小于 3 分钟的间歇选项时，FitLog 使用实际运动分钟数，而不是整段训练经过时间。
+
 力量使用训练量驱动的净消耗：
 
-1. 优先使用已完成且 `reps > 0` 的组；如果没有，则使用所有有效输入组。
-2. 自重动作使用 `bodyWeightKg * bodyweightShare + externalLoadKg` 作为有效负荷。
-3. 辅助类自重动作把 `weight_kg` 视为辅助重量，并用 `max(0, bodyWeightKg - assistanceKg)` 作为有效负荷。
-4. 非自重动作使用外部负荷。
-5. 计算 `totalVolumeKg = sum(effectiveLoadKg * reps)`。
-6. 按更新后的胸部、背部、腿部、臀部、肩部、手臂、核心、全身动作库选择动作 profile 系数。
-7. 时长只进入有上限的恢复密度修正，不线性累加热量。
+1. 优先使用已完成且有有效计算次数的组；如果没有，则使用所有有效输入组。
+2. 保存用户原始输入字段，并为热量启发式计算标准化字段。
+3. 每侧重量会转换为 `calculation_load_kg = input_weight_kg * 2`。
+4. 每侧次数会转换为 `calculation_reps = input_reps * 2`。
+5. 平板支撑等按时长记录的力量组保存 `input_duration_seconds`，并用有上限的 time-under-tension 等价值生成 `calculation_reps`。
+6. 自重动作使用 `bodyWeightKg * bodyweightShare + externalLoadKg` 作为有效负荷。
+7. 辅助类自重动作把输入重量视为辅助重量，并用 `max(0, bodyWeightKg - assistanceKg)` 作为有效负荷。
+8. 非自重动作使用标准化后的外部负荷。
+9. 计算 `totalVolumeKg = sum(effectiveLoadKg * calculationReps)`。
+10. 从已保存 session 快照或当前动作定义中选择内部动作 profile 系数。
+11. 时长只进入有上限的恢复密度修正，不线性累加热量。
 
 ```text
 activeLiftingKcal =
@@ -254,10 +260,10 @@ netStrengthKcal =
 
 | Profile | strengthCoefficient | postTrainingRecoveryRate | muscleRepairAdaptationRate |
 | --- | ---: | ---: | ---: |
-| `upperBodyCompound` | 0.013 | 0.28 | 0.12 |
-| `lowerBodyCompound` | 0.019 | 0.34 | 0.16 |
+| `upper_body_compound` | 0.013 | 0.28 | 0.12 |
+| `lower_body_compound` | 0.019 | 0.34 | 0.16 |
 | `isolation` | 0.0085 | 0.12 | 0.06 |
-| `fullBodyPowerOrHighDensity` | 0.024 | 0.45 | 0.20 |
+| `full_body_power_or_high_density` | 0.024 | 0.45 | 0.20 |
 
 附加修正：
 
@@ -332,6 +338,10 @@ recommended = clamp(round(averageWeekly), 2, 5)
 - `lib/domain/services/daily_summary_service.dart`
 - `lib/domain/services/macro_target_calculator.dart`
 - `lib/domain/services/workout_calorie_calculator.dart`
+- `lib/core/constants/exercise_catalog.dart`
+- `lib/core/constants/exercise_definition.dart`
+- `lib/domain/models/workout_session.dart`
+- `lib/domain/models/workout_set.dart`
 - `lib/domain/services/training_frequency_self_check_service.dart`
 - `lib/domain/services/diet_plan_strategy_service.dart`
 - `lib/domain/services/carb_cycling_calculator.dart`

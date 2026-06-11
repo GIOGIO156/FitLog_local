@@ -1,5 +1,7 @@
 import 'package:fitlog_local/domain/models/workout_set.dart';
 import 'package:fitlog_local/domain/services/workout_calorie_calculator.dart';
+import 'package:fitlog_local/core/constants/exercise_catalog.dart';
+import 'package:fitlog_local/core/constants/exercise_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -213,6 +215,109 @@ void main() {
 
         expect(assistedPullUp, lessThan(pullUp));
         expect(assistedPullUp, greaterThan(0));
+      },
+    );
+
+    test(
+      'per-side load and reps are standardized before strength estimate',
+      () {
+        const dumbbellBench = WorkoutSet(
+          setNumber: 1,
+          weightKg: 30,
+          reps: 10,
+          inputWeightKg: 30,
+          inputReps: 10,
+          calculationLoadKg: 60,
+          calculationReps: 10,
+          loadInputMode: ExerciseLoadInputMode.perSideLoad,
+          repsInputMode: ExerciseRepsInputMode.totalReps,
+          setMetricType: ExerciseSetMetricType.reps,
+          isCompleted: true,
+        );
+        const singleArmRow = WorkoutSet(
+          setNumber: 1,
+          weightKg: 30,
+          reps: 20,
+          inputWeightKg: 30,
+          inputReps: 10,
+          calculationLoadKg: 30,
+          calculationReps: 20,
+          loadInputMode: ExerciseLoadInputMode.totalLoad,
+          repsInputMode: ExerciseRepsInputMode.perSide,
+          setMetricType: ExerciseSetMetricType.reps,
+          isCompleted: true,
+        );
+
+        final dumbbellBenchKcal =
+            WorkoutCalorieCalculator.estimateStrengthCalories(
+              exerciseName: 'Dumbbell Flat Bench Press',
+              bodyWeightKg: 80,
+              sets: const <WorkoutSet>[dumbbellBench],
+              totalSessionDurationMinutes: 20,
+              definition: ExerciseCatalog.byName('Dumbbell Flat Bench Press'),
+            );
+        final singleArmRowKcal =
+            WorkoutCalorieCalculator.estimateStrengthCalories(
+              exerciseName: 'Single-arm Dumbbell Row',
+              bodyWeightKg: 80,
+              sets: const <WorkoutSet>[singleArmRow],
+              totalSessionDurationMinutes: 20,
+              definition: ExerciseCatalog.byName('Single-arm Dumbbell Row'),
+            );
+
+        expect(dumbbellBenchKcal, greaterThan(0));
+        expect(singleArmRowKcal, greaterThan(0));
+      },
+    );
+
+    test('duration-based plank sets use seconds as the set metric', () {
+      const plankSet = WorkoutSet(
+        setNumber: 1,
+        weightKg: 0,
+        reps: 15,
+        inputWeightKg: 0,
+        inputDurationSeconds: 60,
+        calculationLoadKg: 0,
+        calculationReps: 15,
+        loadInputMode: ExerciseLoadInputMode.bodyweightAdded,
+        setMetricType: ExerciseSetMetricType.durationSeconds,
+        isCompleted: true,
+      );
+
+      final kcal = WorkoutCalorieCalculator.estimateStrengthCalories(
+        exerciseName: 'Plank',
+        bodyWeightKg: 80,
+        sets: const <WorkoutSet>[plankSet],
+        totalSessionDurationMinutes: 5,
+        definition: ExerciseCatalog.byName('Plank'),
+      );
+
+      expect(kcal, greaterThan(0));
+    });
+
+    test(
+      'interval cardio can use active minutes instead of total duration',
+      () {
+        final running = ExerciseCatalog.byName('Running')!;
+        final totalDurationKcal =
+            WorkoutCalorieCalculator.estimateCardioCalories(
+              exerciseName: 'Running',
+              bodyWeightKg: 80,
+              durationMinutes: 20,
+              definition: running,
+              intensityBasis: CardioIntensityBasis.intervalUnder3,
+            );
+        final activeOnlyKcal = WorkoutCalorieCalculator.estimateCardioCalories(
+          exerciseName: 'Running',
+          bodyWeightKg: 80,
+          durationMinutes: 20,
+          definition: running,
+          intensityBasis: CardioIntensityBasis.intervalUnder3,
+          activeDurationMinutes: 8,
+        );
+
+        expect(activeOnlyKcal, lessThan(totalDurationKcal));
+        expect(activeOnlyKcal, greaterThan(0));
       },
     );
   });

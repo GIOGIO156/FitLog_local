@@ -2,6 +2,7 @@ import 'package:fitlog_local/app.dart';
 import 'package:fitlog_local/core/constants/app_constants.dart';
 import 'package:fitlog_local/core/localization/language_controller.dart';
 import 'package:fitlog_local/data/db/app_database.dart';
+import 'package:fitlog_local/data/repositories/custom_exercise_repository.dart';
 import 'package:fitlog_local/data/repositories/food_repository.dart';
 import 'package:fitlog_local/data/repositories/profile_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_draft_repository.dart';
@@ -160,6 +161,7 @@ Widget _buildHomeTestApp({
   final database = AppDatabase.instance;
   final foodRepository = _FakeFoodRepository(database)
     ..recordsByDate[_referenceDay] = foodRecords;
+  final customExerciseRepository = CustomExerciseRepository(database);
   final workoutRepository = _FakeWorkoutRepository(database)
     ..sessionsByDate[_referenceDay] = workoutSessions;
   final workoutDraftRepository = WorkoutDraftRepository(database);
@@ -190,18 +192,21 @@ Widget _buildHomeTestApp({
       Provider<AppServices>.value(
         value: AppServices(
           foodRepository: foodRepository,
+          customExerciseRepository: customExerciseRepository,
           workoutRepository: workoutRepository,
           workoutDraftRepository: workoutDraftRepository,
           profileRepository: profileRepository,
           dailySummaryService: dailySummaryService,
           xlsxExportService: XlsxExportService(
             foodRepository: foodRepository,
+            customExerciseRepository: customExerciseRepository,
             workoutRepository: workoutRepository,
             profileRepository: profileRepository,
             dailySummaryService: dailySummaryService,
           ),
           csvExportService: CsvExportService(
             foodRepository: foodRepository,
+            customExerciseRepository: customExerciseRepository,
             workoutRepository: workoutRepository,
             profileRepository: profileRepository,
             dailySummaryService: dailySummaryService,

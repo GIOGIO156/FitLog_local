@@ -26,7 +26,7 @@ The intended workflow is:
 FitLog Local currently provides:
 
 - local food records, manual food entry, external AI JSON paste, preview/edit, copy-to-date, and delete
-- local workout records with named multi-exercise records, cardio duration, strength sets, completed-set persistence, saved-record summaries, and record editing
+- local workout records with named multi-exercise records, built-in and reusable custom exercises, a dedicated custom-exercise picker group with inline swipe-to-delete for saved custom entries, cardio duration and intensity, strength set input modes, completed-set persistence, saved-record summaries, and record editing
 - a daily dashboard for intake, exercise calories, BMR, no-exercise TDEE reference, targets, remaining kcal/macros, and selected-day records
 - Profile settings for body data, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
 - local deterministic diet strategy support for `carb_cycling` and `carb_tapering`
@@ -56,9 +56,12 @@ Workout Record:
 - A single saved record can contain multiple exercises grouped internally by shared `plan_id`.
 - Each session in the same record stores the same `record_name` for additive schema compatibility.
 - Creation/editing preserves the user's exercise selection order.
-- Strength exercises use set rows with weight, reps, and completed state.
+- Strength exercises use set rows with weight, reps or single-set duration, completed state, and saved input-mode snapshots.
+- Built-in and custom strength exercises distinguish total weight, per-side weight, added bodyweight load, assistance load, total reps, and per-side reps.
 - Strength saves persist completed sets only; unchecked sets are discarded and saved sets are renumbered.
-- Cardio exercises use per-exercise duration and do not have set checklists.
+- Cardio exercises use per-exercise duration, a session-intensity basis, and do not have set checklists.
+- Interval or very-high-intensity cardio uses active movement time to avoid applying extreme intensity to rest time.
+- Saved reusable custom exercises appear in their own picker group and can be hidden from future selection through inline swipe-to-delete inside that custom group.
 - Saved records show summary metrics: duration, total volume, total sets, and estimated calories.
 
 Home:
@@ -111,7 +114,7 @@ FitLog keeps its methods separated so users can tell which number is the source 
 
 Carb strategies are also deliberately limited. `carb_cycling` redistributes weekly carbs across high/medium/low days; it is not a magic fat-loss rule. `carb_tapering` reviews rolling weight trend, food-log coverage, and training stability, then waits for user confirmation before applying any carb reduction.
 
-Exercise calories use net additional burn. The daily baseline already includes resting energy use, so cardio subtracts the resting part of the activity window (`MET - 1`) to avoid counting the same resting calories twice. Strength training is volume-driven rather than minute-driven because rest time, load, reps, and movement type matter more than duration alone.
+Exercise calories use net additional burn. The daily baseline already includes resting energy use, so cardio subtracts the resting part of the activity window (`MET - 1`) to avoid counting the same resting calories twice. Cardio intensity is recorded as a concrete "how long could you keep this pace" choice rather than a bare subjective label. Strength training is volume-driven rather than minute-driven because rest time, load, reps, input mode, and movement type matter more than duration alone.
 
 For the user-facing explanation, see [Methodology](docs/en/Methodology.md). For implementation formulas, see [Algorithm](docs/en/Algorithm.md). For source boundaries, see [References](docs/en/References.md).
 
@@ -193,7 +196,7 @@ FitLog Local 是一款 local-first 的 Flutter 个人饮食与训练记录 App�
 FitLog Local 当前提供：
 
 - 本地饮食记录、手动录入、外部 AI JSON 粘贴、预览编辑、复制到指定日期和删除
-- 本地训练记录，支持命名的多动作训练记录、有氧时长、力量组、仅保存已完成组、保存后摘要和记录编辑
+- 本地训练记录，支持命名的多动作训练记录、内置和可复用自定义动作、独立的自定义动作分组与管理、有氧时长与强度、力量组输入口径、仅保存已完成组、保存后摘要和记录编辑
 - 每日看板，展示摄入、运动消耗、BMR、非运动 TDEE 参考、目标、剩余 kcal/宏量和选中日期记录
 - Profile 设置，管理身体数据、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
 - 本地确定性饮食策略：`carb_cycling` 和 `carb_tapering`
@@ -223,9 +226,12 @@ FitLog Local 当前不提供：
 - 一条保存记录可以包含多个动作，内部仍通过共享 `plan_id` 分组。
 - 同一记录内的每条 session 都保存相同 `record_name`，以保持加法式 schema 兼容。
 - 创建和编辑时保留用户的动作选择顺序。
-- 力量动作使用包含重量、次数和完成状态的组行。
+- 力量动作使用包含重量、次数或单组时长、完成状态和当次输入口径快照的组行。
+- 内置和自定义力量动作区分总重量、每侧重量、自重加重、辅助重量、总次数和每侧次数。
 - 力量训练保存时只持久化已完成组；未勾选组会被丢弃，保存后的组号重新编号。
-- 有氧动作使用每个动作自己的时长，不使用组清单。
+- 有氧动作使用每个动作自己的时长和本次强度，不使用组清单。
+- 间歇或极高强度有氧使用实际运动时长，避免把休息时间按极高强度计算。
+- 已保存的可复用自定义动作显示在单独的动作库分组里，并可通过专门的管理入口隐藏，避免误触删除。
 - 保存后的记录展示摘要：总时长、总训练量、总组数和估算消耗。
 
 首页：
@@ -278,7 +284,7 @@ FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来�
 
 碳水策略也被有意限制。`carb_cycling` 只是在 high/medium/low 日之间重新分配一周碳水；它不是神奇燃脂规则。`carb_tapering` 会复盘滚动体重趋势、饮食记录覆盖率和训练稳定性，然后等待用户确认，才会应用任何碳水下调。
 
-运动消耗使用额外净消耗。每日基线已经包含静息能量消耗，所以有氧会减去运动时间里的静息部分（`MET - 1`），避免把同一份静息热量算两次。力量训练以训练量为主，而不是单纯按分钟计算，因为休息时间、负荷、次数和动作类型都比时长本身更重要。
+运动消耗使用额外净消耗。每日基线已经包含静息能量消耗，所以有氧会减去运动时间里的静息部分（`MET - 1`），避免把同一份静息热量算两次。有氧强度使用“保持这次速度/节奏还能连续维持多久”的具体选择，而不是只靠主观轻中高。力量训练以训练量为主，而不是单纯按分钟计算，因为休息时间、负荷、次数、输入口径和动作类型都比时长本身更重要。
 
 面向用户的完整解释见 [Methodology](docs/zh/Methodology.md)。实现公式见 [Algorithm](docs/zh/Algorithm.md)。证据来源和边界见 [References](docs/zh/References.md)。
 

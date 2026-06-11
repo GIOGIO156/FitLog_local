@@ -35,6 +35,8 @@ App 中有一些看起来像自动化的流程，但它们都是确定性的 Dar
 | JSON 解析 | 用户粘贴的 JSON 字符串 | `FoodRecord` 和 `FoodItem` 数据 | 否 |
 | 饮食保存 | 饮食记录和 item | SQLite 行 | 否 |
 | 饮食汇总 | 选中日期记录 | 每日 kcal/蛋白质/碳水/脂肪合计 | 否 |
+| 自定义动作保存 | 用户填写的动作 metadata | 本地可复用动作定义 | 否 |
+| 训练动作标准化 | 动作 metadata、组输入、时长、体重 | 保存原始输入值和标准化计算值 | 否 |
 | 训练汇总 | 选中日期 sessions | 每日净运动 kcal | 否 |
 | BMR 和目标计算 | Profile、饮食、训练、校准状态 | 每日目标和剩余量 | 否 |
 | 宏量目标计算 | 饮食阶段和计算模式 | 蛋白质/碳水/脂肪目标 | 否 |
@@ -51,6 +53,7 @@ App 中有一些看起来像自动化的流程，但它们都是确定性的 Dar
 - Prompt 模板不是 App 内 AI。
 - JSON 解析不是 App 内 AI。
 - `carb_tapering` 是确定性的本地 review 流程，不是会自行修改目标的 Agent。
+- 自定义动作创建、有氧强度选择和训练组标准化都是确定性的本地 UI/数据库/计算器流程，不是 AI 分类。
 - 除非明确要求，不得引入后端、云同步、LLM API、向量数据库、RAG、tool calling、语义记忆或 Agent loop。
 - 如果未来增加 Agent 层，必须与当前本地确定性算法分开记录。
 
@@ -79,4 +82,5 @@ FitLog Local 当前不提供：
 - JSON parser：`lib/domain/services/nutrition_calculator.dart`
 - 来源标记：`AppConstants.sourceAiPaste` in `lib/core/constants/app_constants.dart`
 - 本地确定性 services：`daily_summary_service.dart`, `macro_target_calculator.dart`, `workout_calorie_calculator.dart`, `training_frequency_self_check_service.dart`, `diet_plan_strategy_service.dart`, `carb_cycling_calculator.dart`, `carb_taper_review_service.dart`
+- 动作 metadata：`lib/core/constants/exercise_catalog.dart`, `lib/core/constants/exercise_definition.dart`, `lib/data/repositories/custom_exercise_repository.dart`
 - 依赖检查：`pubspec.yaml`

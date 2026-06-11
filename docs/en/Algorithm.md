@@ -216,7 +216,7 @@ netMet = max(0, MET - 1)
 netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 ```
 
-Current cardio MET map:
+The legacy fixed MET map remains the fallback when the calculator is called with only an exercise name:
 
 | Exercise | MET |
 | --- | ---: |
@@ -226,15 +226,21 @@ Current cardio MET map:
 | Rowing Machine | 7 |
 | Stair Climber | 8 |
 
+Saved built-in and custom cardio sessions can also carry `cardio_intensity_basis`, `cardio_met`, and optional `cardio_active_minutes`. The user-facing intensity basis asks how long the user could maintain the same pace: 60+ minutes, 30-60 minutes, 10-30 minutes, 3-10 minutes, or under 3 minutes with rests. For the under-3-minute interval option, FitLog uses active movement minutes when provided, not the whole elapsed session duration.
+
 Strength uses volume-driven net calories:
 
-1. Prefer completed sets with `reps > 0`; if none exist, use all valid entered sets.
-2. Bodyweight movements use `bodyWeightKg * bodyweightShare + externalLoadKg` as effective load.
-3. Assisted bodyweight movements store assistance in `weight_kg`, and use `max(0, bodyWeightKg - assistanceKg)` as effective load.
-4. Non-bodyweight movements use external load.
-5. Compute `totalVolumeKg = sum(effectiveLoadKg * reps)`.
-6. Select movement profile coefficients from the updated chest/back/legs/glutes/shoulders/arms/core/full-body movement library.
-7. Use duration only in a capped recovery-density modifier, not as linear calorie accumulation.
+1. Prefer completed sets with valid calculation reps; if none exist, use all valid entered sets.
+2. Preserve user input fields and calculate normalized fields for the calorie heuristic.
+3. Per-side load becomes `calculation_load_kg = input_weight_kg * 2`.
+4. Per-side reps become `calculation_reps = input_reps * 2`.
+5. Duration-based strength sets, such as plank, store `input_duration_seconds` and use a bounded time-under-tension equivalent for `calculation_reps`.
+6. Bodyweight movements use `bodyWeightKg * bodyweightShare + externalLoadKg` as effective load.
+7. Assisted bodyweight movements store assistance in the input weight field, and use `max(0, bodyWeightKg - assistanceKg)` as effective load.
+8. Non-bodyweight movements use normalized external load.
+9. Compute `totalVolumeKg = sum(effectiveLoadKg * calculationReps)`.
+10. Select internal movement profile coefficients from the saved session snapshot or current exercise definition.
+11. Use duration only in a capped recovery-density modifier, not as linear calorie accumulation.
 
 ```text
 activeLiftingKcal =
@@ -254,10 +260,10 @@ Movement coefficients:
 
 | Profile | strengthCoefficient | postTrainingRecoveryRate | muscleRepairAdaptationRate |
 | --- | ---: | ---: | ---: |
-| `upperBodyCompound` | 0.013 | 0.28 | 0.12 |
-| `lowerBodyCompound` | 0.019 | 0.34 | 0.16 |
+| `upper_body_compound` | 0.013 | 0.28 | 0.12 |
+| `lower_body_compound` | 0.019 | 0.34 | 0.16 |
 | `isolation` | 0.0085 | 0.12 | 0.06 |
-| `fullBodyPowerOrHighDensity` | 0.024 | 0.45 | 0.20 |
+| `full_body_power_or_high_density` | 0.024 | 0.45 | 0.20 |
 
 Additional modifiers:
 
@@ -332,6 +338,10 @@ Self-check updates only the shared `training_frequency_per_week` setting when th
 - `lib/domain/services/daily_summary_service.dart`
 - `lib/domain/services/macro_target_calculator.dart`
 - `lib/domain/services/workout_calorie_calculator.dart`
+- `lib/core/constants/exercise_catalog.dart`
+- `lib/core/constants/exercise_definition.dart`
+- `lib/domain/models/workout_session.dart`
+- `lib/domain/models/workout_set.dart`
 - `lib/domain/services/training_frequency_self_check_service.dart`
 - `lib/domain/services/diet_plan_strategy_service.dart`
 - `lib/domain/services/carb_cycling_calculator.dart`

@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/utils/date_utils.dart';
+import '../data/repositories/custom_exercise_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/workout_repository.dart';
@@ -14,15 +15,18 @@ import 'export_table_builder.dart';
 class XlsxExportService {
   XlsxExportService({
     required FoodRepository foodRepository,
+    required CustomExerciseRepository customExerciseRepository,
     required WorkoutRepository workoutRepository,
     required ProfileRepository profileRepository,
     required DailySummaryService dailySummaryService,
   }) : _foodRepository = foodRepository,
+       _customExerciseRepository = customExerciseRepository,
        _workoutRepository = workoutRepository,
        _profileRepository = profileRepository,
        _dailySummaryService = dailySummaryService;
 
   final FoodRepository _foodRepository;
+  final CustomExerciseRepository _customExerciseRepository;
   final WorkoutRepository _workoutRepository;
   final ProfileRepository _profileRepository;
   final DailySummaryService _dailySummaryService;
@@ -30,6 +34,7 @@ class XlsxExportService {
   Future<String> export() async {
     final tables = await ExportTableBuilder(
       foodRepository: _foodRepository,
+      customExerciseRepository: _customExerciseRepository,
       workoutRepository: _workoutRepository,
       profileRepository: _profileRepository,
       dailySummaryService: _dailySummaryService,

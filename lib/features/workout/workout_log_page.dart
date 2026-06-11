@@ -733,7 +733,10 @@ class _WorkoutPlanGroup {
             sum +
             session.sets.fold<double>(
               0,
-              (setSum, set) => setSum + (set.weightKg * set.reps),
+              (setSum, set) =>
+                  setSum +
+                  (set.effectiveCalculationLoadKg *
+                      set.effectiveCalculationReps),
             ),
       ),
       totalSets: sessions.fold<int>(

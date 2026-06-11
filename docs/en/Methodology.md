@@ -231,6 +231,16 @@ netMet = max(0, MET - 1)
 netCardioKcal = netMet * 3.5 * bodyWeightKg / 200 * durationMinutes
 ```
 
+For built-in and custom cardio, FitLog can store the intensity basis used for that session. The record page asks how long the user could maintain the same pace or rhythm, rather than only asking for a vague easy/moderate/hard label. The options map to local MET values:
+
+- 60+ minutes: low intensity.
+- 30-60 minutes: moderate intensity.
+- 10-30 minutes: vigorous intensity.
+- 3-10 minutes: high intensity.
+- Under 3 minutes, needs rests: interval/extreme intensity.
+
+The last option is treated carefully. Interval work often includes rest time, so FitLog asks for active movement minutes and uses that value for the MET calculation instead of assuming the whole elapsed duration was extreme intensity.
+
 Why subtract 1 MET:
 
 - 1 MET roughly represents resting energy cost [REF-ALG-09](References.md).
@@ -265,6 +275,10 @@ effective load
 -> active lifting cost
 -> recovery and adaptation components
 ```
+
+Strength exercises can have different entry conventions. Some dumbbell or dual-cable movements are entered as per-side weight, some single-arm or single-leg movements are entered as per-side reps, bodyweight movements may use added weight, and assisted movements use assistance load. FitLog keeps the user's original entry for display, then saves normalized calculation values for volume and calorie estimation. This avoids treating one dumbbell as total load or one-side reps as the whole set.
+
+Custom strength exercises use the same idea. The user chooses understandable input modes such as total weight, per-side weight, bodyweight plus added load, assistance load, total reps, per-side reps, or single-set duration. The app maps those choices to existing local strength profiles; it does not ask the user to choose internal profile names.
 
 For assisted pull-up or dip variants, the logged weight is assistance load, so FitLog estimates actual movement load from `bodyweight - assistance` before applying the normal strength heuristic.
 

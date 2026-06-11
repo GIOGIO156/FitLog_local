@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/exercise_catalog.dart';
+import '../../core/constants/exercise_definition.dart';
 import '../models/workout_set.dart';
 
 class WorkoutCalorieCalculator {
@@ -54,10 +56,12 @@ class WorkoutCalorieCalculator {
     'Standing Dumbbell Shoulder Press',
     'Standing Barbell Shoulder Press',
     'Seated Barbell Shoulder Press',
+    'Barbell Overhead Press',
     'Overhead Press',
     'Pull-up',
     'Assisted Pull-up',
     'Push-up',
+    'Kneeling Push-up',
   };
 
   static const Set<String> _lowerBodyCompoundExercises = <String>{
@@ -84,6 +88,7 @@ class WorkoutCalorieCalculator {
     'Leg Extension',
     'Leg Curl',
     'Lateral Raise',
+    'Dumbbell Rear Delt Fly',
     'Rear Delt Fly',
     'Standing Barbell Front Raise',
     'Barbell Upright Row',
@@ -132,16 +137,39 @@ class WorkoutCalorieCalculator {
     required String exerciseName,
     required double bodyWeightKg,
     required int durationMinutes,
+    ExerciseDefinition? definition,
+    String? intensityBasis,
+    double? met,
+    int? activeDurationMinutes,
   }) {
-    final double met = _cardioMetMap[exerciseName] ?? 6;
-    final safeDurationMinutes = math.max(0, durationMinutes);
+    final resolvedDefinition =
+        definition ??
+        (intensityBasis == null && met == null
+            ? null
+            : ExerciseCatalog.byName(exerciseName));
+    final resolvedIntensity =
+        intensityBasis ??
+        resolvedDefinition?.defaultCardioIntensity ??
+        CardioIntensityBasis.moderate30To60;
+    final double resolvedMet =
+        met ??
+        (resolvedDefinition == null
+            ? (_cardioMetMap[exerciseName] ?? 6)
+            : ExerciseCatalog.cardioMetFor(
+                definition: resolvedDefinition,
+                intensity: resolvedIntensity,
+              ));
+    final safeDurationMinutes = math.max(
+      0,
+      activeDurationMinutes ?? durationMinutes,
+    );
     if (safeDurationMinutes <= 0 || bodyWeightKg <= 0) {
       return 0;
     }
 
     // Net cardio kcal: remove 1 MET resting component to avoid double-counting
     // baseline expenditure that is already inside daily non-exercise target.
-    final netMet = math.max(0.0, met - 1.0);
+    final netMet = math.max(0.0, resolvedMet - 1.0);
     final netKcal =
         netMet * 3.5 * bodyWeightKg / 200 * safeDurationMinutes.toDouble();
     return math.max(0, netKcal);
@@ -152,24 +180,33 @@ class WorkoutCalorieCalculator {
     required double bodyWeightKg,
     required List<WorkoutSet> sets,
     int? totalSessionDurationMinutes,
+    ExerciseDefinition? definition,
+    String? strengthProfile,
   }) {
     if (sets.isEmpty || bodyWeightKg <= 0) {
       return 0;
     }
 
     final completedSets = sets
-        .where((set) => set.isCompleted && set.reps > 0)
+        .where((set) => set.isCompleted && _effectiveReps(set) > 0)
         .toList();
     final validSets = completedSets.isNotEmpty
         ? completedSets
-        : sets.where((set) => set.reps > 0).toList();
+        : sets.where((set) => _effectiveReps(set) > 0).toList();
     if (validSets.isEmpty) {
       return 0;
     }
 
-    final profile = _profileForExercise(exerciseName);
-    final isBodyweight = AppConstants.isBodyweightExercise(exerciseName);
-    final isAssisted = AppConstants.isAssistedBodyweightExercise(exerciseName);
+    final profile = _profileForExercise(
+      exerciseName,
+      strengthProfile ?? definition?.strengthProfile,
+    );
+    final isBodyweight =
+        definition?.usesBodyweight ??
+        AppConstants.isBodyweightExercise(exerciseName);
+    final isAssisted =
+        definition?.usesAssistance ??
+        AppConstants.isAssistedBodyweightExercise(exerciseName);
     final bodyweightShare =
         _bodyweightLoadShare[exerciseName] ?? (isBodyweight ? 1.0 : 0.0);
 
@@ -178,12 +215,14 @@ class WorkoutCalorieCalculator {
     int totalReps = 0;
 
     for (final set in validSets) {
-      final reps = set.reps;
-      final externalLoadKg = math.max(0.0, set.weightKg);
+      final reps = _effectiveReps(set);
+      final externalLoadKg = math.max(0.0, set.effectiveCalculationLoadKg);
+      final loadMode = set.loadInputMode ?? definition?.loadInputMode;
       late final double effectiveLoadKg;
-      if (isAssisted) {
+      if (loadMode == ExerciseLoadInputMode.assistanceLoad || isAssisted) {
         effectiveLoadKg = math.max(0.0, bodyWeightKg - externalLoadKg);
-      } else if (isBodyweight) {
+      } else if (loadMode == ExerciseLoadInputMode.bodyweightAdded ||
+          isBodyweight) {
         effectiveLoadKg = bodyWeightKg * bodyweightShare + externalLoadKg;
       } else {
         effectiveLoadKg = externalLoadKg;
@@ -247,7 +286,20 @@ class WorkoutCalorieCalculator {
     return netStrengthKcal.roundToDouble();
   }
 
-  static _StrengthProfile _profileForExercise(String exerciseName) {
+  static _StrengthProfile _profileForExercise(
+    String exerciseName,
+    String? strengthProfile,
+  ) {
+    switch (strengthProfile) {
+      case ExerciseStrengthProfile.fullBodyPowerOrHighDensity:
+        return _fullBodyPowerHighDensityProfile;
+      case ExerciseStrengthProfile.lowerBodyCompound:
+        return _lowerBodyCompoundProfile;
+      case ExerciseStrengthProfile.isolation:
+        return _isolationProfile;
+      case ExerciseStrengthProfile.upperBodyCompound:
+        return _upperBodyCompoundProfile;
+    }
     if (_fullBodyPowerHighDensityExercises.contains(exerciseName)) {
       return _fullBodyPowerHighDensityProfile;
     }
@@ -261,6 +313,18 @@ class WorkoutCalorieCalculator {
       return _isolationProfile;
     }
     return _upperBodyCompoundProfile;
+  }
+
+  static int _effectiveReps(WorkoutSet set) {
+    final reps = set.effectiveCalculationReps;
+    if (reps > 0) {
+      return reps;
+    }
+    final durationSeconds = set.inputDurationSeconds ?? 0;
+    if (durationSeconds <= 0) {
+      return 0;
+    }
+    return math.max(1, (durationSeconds / 4).round());
   }
 
   static double _inferSetIntensityFactor({

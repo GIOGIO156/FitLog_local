@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/exercise_catalog.dart';
+import '../../core/constants/exercise_definition.dart';
 import '../../core/constants/exercise_visuals.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
@@ -17,6 +19,40 @@ import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
+
+const String _customExerciseGroupKey = 'Custom';
+
+String _customExerciseGroupLabel(AppStrings strings) {
+  return strings.isChinese ? '自定义动作' : 'Custom exercises';
+}
+
+String _cardioDurationHelperText(AppStrings strings) {
+  return strings.isChinese
+      ? '有氧消耗按时长和体重计算。'
+      : 'Cardio calories are calculated from duration and body weight.';
+}
+
+String _noSavedCustomExercisesLabel(AppStrings strings) {
+  return strings.isChinese ? '还没有已保存的自定义动作。' : 'No saved custom exercises yet.';
+}
+
+String _deleteCustomExerciseTitle(AppStrings strings) {
+  return strings.isChinese ? '删除自定义动作？' : 'Delete custom exercise?';
+}
+
+String _deleteCustomExerciseMessage(AppStrings strings, String exerciseName) {
+  return strings.isChinese
+      ? '要从可复用自定义动作库中删除“$exerciseName”吗？历史训练记录不会被改动。'
+      : 'Delete $exerciseName from the reusable custom library? Historical workout records will stay unchanged.';
+}
+
+String _customExerciseDeletedLabel(AppStrings strings) {
+  return strings.isChinese ? '自定义动作已删除。' : 'Custom exercise deleted.';
+}
+
+String _customExerciseDeleteFailedLabel(AppStrings strings) {
+  return strings.isChinese ? '删除失败，请重试。' : 'Failed to delete custom exercise.';
+}
 
 class AddWorkoutPage extends StatefulWidget {
   const AddWorkoutPage({
@@ -43,8 +79,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   final Map<String, _ExercisePlanDraft> _selectedPlans =
       <String, _ExercisePlanDraft>{};
 
-  late final List<_ExerciseOption> _exerciseOptions;
-  late final Map<String, _ExerciseOption> _exerciseOptionsByKey;
+  List<_ExerciseOption> _exerciseOptions = <_ExerciseOption>[];
+  Map<String, _ExerciseOption> _exerciseOptionsByKey =
+      <String, _ExerciseOption>{};
 
   late String _date;
   late final String _entryDate;
@@ -70,17 +107,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     _date = _entryDate;
     _editingPlanId = _normalizePlanId(widget.editingPlanId);
     _editingSeedSessionId = widget.seedSessionId;
-    _exerciseOptions = AppConstants.bodyPartExercises.entries
-        .expand(
-          (entry) => entry.value.map(
-            (exercise) => _ExerciseOption(bodyPart: entry.key, name: exercise),
-          ),
-        )
-        .toList();
-    _exerciseOptionsByKey = <String, _ExerciseOption>{
-      for (final option in _exerciseOptions)
-        _exerciseKey(option.bodyPart, option.name): option,
-    };
+    _setExerciseOptions(ExerciseCatalog.builtInExercises);
     _recordNameController.addListener(_scheduleDraftSave);
     _notesController.addListener(_scheduleDraftSave);
     _loadInitialState();
@@ -101,6 +128,22 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   List<_ExercisePlanDraft> get _selectedDrafts =>
       _selectedPlans.values.toList();
 
+  Future<void> _reloadExerciseOptions() async {
+    final customDefinitions = await context
+        .read<AppServices>()
+        .customExerciseRepository
+        .getActiveDefinitions();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _setExerciseOptions(<ExerciseDefinition>[
+        ...ExerciseCatalog.builtInExercises,
+        ...customDefinitions,
+      ]);
+    });
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive ||
@@ -115,10 +158,13 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     final profileFuture = services.profileRepository.getProfile();
     final draftFuture = services.workoutDraftRepository.getActiveDraft();
     final sessionsFuture = _loadSeedSessions(services);
+    final customDefinitionsFuture = services.customExerciseRepository
+        .getActiveDefinitions();
 
     final profile = await profileFuture;
     final activeDraft = await draftFuture;
     final sessions = await sessionsFuture;
+    final customDefinitions = await customDefinitionsFuture;
 
     if (!mounted) {
       return;
@@ -127,6 +173,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     if (profile != null) {
       _profileWeightKg = profile.weightKg;
     }
+    _setExerciseOptions(<ExerciseDefinition>[
+      ...ExerciseCatalog.builtInExercises,
+      ...customDefinitions,
+    ]);
 
     if (sessions.isNotEmpty) {
       _applySessions(sessions);
@@ -169,8 +219,14 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     }
   }
 
-  String _exerciseKey(String bodyPart, String exerciseName) =>
-      '$bodyPart::$exerciseName';
+  void _setExerciseOptions(List<ExerciseDefinition> definitions) {
+    _exerciseOptions = definitions
+        .map((definition) => _ExerciseOption(definition: definition))
+        .toList();
+    _exerciseOptionsByKey = <String, _ExerciseOption>{
+      for (final option in _exerciseOptions) option.key(): option,
+    };
+  }
 
   String _createPlanId() => DateTime.now().microsecondsSinceEpoch.toString();
 
@@ -232,8 +288,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     }
     final reordered = <String, _ExercisePlanDraft>{};
     for (final session in sessions) {
-      final optionKey = _exerciseKey(session.bodyPart, session.exerciseName);
-      reordered[optionKey] = _ExercisePlanDraft.fromSession(session);
+      final draft = _ExercisePlanDraft.fromSession(session);
+      reordered[draft.exerciseKey] = draft;
     }
     _date = sessions.first.date;
     _recordNameController.text = sessions.first.recordName?.trim() ?? '';
@@ -250,11 +306,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         final exerciseDraft = _ExercisePlanDraft.fromJson(
           entry.cast<String, dynamic>(),
         );
-        reordered[_exerciseKey(
-              exerciseDraft.bodyPart,
-              exerciseDraft.exerciseName,
-            )] =
-            exerciseDraft;
+        reordered[exerciseDraft.exerciseKey] = exerciseDraft;
       }
     }
     _editingPlanId = _normalizePlanId(draft.sourcePlanId) ?? _editingPlanId;
@@ -428,11 +480,33 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       ),
     );
 
+    await _reloadExerciseOptions();
+
     if (pickedKeys == null || !mounted) {
       return;
     }
 
     await _applyExerciseSelection(pickedKeys);
+  }
+
+  Future<void> _openCustomExercise() async {
+    final definition = await Navigator.of(context).push<ExerciseDefinition>(
+      MaterialPageRoute(builder: (_) => const _CustomExercisePage()),
+    );
+    if (definition == null || !mounted) {
+      return;
+    }
+
+    final draft = _ExercisePlanDraft.fromDefinition(
+      definition: definition,
+      exerciseSource: ExerciseSource.adHoc,
+    );
+    setState(() {
+      final replaced = _selectedPlans.remove(draft.exerciseKey);
+      replaced?.dispose();
+      _selectedPlans[draft.exerciseKey] = draft;
+    });
+    _scheduleDraftSave();
   }
 
   Future<void> _applyExerciseSelection(List<String> pickedKeysInOrder) async {
@@ -462,8 +536,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         return;
       }
       newDrafts[key] = _ExercisePlanDraft.fromHistory(
-        bodyPart: option.bodyPart,
-        exerciseName: option.name,
+        definition: option.definition,
         latestSession: latestSession,
       );
     }
@@ -518,8 +591,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   }
 
   void _removeExercise(_ExercisePlanDraft draft) {
-    final key = _exerciseKey(draft.bodyPart, draft.exerciseName);
-    final target = _selectedPlans.remove(key);
+    final target = _selectedPlans.remove(draft.exerciseKey);
     target?.dispose();
     setState(() {});
     _scheduleDraftSave();
@@ -536,6 +608,73 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     return NumberUtils.toInt(draft.effectiveDurationText, fallback: 0);
   }
 
+  int _parseDurationSeconds(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return 0;
+    }
+    if (trimmed.contains(':')) {
+      final parts = trimmed.split(':');
+      if (parts.length != 2) {
+        return 0;
+      }
+      final minutes = NumberUtils.toInt(parts.first, fallback: -1);
+      final seconds = NumberUtils.toInt(parts.last, fallback: -1);
+      if (minutes < 0 || seconds < 0 || seconds >= 60) {
+        return 0;
+      }
+      return minutes * 60 + seconds;
+    }
+    return NumberUtils.toInt(trimmed, fallback: 0);
+  }
+
+  WorkoutSet _buildSetForDraft({
+    required _ExercisePlanDraft draft,
+    required _SetDraft setDraft,
+    required int setNumber,
+    String? completedAt,
+  }) {
+    final inputWeight = NumberUtils.toDouble(
+      setDraft.effectiveWeightText,
+      fallback: 0,
+    );
+    final safeInputWeight = inputWeight < 0 ? 0.0 : inputWeight;
+    final isDurationSet = draft.usesDurationSets;
+    final inputDurationSeconds = isDurationSet
+        ? _parseDurationSeconds(setDraft.effectiveRepsText)
+        : null;
+    final inputReps = isDurationSet
+        ? null
+        : NumberUtils.toInt(setDraft.effectiveRepsText, fallback: 0);
+    final calculationLoad =
+        draft.loadInputMode == ExerciseLoadInputMode.perSideLoad
+        ? safeInputWeight * 2
+        : safeInputWeight;
+    final calculationReps = isDurationSet
+        ? (inputDurationSeconds == null || inputDurationSeconds <= 0
+              ? 0
+              : (inputDurationSeconds / 4).round().clamp(1, 9999).toInt())
+        : (draft.repsInputMode == ExerciseRepsInputMode.perSide
+              ? (inputReps ?? 0) * 2
+              : inputReps ?? 0);
+
+    return WorkoutSet(
+      setNumber: setNumber,
+      weightKg: calculationLoad,
+      reps: calculationReps,
+      inputWeightKg: safeInputWeight,
+      inputReps: inputReps,
+      inputDurationSeconds: inputDurationSeconds,
+      calculationLoadKg: calculationLoad,
+      calculationReps: calculationReps,
+      loadInputMode: draft.loadInputMode,
+      repsInputMode: draft.repsInputMode,
+      setMetricType: draft.setMetricType,
+      isCompleted: setDraft.isCompleted,
+      completedAt: completedAt,
+    );
+  }
+
   List<WorkoutSet> _buildSetsForPreview(_ExercisePlanDraft draft) {
     final sets = <WorkoutSet>[];
     for (var i = 0; i < draft.sets.length; i++) {
@@ -543,22 +682,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       if (!setDraft.isCompleted) {
         continue;
       }
-      final reps = NumberUtils.toInt(setDraft.effectiveRepsText, fallback: 0);
-      final weight = NumberUtils.toDouble(
-        setDraft.effectiveWeightText,
-        fallback: 0,
+      final set = _buildSetForDraft(
+        draft: draft,
+        setDraft: setDraft,
+        setNumber: i + 1,
       );
-      if (reps <= 0) {
+      if (set.effectiveCalculationReps <= 0) {
         continue;
       }
-      sets.add(
-        WorkoutSet(
-          setNumber: i + 1,
-          weightKg: weight < 0 ? 0 : weight,
-          reps: reps,
-          isCompleted: setDraft.isCompleted,
-        ),
-      );
+      sets.add(set);
     }
     return sets;
   }
@@ -569,10 +701,21 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       if (durationMinutes <= 0) {
         return 0;
       }
+      final activeMinutes = draft.usesIntervalCardio
+          ? NumberUtils.toInt(draft.effectiveActiveDurationText, fallback: 0)
+          : null;
+      final met = ExerciseCatalog.cardioMetFor(
+        definition: draft.definition,
+        intensity: draft.cardioIntensityBasis,
+      );
       return WorkoutCalorieCalculator.estimateCardioCalories(
         exerciseName: draft.exerciseName,
         bodyWeightKg: _profileWeightKg,
         durationMinutes: durationMinutes,
+        definition: draft.definition,
+        intensityBasis: draft.cardioIntensityBasis,
+        met: met,
+        activeDurationMinutes: activeMinutes,
       );
     }
 
@@ -582,6 +725,8 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       bodyWeightKg: _profileWeightKg,
       sets: sets,
       totalSessionDurationMinutes: durationMinutes,
+      definition: draft.definition,
+      strengthProfile: draft.strengthProfile,
     );
   }
 
@@ -668,18 +813,28 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         );
       }
       if (draft.isCardio) {
+        if (draft.usesIntervalCardio) {
+          final activeMinutes = NumberUtils.toInt(
+            draft.effectiveActiveDurationText,
+            fallback: 0,
+          );
+          if (activeMinutes <= 0 || activeMinutes > durationMinutes) {
+            return strings.invalidActiveDurationForExercise(
+              strings.exerciseDisplayName(draft.exerciseName),
+            );
+          }
+        }
         continue;
       }
       for (final setDraft in draft.completedSets) {
-        final reps = NumberUtils.toInt(
-          setDraft.effectiveRepsText,
-          fallback: -1,
-        );
         final weight = NumberUtils.toDouble(
           setDraft.effectiveWeightText,
           fallback: double.nan,
         );
-        if (reps <= 0 || weight.isNaN || weight < 0) {
+        final validMetric = draft.usesDurationSets
+            ? _parseDurationSeconds(setDraft.effectiveRepsText) > 0
+            : NumberUtils.toInt(setDraft.effectiveRepsText, fallback: -1) > 0;
+        if (!validMetric || weight.isNaN || weight < 0) {
           return strings.invalidSetValue(
             strings.exerciseDisplayName(draft.exerciseName),
           );
@@ -703,15 +858,15 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         final completedSets = draft.completedSets;
         for (var i = 0; i < completedSets.length; i++) {
           final setDraft = completedSets[i];
-          sets.add(
-            WorkoutSet(
-              setNumber: i + 1,
-              weightKg: NumberUtils.toDouble(setDraft.effectiveWeightText),
-              reps: NumberUtils.toInt(setDraft.effectiveRepsText),
-              isCompleted: setDraft.isCompleted,
-              completedAt: setDraft.isCompleted ? now : null,
-            ),
+          final set = _buildSetForDraft(
+            draft: draft,
+            setDraft: setDraft,
+            setNumber: i + 1,
+            completedAt: setDraft.isCompleted ? now : null,
           );
+          if (set.effectiveCalculationReps > 0) {
+            sets.add(set);
+          }
         }
       }
 
@@ -719,27 +874,56 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         continue;
       }
 
+      final cardioMet = draft.isCardio
+          ? ExerciseCatalog.cardioMetFor(
+              definition: draft.definition,
+              intensity: draft.cardioIntensityBasis,
+            )
+          : null;
+      final activeMinutes = draft.isCardio && draft.usesIntervalCardio
+          ? NumberUtils.toInt(draft.effectiveActiveDurationText, fallback: 0)
+          : null;
       sessions.add(
         WorkoutSession(
           planId: planId,
           recordName: recordName,
           date: _date,
           bodyPart: draft.bodyPart,
+          secondaryBodyPart: draft.secondaryBodyPart,
           exerciseName: draft.exerciseName,
+          exerciseKey: draft.exerciseKey,
+          exerciseSource: draft.exerciseSource,
           exerciseType: draft.isCardio ? 'cardio' : 'strength',
           durationMinutes: durationMinutes,
-          intensity: 'medium',
+          intensity: draft.isCardio ? draft.cardioIntensityBasis : 'medium',
+          strengthProfile: draft.isCardio ? null : draft.strengthProfile,
+          loadInputMode: draft.isCardio ? null : draft.loadInputMode,
+          repsInputMode: draft.isCardio ? null : draft.repsInputMode,
+          setMetricType: draft.isCardio ? null : draft.setMetricType,
+          cardioMet: cardioMet,
+          cardioIntensityBasis: draft.isCardio
+              ? draft.cardioIntensityBasis
+              : null,
+          cardioActiveMinutes: activeMinutes,
+          bodyWeightKgAtCalculation: _profileWeightKg,
+          exerciseSnapshotJson: draft.snapshotJson(),
           estimatedCalories: draft.isCardio
               ? WorkoutCalorieCalculator.estimateCardioCalories(
                   exerciseName: draft.exerciseName,
                   bodyWeightKg: _profileWeightKg,
                   durationMinutes: durationMinutes,
+                  definition: draft.definition,
+                  intensityBasis: draft.cardioIntensityBasis,
+                  met: cardioMet,
+                  activeDurationMinutes: activeMinutes,
                 )
               : WorkoutCalorieCalculator.estimateStrengthCalories(
                   exerciseName: draft.exerciseName,
                   bodyWeightKg: _profileWeightKg,
                   sets: sets,
                   totalSessionDurationMinutes: durationMinutes,
+                  definition: draft.definition,
+                  strengthProfile: draft.strengthProfile,
                 ),
           notes: notes,
           sets: sets,
@@ -747,6 +931,50 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       );
     }
     return sessions;
+  }
+
+  Future<void> _maybeSaveAdHocExercises(AppStrings strings) async {
+    final adHocDrafts = _selectedDrafts
+        .where((draft) => draft.exerciseSource == ExerciseSource.adHoc)
+        .toList();
+    if (adHocDrafts.isEmpty) {
+      return;
+    }
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(strings.saveCustomExercisesTitle),
+          content: Text(strings.saveCustomExercisesMessage(adHocDrafts.length)),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(strings.notNow),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(strings.save),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldSave != true || !mounted) {
+      return;
+    }
+
+    final repository = context.read<AppServices>().customExerciseRepository;
+    for (final draft in adHocDrafts) {
+      await repository.saveDefinition(
+        draft.definition.copyWith(isBuiltin: false),
+      );
+      draft.exerciseSource = ExerciseSource.custom;
+    }
+    _setExerciseOptions(<ExerciseDefinition>[
+      ...ExerciseCatalog.builtInExercises,
+      ...await repository.getActiveDefinitions(),
+    ]);
   }
 
   Future<void> _save() async {
@@ -767,6 +995,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
         : _createPlanId();
     final recordName = _recordNameController.text.trim();
     final notes = _notesController.text.trim();
+    await _maybeSaveAdHocExercises(strings);
+    if (!mounted) {
+      return;
+    }
     final sessions = _buildSessionsForCommit(
       planId: planId,
       now: now,
@@ -910,23 +1142,34 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: (_saving || _updatingExerciseSelection)
-                            ? null
-                            : _openExerciseLibraryPicker,
-                        icon: _updatingExerciseSelection
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.fitness_center),
-                        label: Text(strings.addExercises),
-                      ),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: (_saving || _updatingExerciseSelection)
+                                ? null
+                                : _openExerciseLibraryPicker,
+                            icon: _updatingExerciseSelection
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.fitness_center),
+                            label: Text(strings.addExercises),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _saving ? null : _openCustomExercise,
+                            icon: const Icon(Icons.add_box_outlined),
+                            label: Text(strings.customExercise),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1026,40 +1269,135 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                TextFormField(
-                                  controller: draft.durationController,
-                                  keyboardType: TextInputType.number,
-                                  selectAllOnFocus: true,
-                                  enabled: !_saving,
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    labelText: strings.durationMinutesLabel,
-                                    hintText: durationHint,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                  onChanged: (_) {
-                                    setState(() {});
-                                    _scheduleDraftSave();
-                                  },
-                                ),
-                                const SizedBox(height: 6),
                                 if (draft.isCardio)
-                                  Text(
-                                    strings.cardioDurationHint,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        _cardioDurationHelperText(strings),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      TextFormField(
+                                        controller: draft.durationController,
+                                        keyboardType: TextInputType.number,
+                                        selectAllOnFocus: true,
+                                        enabled: !_saving,
+                                        decoration: InputDecoration(
+                                          isDense: true,
+                                          labelText:
+                                              strings.durationMinutesLabel,
+                                          hintText: durationHint,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 12,
+                                              ),
+                                        ),
+                                        onChanged: (_) {
+                                          setState(() {});
+                                          _scheduleDraftSave();
+                                        },
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        strings.cardioIntensityQuestion,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      DropdownButtonFormField<String>(
+                                        isExpanded: true,
+                                        initialValue:
+                                            draft.cardioIntensityBasis,
+                                        decoration: InputDecoration(
+                                          labelText:
+                                              strings.cardioIntensityFieldLabel,
+                                        ),
+                                        items: CardioIntensityBasis.values
+                                            .map(
+                                              (
+                                                value,
+                                              ) => DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Text(
+                                                  strings
+                                                      .cardioIntensityOptionLabel(
+                                                        value,
+                                                      ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: _saving
+                                            ? null
+                                            : (value) {
+                                                if (value == null) {
+                                                  return;
+                                                }
+                                                setState(() {
+                                                  draft.cardioIntensityBasis =
+                                                      value;
+                                                });
+                                                _scheduleDraftSave();
+                                              },
+                                      ),
+                                      if (draft.usesIntervalCardio) ...<Widget>[
+                                        const SizedBox(height: 10),
+                                        TextFormField(
+                                          controller:
+                                              draft.activeDurationController,
+                                          keyboardType: TextInputType.number,
+                                          enabled: !_saving,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                strings.activeDurationLabel,
+                                            helperText: strings
+                                                .activeDurationHelperText,
+                                          ),
+                                          onChanged: (_) {
+                                            setState(() {});
+                                            _scheduleDraftSave();
+                                          },
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 if (!draft.isCardio) ...<Widget>[
+                                  TextFormField(
+                                    controller: draft.durationController,
+                                    keyboardType: TextInputType.number,
+                                    selectAllOnFocus: true,
+                                    enabled: !_saving,
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      labelText: strings.durationMinutesLabel,
+                                      hintText: durationHint,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                    ),
+                                    onChanged: (_) {
+                                      setState(() {});
+                                      _scheduleDraftSave();
+                                    },
+                                  ),
+                                  const SizedBox(height: 6),
                                   const SizedBox(height: 10),
-                                  if (draft.isBodyweight)
+                                  if (draft.usesBodyweightLoad)
                                     Padding(
                                       padding: const EdgeInsets.only(bottom: 6),
                                       child: Text(
-                                        draft.isAssistedBodyweight
+                                        draft.usesAssistanceLoad
                                             ? strings.bodyweightAssistLoadHint
                                             : strings.bodyweightAddedLoadHint,
                                         style: Theme.of(
@@ -1086,13 +1424,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                                         Expanded(
                                           flex: 6,
                                           child: Text(
-                                            draft.isAssistedBodyweight
-                                                ? strings
-                                                      .assistWeightKgShortLabel
-                                                : draft.isBodyweight
-                                                ? strings
-                                                      .addedWeightKgShortLabel
-                                                : strings.weightKgShortLabel,
+                                            draft.weightLabel(strings),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: Theme.of(context)
@@ -1107,7 +1439,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                                         Expanded(
                                           flex: 3,
                                           child: Text(
-                                            strings.repsLabel,
+                                            draft.metricLabel(strings),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: Theme.of(context)
@@ -1195,7 +1527,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                                                       controller: setDraft
                                                           .repsController,
                                                       keyboardType:
-                                                          TextInputType.number,
+                                                          draft.usesDurationSets
+                                                          ? TextInputType.text
+                                                          : TextInputType
+                                                                .number,
                                                       hintText: setDraft
                                                           .defaultRepsHint,
                                                       showAsDefaultValue:
@@ -1541,19 +1876,35 @@ class _SetDraft {
 
 class _ExercisePlanDraft {
   _ExercisePlanDraft({
-    required this.bodyPart,
-    required this.exerciseName,
+    required this.definition,
+    required this.exerciseSource,
     required this.sets,
     required String defaultDuration,
+    String? cardioIntensityBasis,
+    String defaultActiveDuration = '',
   }) : _defaultDuration = defaultDuration.trim(),
-       durationController = TextEditingController();
+       _defaultActiveDuration = defaultActiveDuration.trim(),
+       cardioIntensityBasis =
+           cardioIntensityBasis ?? definition.defaultCardioIntensity,
+       durationController = TextEditingController(),
+       activeDurationController = TextEditingController();
+
+  factory _ExercisePlanDraft.fromDefinition({
+    required ExerciseDefinition definition,
+    required String exerciseSource,
+  }) {
+    return _ExercisePlanDraft(
+      definition: definition,
+      exerciseSource: exerciseSource,
+      sets: definition.isCardio ? <_SetDraft>[] : <_SetDraft>[],
+      defaultDuration: '',
+    );
+  }
 
   factory _ExercisePlanDraft.fromHistory({
-    required String bodyPart,
-    required String exerciseName,
+    required ExerciseDefinition definition,
     WorkoutSession? latestSession,
   }) {
-    final isCardio = bodyPart == 'Cardio';
     final historySets = latestSession?.sets ?? const <WorkoutSet>[];
     final defaultDuration =
         latestSession == null || latestSession.durationMinutes <= 0
@@ -1561,40 +1912,81 @@ class _ExercisePlanDraft {
         : latestSession.durationMinutes.toString();
 
     return _ExercisePlanDraft(
-      bodyPart: bodyPart,
-      exerciseName: exerciseName,
-      sets: isCardio
+      definition: definition,
+      exerciseSource: definition.isBuiltin
+          ? ExerciseSource.builtin
+          : ExerciseSource.custom,
+      sets: definition.isCardio
           ? <_SetDraft>[]
           : historySets
                 .map(
                   (set) => _SetDraft(
-                    defaultWeight: _formatWeight(set.weightKg),
-                    defaultReps: set.reps <= 0 ? '' : set.reps.toString(),
+                    defaultWeight: _formatWeight(set.displayWeightKg),
+                    defaultReps: definition.usesDurationSets
+                        ? _formatDurationSeconds(set.inputDurationSeconds)
+                        : set.displayReps <= 0
+                        ? ''
+                        : set.displayReps.toString(),
                   ),
                 )
                 .toList(),
       defaultDuration: defaultDuration,
+      cardioIntensityBasis:
+          latestSession?.cardioIntensityBasis ??
+          definition.defaultCardioIntensity,
+      defaultActiveDuration:
+          latestSession?.cardioActiveMinutes?.toString() ?? '',
     );
   }
 
   factory _ExercisePlanDraft.fromSession(WorkoutSession session) {
-    final draft = _ExercisePlanDraft(
-      bodyPart: session.bodyPart,
+    final fallback = ExerciseCatalog.fallbackForSession(
       exerciseName: session.exerciseName,
-      sets: session.exerciseType == 'cardio'
+      bodyPart: session.bodyPart,
+      exerciseType: session.exerciseType,
+    );
+    final definition = fallback.copyWith(
+      key: session.exerciseKey ?? fallback.key,
+      name: session.exerciseName,
+      bodyPart: session.bodyPart,
+      secondaryBodyPart: session.secondaryBodyPart,
+      strengthProfile: session.strengthProfile ?? fallback.strengthProfile,
+      loadInputMode: session.loadInputMode ?? fallback.loadInputMode,
+      repsInputMode: session.repsInputMode ?? fallback.repsInputMode,
+      setMetricType: session.setMetricType ?? fallback.setMetricType,
+      cardioMetByIntensity: fallback.cardioMetByIntensity,
+      isBuiltin: session.exerciseSource == null
+          ? fallback.isBuiltin
+          : session.exerciseSource == ExerciseSource.builtin,
+    );
+    final draft = _ExercisePlanDraft(
+      definition: definition,
+      exerciseSource:
+          session.exerciseSource ??
+          (definition.isBuiltin
+              ? ExerciseSource.builtin
+              : ExerciseSource.custom),
+      sets: session.exerciseType == ExerciseType.cardio
           ? <_SetDraft>[]
           : session.sets
                 .map(
                   (set) => _SetDraft.existing(
-                    weight: _formatWeight(set.weightKg),
-                    reps: set.reps.toString(),
+                    weight: _formatWeight(set.displayWeightKg),
+                    reps: definition.usesDurationSets
+                        ? _formatDurationSeconds(set.inputDurationSeconds)
+                        : set.displayReps.toString(),
                     isCompleted: set.isCompleted,
                   ),
                 )
                 .toList(),
       defaultDuration: '',
+      cardioIntensityBasis:
+          session.cardioIntensityBasis ?? definition.defaultCardioIntensity,
+      defaultActiveDuration: session.cardioActiveMinutes?.toString() ?? '',
     );
     draft.durationController.text = session.durationMinutes.toString();
+    draft.activeDurationController.text =
+        session.cardioActiveMinutes?.toString() ?? '';
     return draft;
   }
 
@@ -1606,26 +1998,75 @@ class _ExercisePlanDraft {
               .map((entry) => _SetDraft.fromJson(entry.cast<String, dynamic>()))
               .toList()
         : <_SetDraft>[];
+    final exerciseName = (map['exercise_name'] ?? '').toString();
+    final bodyPart = (map['body_part'] ?? '').toString();
+    final exerciseType = (map['exercise_type'] ?? '').toString().trim().isEmpty
+        ? (bodyPart == 'Cardio' ? ExerciseType.cardio : ExerciseType.strength)
+        : map['exercise_type'].toString();
+    final fallback = ExerciseCatalog.fallbackForSession(
+      exerciseName: exerciseName,
+      bodyPart: bodyPart,
+      exerciseType: exerciseType,
+    );
+    final definition = fallback.copyWith(
+      key: (map['exercise_key'] ?? fallback.key).toString(),
+      name: exerciseName,
+      bodyPart: bodyPart,
+      secondaryBodyPart: map['secondary_body_part']?.toString(),
+      strengthProfile: (map['strength_profile'] ?? fallback.strengthProfile)
+          .toString(),
+      loadInputMode: (map['load_input_mode'] ?? fallback.loadInputMode)
+          .toString(),
+      repsInputMode: (map['reps_input_mode'] ?? fallback.repsInputMode)
+          .toString(),
+      setMetricType: (map['set_metric_type'] ?? fallback.setMetricType)
+          .toString(),
+      isBuiltin: map['exercise_source'] == null
+          ? fallback.isBuiltin
+          : map['exercise_source'] == ExerciseSource.builtin,
+    );
     final draft = _ExercisePlanDraft(
-      bodyPart: (map['body_part'] ?? '').toString(),
-      exerciseName: (map['exercise_name'] ?? '').toString(),
+      definition: definition,
+      exerciseSource: (map['exercise_source'] ?? ExerciseSource.builtin)
+          .toString(),
       sets: sets,
       defaultDuration: (map['default_duration'] ?? '').toString(),
+      cardioIntensityBasis:
+          (map['cardio_intensity_basis'] ?? definition.defaultCardioIntensity)
+              .toString(),
+      defaultActiveDuration: (map['default_active_duration'] ?? '').toString(),
     );
     draft.durationController.text = (map['duration_text'] ?? '').toString();
+    draft.activeDurationController.text = (map['active_duration_text'] ?? '')
+        .toString();
     return draft;
   }
 
-  final String bodyPart;
-  final String exerciseName;
+  final ExerciseDefinition definition;
+  String exerciseSource;
   final List<_SetDraft> sets;
   final String _defaultDuration;
+  final String _defaultActiveDuration;
   final TextEditingController durationController;
+  final TextEditingController activeDurationController;
+  String cardioIntensityBasis;
 
-  bool get isCardio => bodyPart == 'Cardio';
-  bool get isBodyweight => AppConstants.isBodyweightExercise(exerciseName);
-  bool get isAssistedBodyweight =>
-      AppConstants.isAssistedBodyweightExercise(exerciseName);
+  String get exerciseKey => definition.key;
+  String get bodyPart => definition.bodyPart;
+  String? get secondaryBodyPart => definition.secondaryBodyPart;
+  String get exerciseName => definition.name;
+  String get exerciseType => definition.exerciseType;
+  String get strengthProfile => definition.strengthProfile;
+  String get loadInputMode => definition.loadInputMode;
+  String get repsInputMode => definition.repsInputMode;
+  String get setMetricType => definition.setMetricType;
+  bool get isCardio => definition.isCardio;
+  bool get usesDurationSets => definition.usesDurationSets;
+  bool get usesBodyweightLoad =>
+      definition.usesBodyweight || definition.usesAssistance;
+  bool get usesAssistanceLoad => definition.usesAssistance;
+  bool get usesIntervalCardio =>
+      cardioIntensityBasis == CardioIntensityBasis.intervalUnder3;
   List<_SetDraft> get completedSets =>
       sets.where((set) => set.isCompleted).toList();
 
@@ -1635,15 +2076,69 @@ class _ExercisePlanDraft {
     return typed.isNotEmpty ? typed : _defaultDuration;
   }
 
+  String get effectiveActiveDurationText {
+    final typed = activeDurationController.text.trim();
+    return typed.isNotEmpty ? typed : _defaultActiveDuration;
+  }
+
+  String weightLabel(AppStrings strings) {
+    switch (loadInputMode) {
+      case ExerciseLoadInputMode.perSideLoad:
+        return strings.perSideWeightKgShortLabel;
+      case ExerciseLoadInputMode.bodyweightAdded:
+        return strings.addedWeightKgShortLabel;
+      case ExerciseLoadInputMode.assistanceLoad:
+        return strings.assistWeightKgShortLabel;
+      case ExerciseLoadInputMode.totalLoad:
+      default:
+        return strings.weightKgShortLabel;
+    }
+  }
+
+  String metricLabel(AppStrings strings) {
+    if (usesDurationSets) {
+      return strings.setDurationLabel;
+    }
+    if (repsInputMode == ExerciseRepsInputMode.perSide) {
+      return strings.perSideRepsLabel;
+    }
+    return strings.repsLabel;
+  }
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'exercise_key': exerciseKey,
+      'exercise_source': exerciseSource,
       'body_part': bodyPart,
+      'secondary_body_part': secondaryBodyPart,
       'exercise_name': exerciseName,
+      'exercise_type': exerciseType,
+      'strength_profile': strengthProfile,
+      'load_input_mode': loadInputMode,
+      'reps_input_mode': repsInputMode,
+      'set_metric_type': setMetricType,
+      'cardio_intensity_basis': cardioIntensityBasis,
       'default_duration': _defaultDuration,
       'duration_text': durationController.text.trim(),
+      'default_active_duration': _defaultActiveDuration,
+      'active_duration_text': activeDurationController.text.trim(),
       'sets': sets.map((set) => set.toJson()).toList(),
     };
   }
+
+  String snapshotJson() => jsonEncode(<String, dynamic>{
+    'exercise_key': exerciseKey,
+    'exercise_source': exerciseSource,
+    'body_part': bodyPart,
+    'secondary_body_part': secondaryBodyPart,
+    'exercise_name': exerciseName,
+    'exercise_type': exerciseType,
+    'strength_profile': strengthProfile,
+    'load_input_mode': loadInputMode,
+    'reps_input_mode': repsInputMode,
+    'set_metric_type': setMetricType,
+    'cardio_intensity_basis': cardioIntensityBasis,
+  });
 
   static String _formatWeight(double value) {
     if (value == value.roundToDouble()) {
@@ -1652,8 +2147,22 @@ class _ExercisePlanDraft {
     return value.toStringAsFixed(1);
   }
 
+  static String _formatDurationSeconds(int? value) {
+    final seconds = value ?? 0;
+    if (seconds <= 0) {
+      return '';
+    }
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (minutes <= 0) {
+      return seconds.toString();
+    }
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   void dispose() {
     durationController.dispose();
+    activeDurationController.dispose();
     for (final set in sets) {
       set.dispose();
     }
@@ -1661,12 +2170,305 @@ class _ExercisePlanDraft {
 }
 
 class _ExerciseOption {
-  const _ExerciseOption({required this.bodyPart, required this.name});
+  const _ExerciseOption({required this.definition});
 
-  final String bodyPart;
-  final String name;
+  final ExerciseDefinition definition;
 
-  String key() => '$bodyPart::$name';
+  String get bodyPart => definition.bodyPart;
+  String get groupKey =>
+      definition.isBuiltin ? definition.bodyPart : _customExerciseGroupKey;
+  bool get isCustom => !definition.isBuiltin;
+  String get name => definition.name;
+
+  String key() => definition.key;
+}
+
+class _CustomExercisePage extends StatefulWidget {
+  const _CustomExercisePage();
+
+  @override
+  State<_CustomExercisePage> createState() => _CustomExercisePageState();
+}
+
+class _CustomExercisePageState extends State<_CustomExercisePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  bool _isCardio = false;
+  String _bodyPart = 'Chest';
+  String? _secondaryBodyPart;
+  String _strengthStructure = ExerciseStructure.compound;
+  String _loadInputMode = ExerciseLoadInputMode.totalLoad;
+  String _repsInputMode = ExerciseRepsInputMode.totalReps;
+  String _setMetricType = ExerciseSetMetricType.reps;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final name = _nameController.text.trim();
+    final key =
+        'custom_${DateTime.now().microsecondsSinceEpoch}_${name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_')}';
+    final bodyPart = _isCardio ? 'Cardio' : _bodyPart;
+    final structure = bodyPart == 'Full Body'
+        ? ExerciseStructure.fullBodyAuto
+        : _strengthStructure;
+    final definition = ExerciseDefinition(
+      key: key,
+      name: name,
+      bodyPart: bodyPart,
+      exerciseType: _isCardio ? ExerciseType.cardio : ExerciseType.strength,
+      secondaryBodyPart: _isCardio ? null : _secondaryBodyPart,
+      strengthStructure: structure,
+      strengthProfile: _isCardio
+          ? ExerciseStrengthProfile.upperBodyCompound
+          : _resolveStrengthProfile(bodyPart, structure),
+      loadInputMode: _isCardio
+          ? ExerciseLoadInputMode.totalLoad
+          : _loadInputMode,
+      repsInputMode: _isCardio
+          ? ExerciseRepsInputMode.totalReps
+          : _repsInputMode,
+      setMetricType: _isCardio ? ExerciseSetMetricType.reps : _setMetricType,
+      defaultCardioIntensity: CardioIntensityBasis.moderate30To60,
+      cardioMetByIntensity: _isCardio
+          ? ExerciseCatalog.genericCardioMetByIntensity
+          : const <String, double>{},
+      isBuiltin: false,
+    );
+    Navigator.of(context).pop(definition);
+  }
+
+  String _resolveStrengthProfile(String bodyPart, String structure) {
+    if (bodyPart == 'Full Body') {
+      return ExerciseStrengthProfile.fullBodyPowerOrHighDensity;
+    }
+    if (structure == ExerciseStructure.isolation) {
+      return ExerciseStrengthProfile.isolation;
+    }
+    if (bodyPart == 'Legs' || bodyPart == 'Glutes') {
+      return ExerciseStrengthProfile.lowerBodyCompound;
+    }
+    return ExerciseStrengthProfile.upperBodyCompound;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    final strengthBodyParts = AppConstants.bodyParts
+        .where((part) => part != 'Cardio')
+        .toList();
+    final secondaryOptions = <String?>[null, ...strengthBodyParts];
+
+    return Scaffold(
+      appBar: AppBar(title: Text(strings.customExercise)),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            SegmentedButton<bool>(
+              segments: <ButtonSegment<bool>>[
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text(strings.strengthExercise),
+                  icon: const Icon(Icons.fitness_center),
+                ),
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text(strings.cardioExercise),
+                  icon: const Icon(Icons.monitor_heart_outlined),
+                ),
+              ],
+              selected: <bool>{_isCardio},
+              onSelectionChanged: (selection) {
+                setState(() => _isCardio = selection.first);
+              },
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: strings.exerciseNameLabel),
+              validator: (value) {
+                if ((value ?? '').trim().isEmpty) {
+                  return strings.exerciseNameRequired;
+                }
+                return null;
+              },
+            ),
+            if (!_isCardio) ...<Widget>[
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _bodyPart,
+                decoration: InputDecoration(labelText: strings.primaryBodyPart),
+                items: strengthBodyParts
+                    .map(
+                      (part) => DropdownMenuItem<String>(
+                        value: part,
+                        child: Text(strings.bodyPartLabel(part)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _bodyPart = value;
+                    if (_secondaryBodyPart == value) {
+                      _secondaryBodyPart = null;
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String?>(
+                initialValue: _secondaryBodyPart,
+                decoration: InputDecoration(
+                  labelText: strings.secondaryBodyPartOptional,
+                ),
+                items: secondaryOptions
+                    .where((part) => part == null || part != _bodyPart)
+                    .map(
+                      (part) => DropdownMenuItem<String?>(
+                        value: part,
+                        child: Text(
+                          part == null
+                              ? strings.noneOption
+                              : strings.bodyPartLabel(part),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() => _secondaryBodyPart = value);
+                },
+              ),
+              if (_bodyPart != 'Full Body') ...<Widget>[
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: _strengthStructure,
+                  decoration: InputDecoration(
+                    labelText: strings.exerciseStructureLabel,
+                  ),
+                  items:
+                      <String>[
+                            ExerciseStructure.compound,
+                            ExerciseStructure.isolation,
+                          ]
+                          .map(
+                            (value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                strings.exerciseStructureLabelFor(value),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() => _strengthStructure = value);
+                  },
+                ),
+              ],
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _loadInputMode,
+                decoration: InputDecoration(labelText: strings.loadInputMode),
+                items:
+                    <String>[
+                          ExerciseLoadInputMode.totalLoad,
+                          ExerciseLoadInputMode.perSideLoad,
+                          ExerciseLoadInputMode.bodyweightAdded,
+                          ExerciseLoadInputMode.assistanceLoad,
+                        ]
+                        .map(
+                          (value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(strings.loadInputModeLabel(value)),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() => _loadInputMode = value);
+                },
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _setMetricType,
+                decoration: InputDecoration(labelText: strings.setEntryMode),
+                items:
+                    <String>[
+                          ExerciseSetMetricType.reps,
+                          ExerciseSetMetricType.durationSeconds,
+                        ]
+                        .map(
+                          (value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(strings.setMetricTypeLabel(value)),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() => _setMetricType = value);
+                },
+              ),
+              if (_setMetricType == ExerciseSetMetricType.reps) ...<Widget>[
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: _repsInputMode,
+                  decoration: InputDecoration(labelText: strings.repsInputMode),
+                  items:
+                      <String>[
+                            ExerciseRepsInputMode.totalReps,
+                            ExerciseRepsInputMode.perSide,
+                          ]
+                          .map(
+                            (value) => DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(strings.repsInputModeLabel(value)),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() => _repsInputMode = value);
+                  },
+                ),
+              ],
+            ] else ...<Widget>[
+              const SizedBox(height: 14),
+              Text(
+                strings.customCardioDefinitionHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _submit,
+              icon: const Icon(Icons.check),
+              label: Text(strings.addExercise),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ExerciseLibraryPickerPage extends StatefulWidget {
@@ -1687,11 +2489,14 @@ class _ExerciseLibraryPickerPageState
     extends State<_ExerciseLibraryPickerPage> {
   final _searchController = TextEditingController();
   String? _selectedBodyPartFilter;
+  String? _openCustomDeleteKey;
+  late List<_ExerciseOption> _options;
   late final List<String> _selectedKeysInOrder;
 
   @override
   void initState() {
     super.initState();
+    _options = List<_ExerciseOption>.from(widget.options);
     _selectedKeysInOrder = List<String>.from(widget.initiallySelectedKeys);
   }
 
@@ -1703,10 +2508,10 @@ class _ExerciseLibraryPickerPageState
 
   List<_ExerciseOption> _filteredOptions(AppStrings strings) {
     final queryLower = _searchController.text.trim().toLowerCase();
-    return widget.options.where((option) {
+    return _options.where((option) {
       final bodyPartMatch =
           _selectedBodyPartFilter == null ||
-          option.bodyPart == _selectedBodyPartFilter;
+          option.groupKey == _selectedBodyPartFilter;
       if (!bodyPartMatch) {
         return false;
       }
@@ -1718,14 +2523,27 @@ class _ExerciseLibraryPickerPageState
         strings.exerciseDisplayName(option.name).toLowerCase(),
         option.bodyPart.toLowerCase(),
         strings.bodyPartLabel(option.bodyPart).toLowerCase(),
+        option.isCustom ? _customExerciseGroupLabel(strings).toLowerCase() : '',
       };
       return candidates.any((value) => value.contains(queryLower));
     }).toList();
   }
 
+  List<_ExerciseOption> get _customOptions =>
+      _options.where((option) => option.isCustom).toList();
+
+  List<String> _filterKeys() {
+    final keys = <String>[
+      ...AppConstants.bodyParts,
+      if (_customOptions.isNotEmpty) _customExerciseGroupKey,
+    ];
+    return keys;
+  }
+
   void _toggleOption(_ExerciseOption option) {
     final key = option.key();
     setState(() {
+      _openCustomDeleteKey = null;
       if (_selectedKeysInOrder.contains(key)) {
         _selectedKeysInOrder.remove(key);
       } else {
@@ -1736,6 +2554,191 @@ class _ExerciseLibraryPickerPageState
 
   void _submitSelection() {
     Navigator.of(context).pop(List<String>.from(_selectedKeysInOrder));
+  }
+
+  Future<bool> _deleteCustomOption(_ExerciseOption option) async {
+    final strings = context.stringsRead;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(_deleteCustomExerciseTitle(strings)),
+          content: Text(
+            _deleteCustomExerciseMessage(
+              strings,
+              strings.exerciseDisplayName(option.name),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(strings.notNow),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(strings.delete),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return false;
+    }
+
+    try {
+      await context.read<AppServices>().customExerciseRepository.hideDefinition(
+        option.key(),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return false;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_customExerciseDeleteFailedLabel(strings))),
+      );
+      return false;
+    }
+    if (!mounted) {
+      return false;
+    }
+
+    setState(() {
+      _openCustomDeleteKey = null;
+      _options.removeWhere((candidate) => candidate.key() == option.key());
+      _selectedKeysInOrder.remove(option.key());
+      if (_selectedBodyPartFilter == _customExerciseGroupKey &&
+          _customOptions.isEmpty) {
+        _selectedBodyPartFilter = null;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_customExerciseDeletedLabel(strings))),
+    );
+    return true;
+  }
+
+  Widget _buildExerciseOptionTile(
+    BuildContext context,
+    _ExerciseOption option,
+    bool selected,
+    int selectedIndex,
+  ) {
+    final strings = context.strings;
+    final color = ExerciseVisuals.colorForBodyPart(option.bodyPart, context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: selected
+            ? color.withValues(alpha: 0.16)
+            : Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.36),
+      ),
+      child: Row(
+        children: <Widget>[
+          ExerciseThumbnail(
+            bodyPart: option.bodyPart,
+            exerciseName: option.name,
+            color: color,
+            size: 54,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  strings.exerciseDisplayName(option.name),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  option.isCustom
+                      ? _customExerciseSummary(option, strings)
+                      : strings.bodyPartLabel(option.bodyPart),
+                ),
+              ],
+            ),
+          ),
+          selected
+              ? Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                  ),
+                  child: Text(
+                    '${selectedIndex + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                )
+              : const Icon(Icons.radio_button_unchecked),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomDeleteAction(AppStrings strings, VoidCallback onDelete) {
+    return SizedBox(
+      width: _CustomExerciseSwipeDeleteTile.deleteActionWidth,
+      child: Material(
+        color: const Color(0xFFCE3D3D),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onDelete,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                const SizedBox(height: 4),
+                Text(
+                  strings.delete,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomSwipeTile(
+    _ExerciseOption option,
+    Widget child,
+    VoidCallback onTap,
+  ) {
+    final key = option.key();
+    return _CustomExerciseSwipeDeleteTile(
+      key: ValueKey<String>('custom-delete-$key'),
+      open: _openCustomDeleteKey == key,
+      deleteAction: _buildCustomDeleteAction(context.strings, () {
+        _deleteCustomOption(option);
+      }),
+      onOpenChanged: (open) {
+        setState(() {
+          _openCustomDeleteKey = open ? key : null;
+        });
+      },
+      onTap: onTap,
+      child: child,
+    );
   }
 
   @override
@@ -1775,12 +2778,15 @@ class _ExerciseLibraryPickerPageState
                           },
                         ),
                       ),
-                      ...AppConstants.bodyParts.map((bodyPart) {
+                      ..._filterKeys().map((bodyPart) {
+                        final label = bodyPart == _customExerciseGroupKey
+                            ? _customExerciseGroupLabel(strings)
+                            : strings.bodyPartLabel(bodyPart);
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
                             selected: _selectedBodyPartFilter == bodyPart,
-                            label: Text(strings.bodyPartLabel(bodyPart)),
+                            label: Text(label),
                             onSelected: (_) {
                               setState(
                                 () => _selectedBodyPartFilter = bodyPart,
@@ -1796,84 +2802,53 @@ class _ExerciseLibraryPickerPageState
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              itemCount: filtered.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final option = filtered[index];
-                final key = option.key();
-                final selectedIndex = _selectedKeysInOrder.indexOf(key);
-                final selected = selectedIndex >= 0;
-                final color = ExerciseVisuals.colorForBodyPart(
-                  option.bodyPart,
-                  context,
-                );
-                return InkWell(
-                  onTap: () => _toggleOption(option),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
+            child:
+                filtered.isEmpty &&
+                    _selectedBodyPartFilter == _customExerciseGroupKey &&
+                    _searchController.text.trim().isEmpty
+                ? Center(
+                    child: Text(
+                      _noSavedCustomExercisesLabel(strings),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      color: selected
-                          ? color.withValues(alpha: 0.16)
-                          : Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest
-                                .withValues(alpha: 0.36),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        ExerciseThumbnail(
-                          bodyPart: option.bodyPart,
-                          exerciseName: option.name,
-                          color: color,
-                          size: 54,
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final option = filtered[index];
+                      final key = option.key();
+                      final selectedIndex = _selectedKeysInOrder.indexOf(key);
+                      final selected = selectedIndex >= 0;
+                      final tile = InkWell(
+                        onTap: () => _toggleOption(option),
+                        borderRadius: BorderRadius.circular(14),
+                        child: _buildExerciseOptionTile(
+                          context,
+                          option,
+                          selected,
+                          selectedIndex,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                strings.exerciseDisplayName(option.name),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(strings.bodyPartLabel(option.bodyPart)),
-                            ],
-                          ),
+                      );
+                      final canDeleteInline =
+                          _selectedBodyPartFilter == _customExerciseGroupKey &&
+                          option.isCustom;
+                      if (!canDeleteInline) {
+                        return tile;
+                      }
+                      return _buildCustomSwipeTile(
+                        option,
+                        _buildExerciseOptionTile(
+                          context,
+                          option,
+                          selected,
+                          selectedIndex,
                         ),
-                        selected
-                            ? Container(
-                                width: 28,
-                                height: 28,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: color,
-                                ),
-                                child: Text(
-                                  '${selectedIndex + 1}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              )
-                            : const Icon(Icons.radio_button_unchecked),
-                      ],
-                    ),
+                        () => _toggleOption(option),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -1890,4 +2865,125 @@ class _ExerciseLibraryPickerPageState
       ),
     );
   }
+}
+
+class _CustomExerciseSwipeDeleteTile extends StatefulWidget {
+  const _CustomExerciseSwipeDeleteTile({
+    super.key,
+    required this.child,
+    required this.deleteAction,
+    required this.open,
+    required this.onOpenChanged,
+    required this.onTap,
+  });
+
+  static const double deleteActionWidth = 88;
+
+  final Widget child;
+  final Widget deleteAction;
+  final bool open;
+  final ValueChanged<bool> onOpenChanged;
+  final VoidCallback onTap;
+
+  @override
+  State<_CustomExerciseSwipeDeleteTile> createState() =>
+      _CustomExerciseSwipeDeleteTileState();
+}
+
+class _CustomExerciseSwipeDeleteTileState
+    extends State<_CustomExerciseSwipeDeleteTile> {
+  double _dragExtent = 0;
+  bool _dragging = false;
+
+  @override
+  void didUpdateWidget(_CustomExerciseSwipeDeleteTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.open && _dragExtent != 0) {
+      _dragExtent = 0;
+    } else if (widget.open && _dragExtent == 0) {
+      _dragExtent = _CustomExerciseSwipeDeleteTile.deleteActionWidth;
+    }
+  }
+
+  void _setOpen(bool open) {
+    setState(() {
+      _dragging = false;
+      _dragExtent = open ? _CustomExerciseSwipeDeleteTile.deleteActionWidth : 0;
+    });
+    widget.onOpenChanged(open);
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    final nextExtent = (_dragExtent - details.delta.dx)
+        .clamp(0, _CustomExerciseSwipeDeleteTile.deleteActionWidth)
+        .toDouble();
+    setState(() {
+      _dragging = true;
+      _dragExtent = nextExtent;
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    final shouldOpen =
+        _dragExtent >= _CustomExerciseSwipeDeleteTile.deleteActionWidth * 0.35;
+    _setOpen(shouldOpen);
+  }
+
+  void _handleTap() {
+    if (_dragExtent > 0 || widget.open) {
+      _setOpen(false);
+      return;
+    }
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = _dragging
+        ? Duration.zero
+        : const Duration(milliseconds: 160);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: <Widget>[
+          const SizedBox(height: 70),
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: _CustomExerciseSwipeDeleteTile.deleteActionWidth,
+            child: widget.deleteAction,
+          ),
+          AnimatedPositioned(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            top: 0,
+            left: -_dragExtent,
+            right: _dragExtent,
+            bottom: 0,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _handleTap,
+              onHorizontalDragUpdate: _handleDragUpdate,
+              onHorizontalDragEnd: _handleDragEnd,
+              onHorizontalDragCancel: () => _setOpen(widget.open),
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: widget.child,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _customExerciseSummary(_ExerciseOption option, AppStrings strings) {
+  if (option.definition.exerciseType == ExerciseType.cardio) {
+    return strings.isChinese ? '自定义有氧' : 'Custom cardio';
+  }
+  final bodyPart = strings.bodyPartLabel(option.bodyPart);
+  return strings.isChinese ? '自定义 · $bodyPart' : 'Custom · $bodyPart';
 }

@@ -1,4 +1,4 @@
-# 数据库设计
+﻿# 数据库设计
 
 ## 存储概览
 
@@ -6,14 +6,14 @@ FitLog Local 将业务数据保存在本地。
 
 | 存储 | 用途 | 远程同步 |
 | --- | --- | --- |
-| SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
+| SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、custom exercises、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
 | SharedPreferences | UI 语言偏好，目前是 `language_code`。 | No |
 | Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件。 | No |
 | In-memory providers | App services、refresh version、selected date、language state。 | No |
 
 数据库名：`fitlog_local.db`。
 
-当前 SQLite schema 版本：`10`。
+当前 SQLite schema 版本：`11`。
 
 通过 `PRAGMA foreign_keys = ON` 启用外键。
 
@@ -33,6 +33,7 @@ FitLog Local 将业务数据保存在本地。
 | 8 | 添加 `workout_sessions.record_name`。 |
 | 9 | 添加本地 UI 昵称字段 `user_profile.nickname`。 |
 | 10 | 添加 `workout_record_drafts`，用于保存一条活动中的未保存训练编辑状态。 |
+| 11 | 添加可复用 `custom_exercises`、训练 session 动作快照、有氧强度元数据，以及训练组的原始输入值/计算值字段。 |
 
 兼容规则：
 
@@ -127,10 +128,22 @@ FitLog Local 将业务数据保存在本地。
 | `record_name` | TEXT | 面向用户的训练记录名称，在同组内重复保存。 |
 | `date` | TEXT NOT NULL | `yyyy-MM-dd`。 |
 | `body_part` | TEXT NOT NULL | Body-part bucket。 |
+| `secondary_body_part` | TEXT | 力量动作 metadata 中可选的副锻炼部位。 |
 | `exercise_name` | TEXT NOT NULL | 动作展示名。 |
+| `exercise_key` | TEXT | 保存当时的内置、自定义或临时动作定义 key。 |
+| `exercise_source` | TEXT | `builtin`、`custom` 或 `ad_hoc`。 |
 | `exercise_type` | TEXT NOT NULL | `strength` 或 `cardio`。 |
 | `duration_minutes` | INTEGER NOT NULL | 用户记录时长。 |
-| `intensity` | TEXT NOT NULL | `low`、`medium`、`high`。 |
+| `intensity` | TEXT NOT NULL | 兼容旧记录的强度字段。 |
+| `strength_profile` | TEXT | 本次保存使用的内部力量消耗 profile。 |
+| `load_input_mode` | TEXT | 保存当时的重量录入口径，例如 `total_load`、`per_side_load`、`bodyweight_added` 或 `assistance_load`。 |
+| `reps_input_mode` | TEXT | 保存当时的次数录入口径，例如 `total_reps` 或 `per_side_reps`。 |
+| `set_metric_type` | TEXT | 保存当时的力量组记录指标，目前为 `reps` 或 `duration_seconds`。 |
+| `cardio_met` | REAL | 本次有氧计算使用的 MET。 |
+| `cardio_intensity_basis` | TEXT | 本次有氧强度依据，例如 `moderate_30_to_60` 或 `interval_under_3`。 |
+| `cardio_active_minutes` | INTEGER | 间歇类有氧中实际运动分钟数，可小于经过时长。 |
+| `body_weight_kg_at_calculation` | REAL | 本次运动消耗计算使用的体重。 |
+| `exercise_snapshot_json` | TEXT | 保存当时可解释/复盘动作定义所需 metadata 的 JSON 快照。 |
 | `estimated_calories` | REAL NOT NULL | 本地确定性估算结果。 |
 | `notes` | TEXT | 可选备注。 |
 | `created_at` | TEXT NOT NULL | ISO datetime。 |
@@ -145,10 +158,48 @@ FitLog Local 将业务数据保存在本地。
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | set id。 |
 | `workout_session_id` | INTEGER NOT NULL | FK 到 `workout_sessions.id`。 |
 | `set_number` | INTEGER NOT NULL | 保存后的组号。 |
-| `weight_kg` | REAL NOT NULL | 负重。自重动作时表示额外加重。 |
-| `reps` | INTEGER NOT NULL | 次数。 |
+| `weight_kg` | REAL NOT NULL | 兼容用计算负重；新记录中与计算器使用的标准化负重一致。 |
+| `reps` | INTEGER NOT NULL | 兼容用计算次数；按时长记录的力量组会保存标准化后的计算次数。 |
+| `input_weight_kg` | REAL | 用户原始输入的重量，尚未按每侧、自重或辅助重量解释。 |
+| `input_reps` | INTEGER | 用户原始输入的次数，尚未按每侧次数解释。 |
+| `input_duration_seconds` | INTEGER | 平板支撑等按时长记录的力量组的单组时长。 |
+| `calculation_load_kg` | REAL | 力量消耗和训练量计算实际使用的标准化负重。 |
+| `calculation_reps` | INTEGER | 力量消耗和训练量计算实际使用的标准化次数。 |
+| `load_input_mode` | TEXT | 本组保存的重量录入口径副本。 |
+| `reps_input_mode` | TEXT | 本组保存的次数录入口径副本。 |
+| `set_metric_type` | TEXT | 本组保存的组记录指标副本。 |
 | `is_completed` | INTEGER NOT NULL | bool 以 0/1 存储。 |
 | `completed_at` | TEXT | 完成时间，可为空。 |
+
+当前保存行为：
+
+- 只持久化已完成的力量组。
+- 未勾选的组会在插入/更新前丢弃。
+- 剩余组会重新编号为 `1..n`。
+- `is_completed` 继续保存用于兼容，但已保存的力量组预期都是已完成组。
+- 新记录同时保存用户看到的原始输入值和算法使用的标准化计算值，因此每侧哑铃/绳索重量、每侧次数、辅助自重、自重加重和按时长记录的力量组在保存后仍然可解释。
+
+### `custom_exercises`
+
+用途：用户创建的本地可复用动作定义。隐藏行会保留用于历史记录兼容，但不进入当前可选动作库。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | custom exercise row id。 |
+| `exercise_key` | TEXT NOT NULL UNIQUE | 保存训练记录时使用的稳定本地 key。 |
+| `name` | TEXT NOT NULL | 用户看到的自定义动作名。 |
+| `exercise_type` | TEXT NOT NULL | `strength` 或 `cardio`。 |
+| `body_part` | TEXT NOT NULL | 力量动作的主要部位；自定义有氧固定为 `Cardio`。 |
+| `secondary_body_part` | TEXT | 可选副锻炼部位。 |
+| `strength_structure` | TEXT | 面向用户的力量动作结构，会映射到内部 profile，例如 `compound`、`isolation` 或 `full_body_auto`。 |
+| `strength_profile` | TEXT | 训练记录使用的内部力量消耗 profile。 |
+| `load_input_mode` | TEXT | 默认力量重量录入口径。 |
+| `reps_input_mode` | TEXT | 默认力量次数录入口径。 |
+| `set_metric_type` | TEXT | 默认力量组记录指标。 |
+| `default_cardio_intensity` | TEXT | 自定义有氧的默认强度依据。 |
+| `is_hidden` | INTEGER NOT NULL DEFAULT 0 | bool 以 0/1 存储。 |
+| `created_at` | TEXT NOT NULL | ISO datetime。 |
+| `updated_at` | TEXT NOT NULL | ISO datetime。 |
 
 ### `workout_record_drafts`
 
@@ -267,6 +318,7 @@ Workout：
 
 ```text
 AddWorkoutPage
+-> built-in/custom/ad-hoc exercise definition
 -> workout draft snapshot
 -> workout_record_drafts
 -> explicit save validation
@@ -282,12 +334,13 @@ Export：
 ProfilePage export action
 -> XlsxExportService or CsvExportService
 -> ExportTableBuilder
+-> CustomExerciseRepository
 -> local .xlsx or .zip file
 ```
 
 ## 导出覆盖
 
-导出包含 food records、food items、workout records、workout sets、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname` 和 `record_name`。
+导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、`record_name`、保存时的动作 metadata、有氧强度 metadata，以及 workout set 的原始输入值和标准化计算值。
 
 ## 未实现
 
@@ -304,6 +357,7 @@ ProfilePage export action
 ## 代码引用
 
 - Database：`lib/data/db/app_database.dart`
-- Repositories：`lib/data/repositories/food_repository.dart`、`workout_repository.dart`、`profile_repository.dart`
+- Repositories：`lib/data/repositories/food_repository.dart`、`workout_repository.dart`、`profile_repository.dart`、`custom_exercise_repository.dart`
 - Models：`lib/domain/models/*`
 - Export：`lib/export/*`
+

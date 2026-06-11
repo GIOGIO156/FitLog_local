@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/exercise_definition.dart';
 import '../../core/constants/exercise_visuals.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -56,16 +57,67 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     final isAssistedBodyweightExercise =
         AppConstants.isAssistedBodyweightExercise(session.exerciseName);
 
-    if (isAssistedBodyweightExercise) {
+    final loadMode = session.loadInputMode;
+    if (loadMode == ExerciseLoadInputMode.assistanceLoad ||
+        isAssistedBodyweightExercise) {
       return '${weightKg.toStringAsFixed(1)} kg';
     }
-    if (isBodyweightExercise && weightKg <= 0) {
+    if ((loadMode == ExerciseLoadInputMode.bodyweightAdded ||
+            isBodyweightExercise) &&
+        weightKg <= 0) {
       return strings.isChinese ? '自重' : 'Bodyweight';
     }
     return '${weightKg.toStringAsFixed(1)} kg';
   }
 
-  String _repsValueText(int reps) => '× $reps';
+  String _metricValueText(WorkoutSession session, int reps, int? seconds) {
+    if (session.setMetricType == ExerciseSetMetricType.durationSeconds) {
+      final value = seconds ?? 0;
+      if (value <= 0) {
+        return '--';
+      }
+      final minutes = value ~/ 60;
+      final remainingSeconds = value % 60;
+      return minutes <= 0
+          ? '${value}s'
+          : '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
+    return '× $reps';
+  }
+
+  String _weightHeader(WorkoutSession session) {
+    final strings = context.strings;
+    switch (session.loadInputMode) {
+      case ExerciseLoadInputMode.perSideLoad:
+        return strings.perSideWeightKgShortLabel;
+      case ExerciseLoadInputMode.assistanceLoad:
+        return strings.assistWeightKgShortLabel;
+      case ExerciseLoadInputMode.bodyweightAdded:
+        return strings.addedWeightKgShortLabel;
+      default:
+        final isBodyweightExercise = AppConstants.isBodyweightExercise(
+          session.exerciseName,
+        );
+        final isAssistedBodyweightExercise =
+            AppConstants.isAssistedBodyweightExercise(session.exerciseName);
+        return isAssistedBodyweightExercise
+            ? strings.assistWeightKgShortLabel
+            : isBodyweightExercise
+            ? strings.addedWeightKgShortLabel
+            : strings.weightKgShortLabel;
+    }
+  }
+
+  String _metricHeader(WorkoutSession session) {
+    final strings = context.strings;
+    if (session.setMetricType == ExerciseSetMetricType.durationSeconds) {
+      return strings.setDurationLabel;
+    }
+    if (session.repsInputMode == ExerciseRepsInputMode.perSide) {
+      return strings.perSideRepsLabel;
+    }
+    return strings.repsLabel;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,11 +135,6 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
       );
     }
 
-    final isBodyweightExercise = AppConstants.isBodyweightExercise(
-      session.exerciseName,
-    );
-    final isAssistedBodyweightExercise =
-        AppConstants.isAssistedBodyweightExercise(session.exerciseName);
     final color = ExerciseVisuals.colorForBodyPart(session.bodyPart, context);
     return Scaffold(
       appBar: AppBar(title: Text(strings.workoutLogTitle)),
@@ -128,6 +175,11 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                 Text(
                   '${strings.estimatedCaloriesLabel}: ${session.estimatedCalories.toStringAsFixed(0)} kcal',
                 ),
+                if (session.exerciseType == ExerciseType.cardio &&
+                    (session.cardioIntensityBasis ?? '').isNotEmpty)
+                  Text(
+                    '${strings.cardioIntensityFieldLabel}: ${strings.cardioIntensityOptionLabel(session.cardioIntensityBasis!)}',
+                  ),
                 if (session.notes.trim().isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
@@ -166,11 +218,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 18),
                             child: Text(
-                              isAssistedBodyweightExercise
-                                  ? strings.assistWeightKgShortLabel
-                                  : isBodyweightExercise
-                                  ? strings.addedWeightKgShortLabel
-                                  : strings.weightKgShortLabel,
+                              _weightHeader(session),
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
@@ -181,7 +229,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 18),
                             child: Text(
-                              strings.repsLabel,
+                              _metricHeader(session),
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
@@ -224,7 +272,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                               child: Text(
                                 _weightValueText(
                                   session: session,
-                                  weightKg: set.weightKg,
+                                  weightKg: set.displayWeightKg,
                                 ),
                                 style: const TextStyle(
                                   fontSize: 17,
@@ -238,7 +286,11 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 18),
                               child: Text(
-                                _repsValueText(set.reps),
+                                _metricValueText(
+                                  session,
+                                  set.displayReps,
+                                  set.inputDurationSeconds,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w700,

@@ -1,5 +1,70 @@
 # Changelog
 
+## 2026-06-12 Inline Custom Deletion And Navigation Font
+
+### Changed
+
+- Replaced the separate custom-exercise management page and global library manage icon with inline swipe-to-delete for saved reusable custom exercises inside the dedicated custom picker group.
+- Reworked the custom-exercise swipe delete row from Flutter `Dismissible` to a fixed-width short-swipe action button so tapping the revealed delete action reliably opens confirmation.
+- Kept custom exercise deletion as a soft-hide flow with confirmation so saved workout history and exports remain explainable.
+- Explicitly applied the selected `NotoSansSC` font family to bottom navigation labels and standard bottom-navigation label styles to avoid fallback fonts in the navigation bar.
+- Updated bilingual product and app-guide docs plus the README workout description to reflect inline custom deletion instead of a dedicated management screen.
+
+### Fixed
+
+- Fixed the custom-exercise swipe row so inactive rows keep an opaque foreground, the delete action is not visible through the exercise tile, and tapping the revealed action uses a non-listening localization read before opening confirmation.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+- `flutter build apk --debug --split-per-abi`: success.
+
+## 2026-06-12 Cardio Layout And Custom Exercise Management
+
+### Changed
+
+- Reordered cardio record-entry copy so the duration explanation sits above the duration field and the intensity question sits above the intensity picker, removing the stale extra duration sentence and reducing small-screen overflow risk.
+- Added `isExpanded` cardio intensity dropdown handling plus ellipsized option labels to keep the closed picker stable on narrow mobile layouts.
+- Moved reusable custom exercises into a dedicated picker group instead of mixing them into the built-in chest/back/legs/body-part filters.
+- Added a dedicated custom-exercise management flow that hides saved custom exercises with confirmation instead of placing delete directly on ordinary picker rows.
+- Added `is_hidden` export coverage for custom exercises.
+
+### Added
+
+- Added repository coverage for hiding a saved custom exercise while preserving it in the full local definition list.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
+## 2026-06-11 Custom Exercises And Workout Input Modes
+
+### Added
+
+- Added reusable local custom exercises with separate strength and cardio creation flows, plus a save-time prompt for temporary ad-hoc exercises.
+- Added schema version `11` with `custom_exercises`, workout-session exercise snapshots, cardio-intensity metadata, and workout-set raw-input versus normalized-calculation fields.
+- Added workout calorie coverage for per-side load, per-side reps, duration-based strength sets, and interval-style cardio active minutes.
+- Added export coverage for custom exercises, saved exercise metadata, cardio-intensity basis, active cardio minutes, and workout-set input/calculation fields.
+
+### Changed
+
+- Moved the built-in workout library onto exercise-definition metadata so built-in and custom strength exercises share load/reps/set metric handling.
+- Updated cardio entry to use a maintainable-duration intensity basis and require active movement time for the under-3-minute interval option.
+- Renamed the visible overhead press entry to Barbell Overhead Press / 杠铃推举 while preserving the existing overhead-press icon and legacy record compatibility.
+- Renamed Rear Delt Fly to Dumbbell Rear Delt Fly / 哑铃反向飞鸟, removed Chest Fly and Hammer Strength High Row from the active picker, and mapped legacy Hammer Strength High Row display to Iso-lateral High Row / 分动式高位划船 in Chinese.
+- Updated bilingual README and design docs for custom exercises, cardio intensity, strength input modes, schema version `11`, export coverage, and the no-app-internal-AI boundary.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+
 ## 2026-06-11 Shared Training-frequency Diet Setup
 
 ### Changed

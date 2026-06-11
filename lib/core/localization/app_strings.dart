@@ -575,9 +575,49 @@ class AppStrings {
   String get setsPlan => _t('Sets', '组数');
   String setLabel(int index) => _t('Set #$index', '第 $index 组');
   String get weightKgShortLabel => _t('Weight (kg)', '重量 (kg)');
+  String get perSideWeightKgShortLabel => _t('Per-side (kg)', '每侧重量 (kg)');
   String get addedWeightKgShortLabel => _t('Added (kg)', '加重 (kg)');
   String get assistWeightKgShortLabel => _t('Assist (kg)', '辅助 (kg)');
   String get repsLabel => _t('Reps', '次数');
+  String get perSideRepsLabel => _t('Per-side reps', '每侧次数');
+  String get setDurationLabel => _t('Set duration', '单组时长');
+  String get activeDurationLabel =>
+      _t('Active duration (minutes)', '实际运动时长 (分钟)');
+  String get activeDurationHelperText => _t(
+    'For interval work, enter active movement time only, excluding rest.',
+    '间歇训练只填写实际运动时间，不包含休息。',
+  );
+  String get cardioIntensityFieldLabel => _t('Session intensity', '本次强度');
+  String get cardioIntensityQuestion => _t(
+    'At this pace, about how long could you keep going continuously?',
+    '保持这次的速度 / 节奏，你大概能连续维持多久？',
+  );
+  String get customExercise => _t('Custom exercise', '自定义动作');
+  String get addExercise => _t('Add exercise', '添加动作');
+  String get strengthExercise => _t('Strength', '力量');
+  String get cardioExercise => _t('Cardio', '有氧');
+  String get exerciseNameLabel => _t('Exercise name', '动作名');
+  String get exerciseNameRequired =>
+      _t('Please enter an exercise name.', '请输入动作名。');
+  String get primaryBodyPart => _t('Primary body part', '主要部位');
+  String get secondaryBodyPartOptional =>
+      _t('Secondary body part (optional)', '副部位（可选）');
+  String get noneOption => _t('None', '无');
+  String get exerciseStructureLabel => _t('Exercise structure', '动作结构');
+  String get loadInputMode => _t('Weight entry', '重量填写方式');
+  String get repsInputMode => _t('Rep entry', '次数填写方式');
+  String get setEntryMode => _t('Set entry', '组内填写方式');
+  String get customCardioDefinitionHint => _t(
+    'Cardio custom exercises use duration and session intensity. Weight, reps, sets, and body-part fields are not used.',
+    '自定义有氧只使用时长和本次强度；不填写重量、次数、组数和部位。',
+  );
+  String get saveCustomExercisesTitle =>
+      _t('Save custom exercises?', '保存自定义动作？');
+  String saveCustomExercisesMessage(int count) => _t(
+    'Save $count temporary custom exercise${count == 1 ? '' : 's'} to the reusable library?',
+    '是否将 $count 个临时自定义动作保存到可复用动作库？',
+  );
+  String get notNow => _t('Not now', '暂不');
   String get addSet => _t('Add Set', '新增组');
   String get removeExercise => _t('Remove exercise', '移除动作');
   String get removeSet => _t('Remove set', '移除组');
@@ -645,6 +685,10 @@ class AppStrings {
   String invalidSetValue(String exerciseName) => _t(
     'Please check set values for $exerciseName.',
     '请检查“$exerciseName”的组数参数。',
+  );
+  String invalidActiveDurationForExercise(String exerciseName) => _t(
+    'Please set active duration for $exerciseName, and keep it within total duration.',
+    '请为“$exerciseName”填写实际运动时长，且不要超过总时长。',
   );
   String noSetsForExercise(String exerciseName) => _t(
     'Please add at least one set for $exerciseName.',
@@ -988,7 +1032,7 @@ class AppStrings {
       'Seal Barbell Row': '海豹杠铃划船',
       'Chest-supported T-Bar Row': '俯卧 T-bar 划船',
       'Iso-lateral High Row': '分动式高位划船',
-      'Hammer Strength High Row': '悍马机大剪刀',
+      'Hammer Strength High Row': '分动式高位划船',
       'Barbell High Pull': '杠铃上斜提拉',
       'Barbell Pullover': '杠铃抱拉',
       'Barbell Straight-leg Deadlift': '杠铃直腿硬拉',
@@ -1001,9 +1045,11 @@ class AppStrings {
       'Leg Extension': '腿屈伸',
       'Leg Curl': '腿弯举',
       'Barbell Hip Thrust': '杠铃臀冲',
-      'Overhead Press': '推举',
+      'Barbell Overhead Press': '杠铃推举',
+      'Overhead Press': '杠铃推举',
       'Lateral Raise': '侧平举',
-      'Rear Delt Fly': '反向飞鸟',
+      'Dumbbell Rear Delt Fly': '哑铃反向飞鸟',
+      'Rear Delt Fly': '哑铃反向飞鸟',
       'Standing Dumbbell Shoulder Press': '哑铃站姿推肩',
       'Standing Barbell Shoulder Press': '杠铃站姿推肩',
       'Seated Barbell Shoulder Press': '杠铃坐姿推肩',
@@ -1083,6 +1129,70 @@ class AppStrings {
       case 'medium':
       default:
         return _t('Medium', '中');
+    }
+  }
+
+  String cardioIntensityOptionLabel(String value) {
+    switch (value) {
+      case 'low_60_plus':
+        return _t('Low: 60+ minutes', '低强度：60 分钟以上');
+      case 'moderate_30_to_60':
+        return _t('Moderate: 30-60 minutes', '中等强度：30-60 分钟');
+      case 'vigorous_10_to_30':
+        return _t('Vigorous: 10-30 minutes', '较高强度：10-30 分钟');
+      case 'high_3_to_10':
+        return _t('High: 3-10 minutes', '高强度：3-10 分钟');
+      case 'interval_under_3':
+        return _t(
+          'Intervals / very high: under 3 minutes',
+          '间歇/极高强度：小于 3 分钟，需要休息',
+        );
+      default:
+        return intensityLabel(value);
+    }
+  }
+
+  String exerciseStructureLabelFor(String value) {
+    switch (value) {
+      case 'isolation':
+        return _t('Isolation', '孤立动作');
+      case 'compound':
+      default:
+        return _t('Compound', '复合动作');
+    }
+  }
+
+  String loadInputModeLabel(String value) {
+    switch (value) {
+      case 'per_side_load':
+        return _t('Per-side weight', '每侧重量');
+      case 'bodyweight_added':
+        return _t('Bodyweight + added load', '自重 + 额外加重');
+      case 'assistance_load':
+        return _t('Assistance weight', '辅助重量');
+      case 'total_load':
+      default:
+        return _t('Total / machine weight', '总重量 / 器械标称重量');
+    }
+  }
+
+  String repsInputModeLabel(String value) {
+    switch (value) {
+      case 'per_side_reps':
+        return _t('Per-side reps', '每侧次数');
+      case 'total_reps':
+      default:
+        return _t('Total reps', '总次数');
+    }
+  }
+
+  String setMetricTypeLabel(String value) {
+    switch (value) {
+      case 'duration_seconds':
+        return _t('Single-set duration', '单组时长');
+      case 'reps':
+      default:
+        return _t('Reps', '次数');
     }
   }
 

@@ -5,6 +5,7 @@ import 'core/localization/language_controller.dart';
 import 'core/localization/localization_extensions.dart';
 import 'core/utils/date_utils.dart';
 import 'data/db/app_database.dart';
+import 'data/repositories/custom_exercise_repository.dart';
 import 'data/repositories/food_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/workout_draft_repository.dart';
@@ -48,6 +49,7 @@ class _FitLogAppState extends State<FitLogApp> {
 
     final database = AppDatabase.instance;
     final foodRepository = FoodRepository(database);
+    final customExerciseRepository = CustomExerciseRepository(database);
     final workoutRepository = WorkoutRepository(database);
     final workoutDraftRepository = WorkoutDraftRepository(database);
     final profileRepository = ProfileRepository(database);
@@ -73,18 +75,21 @@ class _FitLogAppState extends State<FitLogApp> {
 
     _services = AppServices(
       foodRepository: foodRepository,
+      customExerciseRepository: customExerciseRepository,
       workoutRepository: workoutRepository,
       workoutDraftRepository: workoutDraftRepository,
       profileRepository: profileRepository,
       dailySummaryService: dailySummaryService,
       xlsxExportService: XlsxExportService(
         foodRepository: foodRepository,
+        customExerciseRepository: customExerciseRepository,
         workoutRepository: workoutRepository,
         profileRepository: profileRepository,
         dailySummaryService: dailySummaryService,
       ),
       csvExportService: CsvExportService(
         foodRepository: foodRepository,
+        customExerciseRepository: customExerciseRepository,
         workoutRepository: workoutRepository,
         profileRepository: profileRepository,
         dailySummaryService: dailySummaryService,
@@ -236,9 +241,15 @@ class _FitLogAppState extends State<FitLogApp> {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
         selectedItemColor: const Color(0xFF4E9E3B),
+        selectedLabelStyle: _withFontFallback(
+          const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        ),
         unselectedItemColor: isDark
             ? Colors.white.withValues(alpha: 0.58)
             : const Color(0xFF7A8973),
+        unselectedLabelStyle: _withFontFallback(
+          const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+        ),
         backgroundColor: isDark
             ? const Color(0xFF11161F).withValues(alpha: 0.9)
             : Colors.white,
@@ -377,16 +388,18 @@ class _RootShellState extends State<_RootShell> {
                                 AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 180),
                                   curve: Curves.easeOutCubic,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    height: 1.0,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: selected
-                                        ? const Color(0xFF234120)
-                                        : const Color(0xFF7A8973),
-                                  ),
+                                  style: _withFontFallback(
+                                    TextStyle(
+                                      fontSize: 11,
+                                      height: 1.0,
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: selected
+                                          ? const Color(0xFF234120)
+                                          : const Color(0xFF7A8973),
+                                    ),
+                                  )!,
                                   child: Text(
                                     item.label,
                                     maxLines: 1,
@@ -464,6 +477,7 @@ class SelectedDateNotifier extends ChangeNotifier {
 class AppServices {
   const AppServices({
     required this.foodRepository,
+    required this.customExerciseRepository,
     required this.workoutRepository,
     required this.workoutDraftRepository,
     required this.profileRepository,
@@ -477,6 +491,7 @@ class AppServices {
   });
 
   final FoodRepository foodRepository;
+  final CustomExerciseRepository customExerciseRepository;
   final WorkoutRepository workoutRepository;
   final WorkoutDraftRepository workoutDraftRepository;
   final ProfileRepository profileRepository;
