@@ -152,9 +152,7 @@ class WorkoutSession {
     List<WorkoutSet> sets = const <WorkoutSet>[],
   }) {
     return WorkoutSession(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
+      id: NumberUtils.toNullableInt(map['id']),
       planId: map['plan_id']?.toString(),
       recordName: map['record_name']?.toString(),
       date: (map['date'] ?? '').toString(),

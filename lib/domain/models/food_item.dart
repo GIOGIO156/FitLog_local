@@ -63,12 +63,8 @@ class FoodItem {
 
   factory FoodItem.fromMap(Map<String, dynamic> map) {
     return FoodItem(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
-      foodRecordId: NumberUtils.toInt(map['food_record_id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['food_record_id']),
+      id: NumberUtils.toNullableInt(map['id']),
+      foodRecordId: NumberUtils.toNullableInt(map['food_record_id']),
       name: (map['name'] ?? '').toString(),
       estimatedWeightG: NumberUtils.toDouble(map['estimated_weight_g']),
       caloriesKcal: NumberUtils.toDouble(map['calories_kcal']),

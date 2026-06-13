@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This guide explains what each FitLog Local app area does, how it works at a high level, and where to read the design details. It is a user and maintainer map, not a replacement for Product, Methodology, Algorithm, Database, Agent, or References.
+This guide explains what each FitLog Local app area does, how it works at a high level, and where to read the design details. It is a user and maintainer map, not a replacement for Product, Methodology, Algorithm, Database, AgentDesign, or References.
 
 ## App-wide Rules
 
@@ -146,6 +146,7 @@ What users can do:
 - name the workout record
 - choose one or more exercises from the current chest, back, legs, glutes, shoulders, arms, core, full-body, cardio, and reusable custom library
 - add a temporary custom strength or cardio exercise to the current record
+- swipe a saved reusable custom exercise inside the `Custom exercises` filter and confirm deletion from future selection
 - keep selected exercises in user-chosen order
 - enter per-exercise duration
 - choose cardio session intensity from a maintainable-duration basis
@@ -264,7 +265,7 @@ What exports include:
 - daily summary
 - user profile
 - diet adjustment review history
-- strategy, calibration, and self-check fields where relevant
+- strategy, calibration, self-check, and local-only nickname fields where relevant
 
 How it works:
 

@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_brace_in_string_interps
-
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -734,8 +732,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String _trainingSummaryLabel(BuildContext context) {
     final strings = context.strings;
     return strings.isChinese
-        ? '每周训练 $_trainingFrequencyPerWeek 次 · ${_macroSelfCheckPeriodDays} 天自检'
-        : '$_trainingFrequencyPerWeek sessions/week · ${_macroSelfCheckPeriodDays}-day self-check';
+        ? '每周训练 $_trainingFrequencyPerWeek 次 · $_macroSelfCheckPeriodDays 天自检'
+        : '$_trainingFrequencyPerWeek sessions/week · $_macroSelfCheckPeriodDays-day self-check';
   }
 
   bool _validateBodyProfile() {

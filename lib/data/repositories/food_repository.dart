@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../../core/utils/date_utils.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/models/food_record.dart';
@@ -18,12 +20,7 @@ class FoodRepository {
         record.copyWith(createdAt: now, updatedAt: now).toMap()..remove('id'),
       );
 
-      for (final item in record.items) {
-        await txn.insert(
-          'food_items',
-          item.copyWith(foodRecordId: recordId).toMap()..remove('id'),
-        );
-      }
+      await _insertItems(txn, foodRecordId: recordId, items: record.items);
 
       return recordId;
     });
@@ -69,12 +66,7 @@ class FoodRepository {
         whereArgs: <Object?>[record.id],
       );
 
-      for (final item in record.items) {
-        await txn.insert(
-          'food_items',
-          item.copyWith(foodRecordId: record.id).toMap()..remove('id'),
-        );
-      }
+      await _insertItems(txn, foodRecordId: record.id!, items: record.items);
     });
   }
 
@@ -191,5 +183,18 @@ class FoodRepository {
     final int id = row['id'] as int;
     final items = await getFoodItemsByRecordId(id);
     return FoodRecord.fromMap(row, items: items);
+  }
+
+  Future<void> _insertItems(
+    DatabaseExecutor executor, {
+    required int foodRecordId,
+    required List<FoodItem> items,
+  }) async {
+    for (final item in items) {
+      await executor.insert(
+        'food_items',
+        item.copyWith(foodRecordId: foodRecordId).toMap()..remove('id'),
+      );
+    }
   }
 }

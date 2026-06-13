@@ -92,9 +92,7 @@ class FoodRecord {
     List<FoodItem> items = const <FoodItem>[],
   }) {
     return FoodRecord(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
+      id: NumberUtils.toNullableInt(map['id']),
       date: (map['date'] ?? '').toString(),
       mealName: (map['meal_name'] ?? '').toString(),
       totalWeightG: NumberUtils.toDouble(map['total_weight_g']),

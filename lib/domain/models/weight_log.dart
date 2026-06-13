@@ -48,9 +48,7 @@ class WeightLog {
 
   factory WeightLog.fromMap(Map<String, dynamic> map) {
     return WeightLog(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
+      id: NumberUtils.toNullableInt(map['id']),
       date: (map['date'] ?? '').toString(),
       weightKg: NumberUtils.toDouble(map['weight_kg']),
       source: (map['source'] ?? '').toString(),

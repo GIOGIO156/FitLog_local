@@ -138,9 +138,7 @@ class DietAdjustmentReview {
       } catch (_) {}
     }
     return DietAdjustmentReview(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
+      id: NumberUtils.toNullableInt(map['id']),
       reviewDate: (map['review_date'] ?? '').toString(),
       windowDays: NumberUtils.toInt(map['window_days']),
       dietGoalPhase: (map['diet_goal_phase'] ?? '').toString(),

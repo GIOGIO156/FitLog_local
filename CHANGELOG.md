@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-06-13 Source Baseline Cleanup
+
+### Changed
+
+- Reduced repository write-path duplication by centralizing repeated child-row insertion helpers inside `FoodRepository` and `WorkoutRepository`, preserving existing timestamp, transaction, and persistence behavior.
+- Added `NumberUtils.toNullableInt` for nullable database id parsing and replaced repeated sentinel-based id parsing in domain models with the shared helper.
+- Removed the Profile page file-level `unnecessary_brace_in_string_interps` ignore by simplifying the only unnecessary interpolations while preserving visible text.
+
+### Added
+
+- Added focused `NumberUtils.toNullableInt` unit coverage for null, invalid, sentinel, and valid integer-like values.
+
+### Fixed
+
+- Rebuilt the ABI-specific debug APKs with `--build-number 22` so devices that previously installed a higher debug build, such as build 21, do not reject the current package as a version downgrade.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success.
+- `flutter build apk --debug --split-per-abi --build-number 22`: success; generated ABI-specific debug APKs including `app-arm64-v8a-debug.apk`.
+
+## 2026-06-13 Documentation Baseline Rule Update
+
+### Changed
+
+- Reordered `README.md` so the Chinese section appears before the English section, matching the project's primary Chinese-user audience while preserving bilingual content parity.
+- Updated `AGENTS.md` documentation rules so future documentation work keeps `README.md` Chinese-first and allows `CHANGELOG.md` to preserve complex bug/debugging lessons when they help future diagnosis.
+- Aligned the `AGENTS.md` heading with the current file name instead of the older `CLAUDE.md` label.
+- Corrected the Chinese README custom-exercise description so it matches the current inline swipe-to-delete behavior instead of the removed separate management-entry wording.
+- Synchronized detailed design docs after review: fixed the English AppGuide's `AgentDesign` naming, aligned Add/Edit Workout custom-exercise deletion wording, added the missing Chinese Product cardio-helper behavior, and completed Chinese Database export/code-reference coverage.
+
+### Validation
+
+- Documentation-only change; Flutter analysis and tests were not required.
+- Verified the required design-document tree still exists under `docs/en/` and `docs/zh/`.
+- Searched current rules and stable docs for stale README language-order rules, stale custom-exercise management wording, date-appended headings, stale root-level design-doc paths, and obvious replacement characters.
+
 ## 2026-06-13 Home First-Screen Strategy Placement
 
 ### Fixed

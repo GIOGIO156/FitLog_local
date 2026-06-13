@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../../core/utils/date_utils.dart';
 import '../../domain/models/workout_session.dart';
 import '../../domain/models/workout_set.dart';
@@ -13,19 +15,10 @@ class WorkoutRepository {
     final now = DateTime.now().toIso8601String();
 
     return db.transaction((txn) async {
-      final int sessionId = await txn.insert(
-        'workout_sessions',
-        session.copyWith(createdAt: now, updatedAt: now).toMap()..remove('id'),
+      return _insertSessionWithSets(
+        txn,
+        session.copyWith(createdAt: now, updatedAt: now),
       );
-
-      for (final set in session.sets) {
-        await txn.insert(
-          'workout_sets',
-          set.copyWith(workoutSessionId: sessionId).toMap()..remove('id'),
-        );
-      }
-
-      return sessionId;
     });
   }
 
@@ -39,18 +32,10 @@ class WorkoutRepository {
 
     await db.transaction((txn) async {
       for (final session in sessions) {
-        final int sessionId = await txn.insert(
-          'workout_sessions',
-          session.copyWith(createdAt: now, updatedAt: now).toMap()
-            ..remove('id'),
+        await _insertSessionWithSets(
+          txn,
+          session.copyWith(createdAt: now, updatedAt: now),
         );
-
-        for (final set in session.sets) {
-          await txn.insert(
-            'workout_sets',
-            set.copyWith(workoutSessionId: sessionId).toMap()..remove('id'),
-          );
-        }
       }
     });
   }
@@ -70,24 +55,14 @@ class WorkoutRepository {
       );
 
       for (final session in sessions) {
-        final int sessionId = await txn.insert(
-          'workout_sessions',
-          session
-              .copyWith(
-                planId: planId,
-                createdAt: session.createdAt ?? now,
-                updatedAt: now,
-              )
-              .toMap()
-            ..remove('id'),
+        await _insertSessionWithSets(
+          txn,
+          session.copyWith(
+            planId: planId,
+            createdAt: session.createdAt ?? now,
+            updatedAt: now,
+          ),
         );
-
-        for (final set in session.sets) {
-          await txn.insert(
-            'workout_sets',
-            set.copyWith(workoutSessionId: sessionId).toMap()..remove('id'),
-          );
-        }
       }
     });
   }
@@ -107,19 +82,10 @@ class WorkoutRepository {
       );
 
       for (final session in sessions) {
-        final int insertedSessionId = await txn.insert(
-          'workout_sessions',
-          session.copyWith(createdAt: now, updatedAt: now).toMap()
-            ..remove('id'),
+        await _insertSessionWithSets(
+          txn,
+          session.copyWith(createdAt: now, updatedAt: now),
         );
-
-        for (final set in session.sets) {
-          await txn.insert(
-            'workout_sets',
-            set.copyWith(workoutSessionId: insertedSessionId).toMap()
-              ..remove('id'),
-          );
-        }
       }
     });
   }
@@ -164,12 +130,7 @@ class WorkoutRepository {
         whereArgs: <Object?>[session.id],
       );
 
-      for (final set in session.sets) {
-        await txn.insert(
-          'workout_sets',
-          set.copyWith(workoutSessionId: session.id).toMap()..remove('id'),
-        );
-      }
+      await _insertSets(txn, workoutSessionId: session.id!, sets: session.sets);
     });
   }
 
@@ -365,5 +326,34 @@ class WorkoutRepository {
     final int id = row['id'] as int;
     final sets = await getSetsBySessionId(id);
     return WorkoutSession.fromMap(row, sets: sets);
+  }
+
+  Future<int> _insertSessionWithSets(
+    DatabaseExecutor executor,
+    WorkoutSession session,
+  ) async {
+    final sessionId = await executor.insert(
+      'workout_sessions',
+      session.toMap()..remove('id'),
+    );
+    await _insertSets(
+      executor,
+      workoutSessionId: sessionId,
+      sets: session.sets,
+    );
+    return sessionId;
+  }
+
+  Future<void> _insertSets(
+    DatabaseExecutor executor, {
+    required int workoutSessionId,
+    required List<WorkoutSet> sets,
+  }) async {
+    for (final set in sets) {
+      await executor.insert(
+        'workout_sets',
+        set.copyWith(workoutSessionId: workoutSessionId).toMap()..remove('id'),
+      );
+    }
   }
 }

@@ -20,4 +20,9 @@ class NumberUtils {
     }
     return int.tryParse(value.toString()) ?? fallback;
   }
+
+  static int? toNullableInt(dynamic value) {
+    final parsed = toInt(value, fallback: -1);
+    return parsed == -1 ? null : parsed;
+  }
 }

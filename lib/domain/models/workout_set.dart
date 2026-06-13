@@ -99,13 +99,8 @@ class WorkoutSet {
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
-      workoutSessionId:
-          NumberUtils.toInt(map['workout_session_id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['workout_session_id']),
+      id: NumberUtils.toNullableInt(map['id']),
+      workoutSessionId: NumberUtils.toNullableInt(map['workout_session_id']),
       setNumber: NumberUtils.toInt(map['set_number']),
       weightKg: NumberUtils.toDouble(map['weight_kg']),
       reps: NumberUtils.toInt(map['reps']),

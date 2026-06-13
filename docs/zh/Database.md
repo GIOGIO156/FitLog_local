@@ -340,7 +340,7 @@ ProfilePage export action
 
 ## 导出覆盖
 
-导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、`record_name`、保存时的动作 metadata、有氧强度 metadata，以及 workout set 的原始输入值和标准化计算值。
+导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、`record_name`、保存时的动作 metadata、有氧强度 metadata、自定义动作隐藏状态，以及 workout set 的原始输入值和标准化计算值。
 
 ## 未实现
 
@@ -359,5 +359,7 @@ ProfilePage export action
 - Database：`lib/data/db/app_database.dart`
 - Repositories：`lib/data/repositories/food_repository.dart`、`workout_repository.dart`、`profile_repository.dart`、`custom_exercise_repository.dart`
 - Models：`lib/domain/models/*`
-- Export：`lib/export/*`
+- Services：`lib/domain/services/*`
+- Export：`lib/export/xlsx_export_service.dart`、`lib/export/csv_export_service.dart`
+- App state：`lib/app.dart`、`lib/core/localization/language_controller.dart`
 

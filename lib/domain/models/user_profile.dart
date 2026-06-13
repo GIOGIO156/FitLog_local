@@ -264,9 +264,7 @@ class UserProfile {
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(
-      id: NumberUtils.toInt(map['id'], fallback: -1) == -1
-          ? null
-          : NumberUtils.toInt(map['id']),
+      id: NumberUtils.toNullableInt(map['id']),
       nickname: map['nickname']?.toString(),
       age: NumberUtils.toInt(map['age'], fallback: 25),
       heightCm: NumberUtils.toDouble(map['height_cm'], fallback: 170),

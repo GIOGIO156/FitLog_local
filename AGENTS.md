@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
@@ -107,8 +107,8 @@ docs/
 
 File responsibilities:
 
-- `README.md`: project face and quick-start overview. Keep English first and Chinese second in the same file. The two language sections must match in facts, scope, commands, and links. Do not append date-based update sections.
-- `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Concise implementation details and engineering rationale are allowed when they explain a shipped fix. Do not store product design, architecture explanations, future notes, or agent memory here.
+- `README.md`: project face and quick-start overview. Keep Chinese first and English second in the same file because the project primarily serves Chinese users. The two language sections must match in facts, scope, commands, and links. Do not append date-based update sections.
+- `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Concise implementation details, engineering rationale, and complex bug/debugging lessons are allowed when they explain a shipped fix or help future maintainers diagnose similar failures. Do not store product design, architecture explanations, future notes, or agent memory here.
 - `docs/en/Product.md` and `docs/zh/Product.md`: stable product design. Cover purpose, product principles, modules, workflows, UX behavior, implemented scope, non-goals, and code references. Do not write release notes here.
 - `docs/en/AppGuide.md` and `docs/zh/AppGuide.md`: app-area guide. Explain what each app module does, how it works at a high level, and which design file to read for details. Keep it navigational; do not duplicate all Product/Algorithm/Database content.
 - `docs/en/Methodology.md` and `docs/zh/Methodology.md`: user-facing method explanation. Explain why the app uses `energy_ratio`, `gram_per_kg`, carb cycling, carb tapering, net exercise calories, and strength calorie heuristics. Keep it understandable, evidence-aware, and honest about limitations.
@@ -120,7 +120,7 @@ File responsibilities:
 Language and sync rules:
 
 - `CHANGELOG.md` stays English only.
-- `README.md` is bilingual in one file: English first, Chinese second, with matching content.
+- `README.md` is bilingual in one file: Chinese first, English second, with matching content.
 - All other design docs live in both `docs/en` and `docs/zh`; when one changes, update the other in the same task.
 - Keep docs concise but complete: every important field, mode, formula, boundary, and non-goal must appear exactly where it belongs.
 - New feature details should be integrated into the stable section they affect, not appended as "2026-xx update" blocks.
