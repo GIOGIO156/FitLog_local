@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-13 Home First-Screen Strategy Placement
+
+### Fixed
+
+- Reworked the Home first-screen layout so the greeting, date, and active dashboard occupy the full available viewport before the strategy card is placed below it, preventing tall Pro Max-class screens from revealing the strategy row before scrolling.
+- Updated Home widget coverage so both ordinary and tall viewport sizes assert that the strategy card is absent from the initial first screen and appears only after scrolling.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 21`: success.
+
 ## 2026-06-13 Exercise Naming And Profile Guide Follow-up
 
 ### Changed

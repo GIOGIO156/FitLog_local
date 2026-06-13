@@ -114,49 +114,63 @@ class _HomePageState extends State<HomePage> {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final gramDashboardHeight = math.max(
-                    560.0,
-                    constraints.maxHeight - 170,
-                  );
-                  final energyDashboardHeight = math.max(
-                    648.0,
-                    constraints.maxHeight - 196,
-                  );
-
                   return ListView(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.paddingOf(context).bottom + 132,
                     ),
                     children: <Widget>[
-                      FitLogPageHeader(
-                        title: '',
-                        titleWidget: _HomeGreeting(
-                          greetingPrefix: greetingPrefix,
-                          nickname: nickname,
-                          isChinese: strings.isChinese,
-                        ),
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                        trailing: FitLogActionIconButton(
-                          icon: Icons.calendar_today_outlined,
-                          tooltip: strings.change,
-                          onPressed: () =>
-                              _pickDate(context, selectedDateNotifier),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                        child: Text(
-                          DateUtilsX.formatReadable(summary.date),
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: const Color(0xFF7A8973)),
+                      SizedBox(
+                        height: constraints.maxHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            FitLogPageHeader(
+                              title: '',
+                              titleWidget: _HomeGreeting(
+                                greetingPrefix: greetingPrefix,
+                                nickname: nickname,
+                                isChinese: strings.isChinese,
+                              ),
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                              trailing: FitLogActionIconButton(
+                                icon: Icons.calendar_today_outlined,
+                                tooltip: strings.change,
+                                onPressed: () =>
+                                    _pickDate(context, selectedDateNotifier),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              child: Text(
+                                DateUtilsX.formatReadable(summary.date),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: const Color(0xFF7A8973)),
+                              ),
+                            ),
+                            Expanded(
+                              child: LayoutBuilder(
+                                builder: (context, dashboardConstraints) {
+                                  final dashboardHeight =
+                                      dashboardConstraints.maxHeight;
+
+                                  return isGramPerKgMode
+                                      ? _GramPerKgDashboard(
+                                          summary: summary,
+                                          strings: strings,
+                                          height: dashboardHeight,
+                                        )
+                                      : _EnergyRatioDashboard(
+                                          summary: summary,
+                                          strings: strings,
+                                          height: dashboardHeight,
+                                        );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       if (isGramPerKgMode) ...<Widget>[
-                        _GramPerKgDashboard(
-                          summary: summary,
-                          strings: strings,
-                          height: gramDashboardHeight,
-                        ),
                         const SizedBox(height: 20),
                         _StrategyCard(
                           summary: summary,
@@ -164,11 +178,6 @@ class _HomePageState extends State<HomePage> {
                           strings: strings,
                         ),
                       ] else ...<Widget>[
-                        _EnergyRatioDashboard(
-                          summary: summary,
-                          strings: strings,
-                          height: energyDashboardHeight,
-                        ),
                         _StrategyCard(
                           summary: summary,
                           profile: effectiveProfile,

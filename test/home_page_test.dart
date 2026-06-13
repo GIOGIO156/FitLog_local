@@ -72,22 +72,19 @@ void main() {
 
     expect(find.text("Today's Macro Progress"), findsOneWidget);
     expect(find.text("Today's Records"), findsNothing);
-    final strategyLabelFinder = find.textContaining('Carb Cycling');
-    expect(strategyLabelFinder, findsOneWidget);
+    expect(find.textContaining('Carb Cycling'), findsNothing);
     expect(find.textContaining('1365', findRichText: true), findsOneWidget);
     expect(find.textContaining('220', findRichText: true), findsOneWidget);
     expect(find.text('Protein'), findsWidgets);
     expect(find.text('Carbs'), findsWidgets);
     expect(find.text('Fat'), findsWidgets);
     expect(find.textContaining('%'), findsWidgets);
-    expect(
-      tester.getTopLeft(strategyLabelFinder).dy,
-      greaterThanOrEqualTo(800),
-    );
 
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
 
+    final strategyLabelFinder = find.textContaining('Carb Cycling');
+    expect(strategyLabelFinder, findsOneWidget);
     expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(800));
     expect(tester.takeException(), isNull);
   });
@@ -136,17 +133,68 @@ void main() {
     await tester.pumpAndSettle();
 
     final strategyLabelFinder = find.textContaining('Carb Cycling');
-    expect(strategyLabelFinder, findsOneWidget);
-    expect(
-      tester.getTopLeft(strategyLabelFinder).dy,
-      greaterThanOrEqualTo(800),
-    );
+    expect(strategyLabelFinder, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -500));
     await tester.pumpAndSettle();
 
+    expect(strategyLabelFinder, findsOneWidget);
     expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(844));
     expect(find.text("Today's Records"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('home keeps strategy below the first viewport on tall screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildHomeTestApp(
+        profile: UserProfile.defaults.copyWith(
+          nickname: 'Chris',
+          dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+          dietPlanStrategy: AppConstants.dietPlanStrategyCarbCycling,
+        ),
+        foodRecords: <FoodRecord>[
+          const FoodRecord(
+            date: _referenceDay,
+            mealName: 'Dinner',
+            totalWeightG: 450,
+            caloriesKcal: 820,
+            proteinG: 48,
+            carbsG: 72,
+            fatG: 24,
+            estimationNotes: '',
+            source: 'manual',
+          ),
+        ],
+        workoutSessions: <WorkoutSession>[
+          WorkoutSession(
+            date: _referenceDay,
+            bodyPart: 'Back',
+            exerciseName: 'Row',
+            exerciseType: 'strength',
+            durationMinutes: 35,
+            intensity: 'medium',
+            estimatedCalories: 180,
+            notes: '',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final strategyLabelFinder = find.textContaining('Carb Cycling');
+    expect(strategyLabelFinder, findsNothing);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    expect(strategyLabelFinder, findsOneWidget);
+    expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(932));
     expect(tester.takeException(), isNull);
   });
 }
