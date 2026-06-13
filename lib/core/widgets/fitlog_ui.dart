@@ -150,6 +150,40 @@ class FitLogSvgIcon extends StatelessWidget {
   }
 }
 
+class FitLogAssetIcon extends StatelessWidget {
+  const FitLogAssetIcon({
+    super.key,
+    required this.assetName,
+    required this.size,
+    this.tintColor,
+  });
+
+  final String assetName;
+  final double size;
+  final Color? tintColor;
+
+  @override
+  Widget build(BuildContext context) {
+    if (assetName.toLowerCase().endsWith('.svg')) {
+      return FitLogSvgIcon(
+        assetName: assetName,
+        size: size,
+        tintColor: tintColor,
+      );
+    }
+
+    return Image.asset(
+      assetName,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      color: tintColor,
+      colorBlendMode: tintColor == null ? null : BlendMode.srcIn,
+    );
+  }
+}
+
 class FitLogSvgIconCircle extends StatelessWidget {
   const FitLogSvgIconCircle({
     super.key,
@@ -174,6 +208,38 @@ class FitLogSvgIconCircle extends StatelessWidget {
       decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: FitLogSvgIcon(
+        assetName: assetName,
+        size: iconSize ?? size * 0.56,
+        tintColor: tintColor,
+      ),
+    );
+  }
+}
+
+class FitLogAssetIconCircle extends StatelessWidget {
+  const FitLogAssetIconCircle({
+    super.key,
+    required this.assetName,
+    required this.backgroundColor,
+    this.size = 42,
+    this.iconSize,
+    this.tintColor,
+  });
+
+  final String assetName;
+  final Color backgroundColor;
+  final double size;
+  final double? iconSize;
+  final Color? tintColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: FitLogAssetIcon(
         assetName: assetName,
         size: iconSize ?? size * 0.56,
         tintColor: tintColor,

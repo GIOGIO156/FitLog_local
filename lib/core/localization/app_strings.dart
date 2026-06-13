@@ -159,7 +159,7 @@ class AppStrings {
   String get ageLabel => _t('Age', '年龄');
   String get heightCmLabel => _t('Height (cm)', '身高 (cm)');
   String get weightKgLabel => _t('Weight (kg)', '体重 (kg)');
-  String get sexForFormulaLabel => _t('Sex for Formula', 'BMR 性别参数');
+  String get sexForFormulaLabel => _t('Sex', '性别');
   String get activityLevelLabel => _t('Activity Level', '活动水平');
   String get goalPhaseLabel => _t('Goal phase', '目标阶段');
   String get cuttingLabel => _t('Cutting', '减脂期');
@@ -1018,7 +1018,7 @@ class AppStrings {
       'Machine Pec Fly': '坐姿器械夹胸',
       'Kneeling Push-up': '跪姿俯卧撑',
       'Bench Press': '卧推',
-      'Incline Dumbbell Press': '上斜哑铃卧推',
+      'Incline Dumbbell Press': '哑铃上斜卧推',
       'Push-up': '俯卧撑',
       'Chest Fly': '飞鸟',
       'Pull-up': '引体向上',
@@ -1028,8 +1028,8 @@ class AppStrings {
       'Seated Cable Row': '坐姿划船',
       'Seated Row': '坐姿划船',
       'Bent-over Barbell Row': '杠铃俯身划船',
-      'Underhand Barbell Row': '反手杠铃划船',
-      'Seal Barbell Row': '海豹杠铃划船',
+      'Underhand Barbell Row': '杠铃反手划船',
+      'Seal Barbell Row': '杠铃海豹划船',
       'Chest-supported T-Bar Row': '俯卧 T-bar 划船',
       'Iso-lateral High Row': '分动式高位划船',
       'Hammer Strength High Row': '分动式高位划船',
@@ -1053,8 +1053,8 @@ class AppStrings {
       'Standing Dumbbell Shoulder Press': '哑铃站姿推肩',
       'Standing Barbell Shoulder Press': '杠铃站姿推肩',
       'Seated Barbell Shoulder Press': '杠铃坐姿推肩',
-      'Standing Barbell Front Raise': '站姿杠铃前平举',
-      'Barbell Upright Row': '杠铃直立划船',
+      'Standing Barbell Front Raise': '杠铃站姿前平举',
+      'Barbell Upright Row': '杠铃提拉',
       'Barbell Biceps Curl': '杠铃二头弯举',
       'Dumbbell Biceps Curl': '哑铃二头弯举',
       'Biceps Curl': '二头弯举',

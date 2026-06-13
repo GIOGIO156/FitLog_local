@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-06-13 Exercise Naming And Profile Guide Follow-up
+
+### Changed
+
+- Renamed Chinese built-in exercise labels so dumbbell and barbell names start with the equipment term, including `Incline Dumbbell Press` -> `哑铃上斜卧推`, `Underhand Barbell Row` -> `杠铃反手划船`, `Seal Barbell Row` -> `杠铃海豹划船`, and `Standing Barbell Front Raise` -> `杠铃站姿前平举`.
+- Renamed `Barbell Upright Row` to `杠铃提拉` in Chinese.
+- Removed `Barbell Row` from the active built-in exercise catalog because `Bent-over Barbell Row` already covers the intended barbell-row option, while leaving historical record display compatibility intact.
+- Tightened the temporary custom-exercise card gaps to match the surrounding workout surfaces more closely.
+- Removed example hint text from the custom-exercise name field so strength and cardio creation do not show a large example prompt inside the focused input.
+
+### Fixed
+
+- **Important Profile guide lesson:** device testing confirmed the current-plan information tap reached the Profile page, but the modal/bottom-sheet presentation path could still fail to appear on the real device. The shipped fix keeps the guide presentation inside the Profile widget tree with a page-local `Stack` overlay instead of relying on an external route overlay, which is the safer pattern for similarly dense Profile-only guide surfaces.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 20`: success.
+
+## 2026-06-13 Profile Tap Handling Fix
+
+### Changed
+
+- Removed the page-level Profile `GestureDetector` that had been used to collapse clean inline editors.
+- Replaced the current-plan information trigger with a smaller green circular raw-pointer control that opens a Profile-local in-page overlay, bypassing the modal route path after device testing showed the button callback reached the page but `showModalBottomSheet` still failed to appear.
+- Changed nickname editing to a value-tap flow with an inline same-row save button, removing the trailing pen shortcut and avoiding implicit outside-tap saving for text input.
+- Kept body-profile editing on explicit card-local save, preserving direct-save chip behavior for plan-matrix and training-frequency controls that do not have freeform text drafts.
+- Tuned the current-plan strategy badge to a middle size between the previous small badge and the oversized follow-up attempt, without changing the surrounding plan-card layout.
+- Removed the remaining field-level outside-tap handlers from nickname and body-profile editors so text and numeric drafts can only be persisted through their visible save actions.
+- Aligned the current-plan training-frequency and strategy rows by giving both leading icons the same layout slot.
+- Kept nickname and body-profile save controls visible for the full edit state; pressing save with no changed draft now exits edit mode without writing to SQLite, while changed drafts still persist through the same explicit button.
+- Removed duplicate unit text from the body-profile height and weight tile titles, keeping units beside the values and editors instead.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 19`: success.
+
+## 2026-06-12 Profile And Custom Exercise UI Redesign
+
+### Changed
+
+- Rebuilt temporary custom exercise creation into a card-first control surface with a compact slider-style strength/cardio toggle, isolated name card, bento-style strength metadata, cardio-specific summary rules, and a fixed bottom add action.
+- Tightened custom-exercise typography and tile layout to match the scale of the existing Home, Food, and Workout surfaces, added short tile labels with full-width load-rule layout and narrow-screen fallback, and enlarged the transparent full-body workout icon presentation inside the exercise library.
+- Reworked Profile into a summary-first dashboard with a current-plan hero, a compact display-first nickname card, a display-first 2x2 body-profile grid with single-tile editing, direct phase/mode/strategy chips, one-row g/kg self-check period choices, direct-save training-frequency setup, and card-local save actions for inline text and numeric fields instead of a single page-level save button.
+- Switched shared workout body-part badges to the corresponding `assets/icons/workouts/*.png` assets where the app uses those fallback body-part icons.
+- Followed up the Profile summary UI by turning nickname into a compact top identity row and allowing unchanged inline editors to collapse when the user taps elsewhere.
+- Refined the custom-exercise page with a slider-style strength/cardio toggle, delayed single-column fallback, and denser two-column bento tiles so the strength layout stays compact on ordinary phone widths.
+- Aligned the Profile header with the shared record-page title scale by renaming the visible top title to `User Settings` / `用户设置`, removing the extra top-right settings shortcut, restoring the plan matrix to stable horizontal wrap chips, and keeping the training-frequency setup card title fixed across diet modes.
+- Changed the top nickname summary into a one-line identity row with a trailing pen trigger, inline auto-save on outside tap, and no persistent empty editor when nothing changed.
+- Added a current-plan information trigger on Profile that reuses the Home strategy bottom-sheet style for beginner-friendly method guidance, mode-sensitive coefficient tables, and the g/kg explanatory note that was removed from the setup card body.
+- Reordered Profile so `Energy Ratio Setup` now appears directly below the plan matrix in `energy_ratio` mode, while the shared training-frequency/self-check card stays below it and the plan matrix chips keep a stable wrap layout.
+- Matched custom-exercise page typography more closely to the shared workout surfaces by reusing the Add Workout title scale for `Custom Exercise` / `自定义动作` and the Workout Parameter section-title scale for custom-exercise section headers.
+
+### Validation
+
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 6`: success.
+
 ## 2026-06-12 Inline Custom Deletion And Navigation Font
 
 ### Changed

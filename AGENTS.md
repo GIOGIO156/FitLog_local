@@ -108,7 +108,7 @@ docs/
 File responsibilities:
 
 - `README.md`: project face and quick-start overview. Keep English first and Chinese second in the same file. The two language sections must match in facts, scope, commands, and links. Do not append date-based update sections.
-- `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Do not store product design, architecture explanations, future notes, or agent memory here.
+- `CHANGELOG.md`: English only. Record dated changes under Added/Changed/Fixed/Validation style headings. Concise implementation details and engineering rationale are allowed when they explain a shipped fix. Do not store product design, architecture explanations, future notes, or agent memory here.
 - `docs/en/Product.md` and `docs/zh/Product.md`: stable product design. Cover purpose, product principles, modules, workflows, UX behavior, implemented scope, non-goals, and code references. Do not write release notes here.
 - `docs/en/AppGuide.md` and `docs/zh/AppGuide.md`: app-area guide. Explain what each app module does, how it works at a high level, and which design file to read for details. Keep it navigational; do not duplicate all Product/Algorithm/Database content.
 - `docs/en/Methodology.md` and `docs/zh/Methodology.md`: user-facing method explanation. Explain why the app uses `energy_ratio`, `gram_per_kg`, carb cycling, carb tapering, net exercise calories, and strength calorie heuristics. Keep it understandable, evidence-aware, and honest about limitations.
@@ -133,6 +133,8 @@ Encoding and terminal-output rules:
 - Before changing text for suspected encoding issues, verify the actual file content by reading it as UTF-8, checking Unicode code points, or inspecting it in an editor that correctly renders UTF-8.
 - Do not record a "garbled text fix" in `CHANGELOG.md` unless the source file or rendered app/docs are actually corrupted.
 - Prefer ASCII punctuation in English docs when it does not reduce clarity; Chinese docs may use normal Chinese punctuation.
+- For Chinese-heavy files or bilingual docs, first verify the real UTF-8 source content before editing; do not spend time "repairing" text based only on PowerShell or terminal mojibake.
+- Keep edits small and surgical after encoding verification: apply the minimal patch, run a local targeted check when available, then run `flutter analyze`, `flutter test`, and build only after code changes are stable.
 
 Validation for documentation-only changes:
 

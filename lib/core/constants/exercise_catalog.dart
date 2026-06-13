@@ -123,13 +123,6 @@ class ExerciseCatalog {
       strengthProfile: ExerciseStrengthProfile.upperBodyCompound,
     ),
     ExerciseDefinition(
-      key: 'barbell_row',
-      name: 'Barbell Row',
-      bodyPart: 'Back',
-      exerciseType: ExerciseType.strength,
-      strengthProfile: ExerciseStrengthProfile.upperBodyCompound,
-    ),
-    ExerciseDefinition(
       key: 'seated_row',
       name: 'Seated Row',
       bodyPart: 'Back',

@@ -14,6 +14,7 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../core/widgets/exercise_thumbnail.dart';
+import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
@@ -2244,6 +2245,110 @@ class _CustomExercisePageState extends State<_CustomExercisePage> {
     Navigator.of(context).pop(definition);
   }
 
+  Future<void> _pickStringValue({
+    required String title,
+    required String currentValue,
+    required List<String> options,
+    required String Function(String value) labelBuilder,
+    required ValueChanged<String> onPicked,
+  }) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: options.map((value) {
+                    final selected = value == currentValue;
+                    return ListTile(
+                      title: Text(labelBuilder(value)),
+                      trailing: selected
+                          ? const Icon(Icons.check_rounded)
+                          : null,
+                      onTap: () => Navigator.of(context).pop(value),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null) {
+      onPicked(selected);
+    }
+  }
+
+  Future<void> _pickNullableStringValue({
+    required String title,
+    required String? currentValue,
+    required List<String?> options,
+    required String Function(String? value) labelBuilder,
+    required ValueChanged<String?> onPicked,
+  }) async {
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: options.map((value) {
+                    final selected = value == currentValue;
+                    return ListTile(
+                      title: Text(labelBuilder(value)),
+                      trailing: selected
+                          ? const Icon(Icons.check_rounded)
+                          : null,
+                      onTap: () => Navigator.of(context).pop(value),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null || currentValue != null) {
+      onPicked(selected);
+    }
+  }
+
   String _resolveStrengthProfile(String bodyPart, String structure) {
     if (bodyPart == 'Full Body') {
       return ExerciseStrengthProfile.fullBodyPowerOrHighDensity;
@@ -2257,6 +2362,67 @@ class _CustomExercisePageState extends State<_CustomExercisePage> {
     return ExerciseStrengthProfile.upperBodyCompound;
   }
 
+  String _primaryBodyPartTileLabel(AppStrings strings) {
+    return strings.isChinese ? '主要部位' : 'Primary';
+  }
+
+  String _secondaryBodyPartTileLabel(AppStrings strings) {
+    return strings.isChinese ? '副部位' : 'Secondary';
+  }
+
+  String _structureTileLabel(AppStrings strings) {
+    return strings.isChinese ? '动作结构' : 'Structure';
+  }
+
+  String _loadRuleTileLabel(AppStrings strings) {
+    return strings.isChinese ? '重量口径' : 'Load';
+  }
+
+  String _entryRuleTileLabel(AppStrings strings) {
+    return strings.isChinese ? '组内填写' : 'Entry';
+  }
+
+  String _repsRuleTileLabel(AppStrings strings) {
+    if (_setMetricType == ExerciseSetMetricType.durationSeconds) {
+      return strings.isChinese ? '时长统计' : 'Duration';
+    }
+    return strings.isChinese ? '次数统计' : 'Reps';
+  }
+
+  String _shortLoadInputModeLabel(AppStrings strings) {
+    switch (_loadInputMode) {
+      case ExerciseLoadInputMode.perSideLoad:
+        return strings.isChinese ? '每侧重量' : 'Per-side';
+      case ExerciseLoadInputMode.bodyweightAdded:
+        return strings.isChinese ? '自重加重' : 'Added load';
+      case ExerciseLoadInputMode.assistanceLoad:
+        return strings.isChinese ? '辅助重量' : 'Assistance';
+      case ExerciseLoadInputMode.totalLoad:
+      default:
+        return strings.isChinese ? '总重量' : 'Total load';
+    }
+  }
+
+  String _shortSetMetricTypeLabel(AppStrings strings) {
+    if (_setMetricType == ExerciseSetMetricType.durationSeconds) {
+      return strings.isChinese ? '时长' : 'Duration';
+    }
+    return strings.isChinese ? '次数' : 'Reps';
+  }
+
+  String _shortRepsInputModeLabel(AppStrings strings) {
+    if (_setMetricType == ExerciseSetMetricType.durationSeconds) {
+      return strings.isChinese ? '总时长' : 'Total duration';
+    }
+    switch (_repsInputMode) {
+      case ExerciseRepsInputMode.perSide:
+        return strings.isChinese ? '每侧次数' : 'Per-side reps';
+      case ExerciseRepsInputMode.totalReps:
+      default:
+        return strings.isChinese ? '总次数' : 'Total reps';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
@@ -2264,207 +2430,640 @@ class _CustomExercisePageState extends State<_CustomExercisePage> {
         .where((part) => part != 'Cardio')
         .toList();
     final secondaryOptions = <String?>[null, ...strengthBodyParts];
+    final pageTitleStyle = Theme.of(
+      context,
+    ).appBarTheme.titleTextStyle?.copyWith(color: const Color(0xFF16301A));
+    final contentBottomPadding = MediaQuery.paddingOf(context).bottom + 124;
 
     return Scaffold(
-      appBar: AppBar(title: Text(strings.customExercise)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: <Widget>[
-            SegmentedButton<bool>(
-              segments: <ButtonSegment<bool>>[
-                ButtonSegment<bool>(
-                  value: false,
-                  label: Text(strings.strengthExercise),
-                  icon: const Icon(Icons.fitness_center),
-                ),
-                ButtonSegment<bool>(
-                  value: true,
-                  label: Text(strings.cardioExercise),
-                  icon: const Icon(Icons.monitor_heart_outlined),
-                ),
-              ],
-              selected: <bool>{_isCardio},
-              onSelectionChanged: (selection) {
-                setState(() => _isCardio = selection.first);
-              },
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: strings.exerciseNameLabel),
-              validator: (value) {
-                if ((value ?? '').trim().isEmpty) {
-                  return strings.exerciseNameRequired;
-                }
-                return null;
-              },
-            ),
-            if (!_isCardio) ...<Widget>[
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                initialValue: _bodyPart,
-                decoration: InputDecoration(labelText: strings.primaryBodyPart),
-                items: strengthBodyParts
-                    .map(
-                      (part) => DropdownMenuItem<String>(
-                        value: part,
-                        child: Text(strings.bodyPartLabel(part)),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, contentBottomPadding),
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 18),
+                child: Row(
+                  children: <Widget>[
+                    IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      color: const Color(0xFF203125),
+                      iconSize: 32,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 40,
+                        height: 40,
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    _bodyPart = value;
-                    if (_secondaryBodyPart == value) {
-                      _secondaryBodyPart = null;
-                    }
-                  });
-                },
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String?>(
-                initialValue: _secondaryBodyPart,
-                decoration: InputDecoration(
-                  labelText: strings.secondaryBodyPartOptional,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        strings.customExercise,
+                        style: pageTitleStyle,
+                      ),
+                    ),
+                  ],
                 ),
-                items: secondaryOptions
-                    .where((part) => part == null || part != _bodyPart)
-                    .map(
-                      (part) => DropdownMenuItem<String?>(
-                        value: part,
-                        child: Text(
-                          part == null
+              ),
+              _CustomExerciseModeToggle(
+                isCardio: _isCardio,
+                strengthLabel: strings.strengthExercise,
+                cardioLabel: strings.cardioExercise,
+                onChanged: (isCardio) => setState(() => _isCardio = isCardio),
+              ),
+              const SizedBox(height: 12),
+              _CustomExerciseSectionCard(
+                icon: const Icon(Icons.person_outline_rounded),
+                title: strings.isChinese ? '动作名称' : 'Exercise Name',
+                child: TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: strings.exerciseNameLabel,
+                  ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF152013),
+                  ),
+                  validator: (value) {
+                    if ((value ?? '').trim().isEmpty) {
+                      return strings.exerciseNameRequired;
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (!_isCardio) ...<Widget>[
+                _CustomExerciseSectionCard(
+                  icon: const Icon(Icons.sell_outlined),
+                  title: strings.isChinese ? '动作归类' : 'Exercise Category',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stackTwoColumnTiles = constraints.maxWidth < 290;
+                      final primaryTile = _CustomExerciseInfoTile(
+                        label: _primaryBodyPartTileLabel(strings),
+                        value: strings.bodyPartLabel(_bodyPart),
+                        leading: FitLogAssetIcon(
+                          assetName: fitLogWorkoutAssetForBodyPart(_bodyPart),
+                          size: 30,
+                        ),
+                        compact: true,
+                        onTap: () => _pickStringValue(
+                          title: strings.primaryBodyPart,
+                          currentValue: _bodyPart,
+                          options: strengthBodyParts,
+                          labelBuilder: strings.bodyPartLabel,
+                          onPicked: (value) {
+                            setState(() {
+                              _bodyPart = value;
+                              if (_secondaryBodyPart == value) {
+                                _secondaryBodyPart = null;
+                              }
+                            });
+                          },
+                        ),
+                      );
+                      final secondaryTile = _CustomExerciseInfoTile(
+                        label: _secondaryBodyPartTileLabel(strings),
+                        value: _secondaryBodyPart == null
+                            ? strings.noneOption
+                            : strings.bodyPartLabel(_secondaryBodyPart!),
+                        leading: const Icon(Icons.hub_rounded),
+                        compact: true,
+                        onTap: () => _pickNullableStringValue(
+                          title: strings.secondaryBodyPartOptional,
+                          currentValue: _secondaryBodyPart,
+                          options: secondaryOptions
+                              .where(
+                                (part) => part == null || part != _bodyPart,
+                              )
+                              .toList(),
+                          labelBuilder: (value) => value == null
                               ? strings.noneOption
-                              : strings.bodyPartLabel(part),
+                              : strings.bodyPartLabel(value),
+                          onPicked: (value) {
+                            setState(() => _secondaryBodyPart = value);
+                          },
+                        ),
+                      );
+
+                      return Column(
+                        children: <Widget>[
+                          if (stackTwoColumnTiles)
+                            Column(
+                              children: <Widget>[
+                                primaryTile,
+                                const SizedBox(height: 12),
+                                secondaryTile,
+                              ],
+                            )
+                          else
+                            Row(
+                              children: <Widget>[
+                                Expanded(child: primaryTile),
+                                const SizedBox(width: 10),
+                                Expanded(child: secondaryTile),
+                              ],
+                            ),
+                          const SizedBox(height: 12),
+                          _CustomExerciseInfoTile(
+                            label: _structureTileLabel(strings),
+                            value: _bodyPart == 'Full Body'
+                                ? strings.isChinese
+                                      ? '全身动作'
+                                      : 'Full-body movement'
+                                : strings.exerciseStructureLabelFor(
+                                    _strengthStructure,
+                                  ),
+                            leading: const Icon(Icons.layers_outlined),
+                            onTap: _bodyPart == 'Full Body'
+                                ? null
+                                : () => _pickStringValue(
+                                    title: strings.exerciseStructureLabel,
+                                    currentValue: _strengthStructure,
+                                    options: const <String>[
+                                      ExerciseStructure.compound,
+                                      ExerciseStructure.isolation,
+                                    ],
+                                    labelBuilder:
+                                        strings.exerciseStructureLabelFor,
+                                    onPicked: (value) {
+                                      setState(
+                                        () => _strengthStructure = value,
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _CustomExerciseSectionCard(
+                  icon: const Icon(Icons.tune_rounded),
+                  title: strings.isChinese ? '记录规则' : 'Recording Rules',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stackRuleTiles = constraints.maxWidth < 290;
+                      final loadTile = _CustomExerciseInfoTile(
+                        label: _loadRuleTileLabel(strings),
+                        value: _shortLoadInputModeLabel(strings),
+                        leading: const Icon(Icons.fitness_center_rounded),
+                        onTap: () => _pickStringValue(
+                          title: strings.loadInputMode,
+                          currentValue: _loadInputMode,
+                          options: const <String>[
+                            ExerciseLoadInputMode.totalLoad,
+                            ExerciseLoadInputMode.perSideLoad,
+                            ExerciseLoadInputMode.bodyweightAdded,
+                            ExerciseLoadInputMode.assistanceLoad,
+                          ],
+                          labelBuilder: strings.loadInputModeLabel,
+                          onPicked: (value) {
+                            setState(() => _loadInputMode = value);
+                          },
+                        ),
+                      );
+                      final entryTile = _CustomExerciseInfoTile(
+                        label: _entryRuleTileLabel(strings),
+                        value: _shortSetMetricTypeLabel(strings),
+                        leading: const Icon(Icons.edit_rounded),
+                        compact: true,
+                        onTap: () => _pickStringValue(
+                          title: strings.setEntryMode,
+                          currentValue: _setMetricType,
+                          options: const <String>[
+                            ExerciseSetMetricType.reps,
+                            ExerciseSetMetricType.durationSeconds,
+                          ],
+                          labelBuilder: strings.setMetricTypeLabel,
+                          onPicked: (value) {
+                            setState(() => _setMetricType = value);
+                          },
+                        ),
+                      );
+                      final repsTile = _CustomExerciseInfoTile(
+                        label: _repsRuleTileLabel(strings),
+                        value: _shortRepsInputModeLabel(strings),
+                        leading: const Icon(Icons.bar_chart_rounded),
+                        compact: true,
+                        onTap: _setMetricType == ExerciseSetMetricType.reps
+                            ? () => _pickStringValue(
+                                title: strings.repsInputMode,
+                                currentValue: _repsInputMode,
+                                options: const <String>[
+                                  ExerciseRepsInputMode.totalReps,
+                                  ExerciseRepsInputMode.perSide,
+                                ],
+                                labelBuilder: strings.repsInputModeLabel,
+                                onPicked: (value) {
+                                  setState(() => _repsInputMode = value);
+                                },
+                              )
+                            : null,
+                      );
+
+                      if (stackRuleTiles) {
+                        return Column(
+                          children: <Widget>[
+                            loadTile,
+                            const SizedBox(height: 12),
+                            entryTile,
+                            const SizedBox(height: 12),
+                            repsTile,
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        children: <Widget>[
+                          loadTile,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: <Widget>[
+                              Expanded(child: entryTile),
+                              const SizedBox(width: 10),
+                              Expanded(child: repsTile),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ] else ...<Widget>[
+                _CustomExerciseSectionCard(
+                  icon: const Icon(Icons.tune_rounded),
+                  title: strings.isChinese ? '记录规则' : 'Recording Rules',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _CustomExerciseInfoTile(
+                        label: strings.isChinese ? '主要记录' : 'Primary record',
+                        value: strings.isChinese ? '时长' : 'Duration',
+                        leading: const Icon(Icons.timelapse_rounded),
+                      ),
+                      const SizedBox(height: 12),
+                      _CustomExerciseInfoTile(
+                        label: strings.isChinese ? '辅助记录' : 'Secondary record',
+                        value: strings.isChinese ? '本次强度' : 'Session intensity',
+                        leading: const Icon(Icons.speed_rounded),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        strings.customCardioDefinitionHint,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF6A7A66),
+                          height: 1.45,
                         ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => _secondaryBodyPart = value);
-                },
-              ),
-              if (_bodyPart != 'Full Body') ...<Widget>[
-                const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
-                  initialValue: _strengthStructure,
-                  decoration: InputDecoration(
-                    labelText: strings.exerciseStructureLabel,
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          _CustomExerciseTinyChip(
+                            label: strings.isChinese ? '不记录：重量' : 'No weight',
+                          ),
+                          _CustomExerciseTinyChip(
+                            label: strings.isChinese ? '不记录：次数' : 'No reps',
+                          ),
+                          _CustomExerciseTinyChip(
+                            label: strings.isChinese ? '不记录：组数' : 'No sets',
+                          ),
+                          _CustomExerciseTinyChip(
+                            label: strings.isChinese
+                                ? '不记录：部位'
+                                : 'No body part',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  items:
-                      <String>[
-                            ExerciseStructure.compound,
-                            ExerciseStructure.isolation,
-                          ]
-                          .map(
-                            (value) => DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                strings.exerciseStructureLabelFor(value),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() => _strengthStructure = value);
-                  },
                 ),
               ],
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                initialValue: _loadInputMode,
-                decoration: InputDecoration(labelText: strings.loadInputMode),
-                items:
-                    <String>[
-                          ExerciseLoadInputMode.totalLoad,
-                          ExerciseLoadInputMode.perSideLoad,
-                          ExerciseLoadInputMode.bodyweightAdded,
-                          ExerciseLoadInputMode.assistanceLoad,
-                        ]
-                        .map(
-                          (value) => DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(strings.loadInputModeLabel(value)),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() => _loadInputMode = value);
-                },
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+        child: FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.check_rounded),
+          label: Text(strings.addExercise),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(62),
+            backgroundColor: const Color(0xFF3E7A31),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomExerciseModeToggle extends StatelessWidget {
+  const _CustomExerciseModeToggle({
+    required this.isCardio,
+    required this.strengthLabel,
+    required this.cardioLabel,
+    required this.onChanged,
+  });
+
+  final bool isCardio;
+  final String strengthLabel;
+  final String cardioLabel;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget buildSegment({
+      required bool value,
+      required String label,
+      required IconData icon,
+    }) {
+      final selected = isCardio == value;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(999),
+            onTap: () => onChanged(value),
+            child: SizedBox(
+              height: 64,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    icon,
+                    color: selected
+                        ? const Color(0xFF4E9E3B)
+                        : const Color(0xFF354336),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: selected
+                          ? const Color(0xFF34752A)
+                          : const Color(0xFF243226),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                initialValue: _setMetricType,
-                decoration: InputDecoration(labelText: strings.setEntryMode),
-                items:
-                    <String>[
-                          ExerciseSetMetricType.reps,
-                          ExerciseSetMetricType.durationSeconds,
-                        ]
-                        .map(
-                          (value) => DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(strings.setMetricTypeLabel(value)),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() => _setMetricType = value);
-                },
-              ),
-              if (_setMetricType == ExerciseSetMetricType.reps) ...<Widget>[
-                const SizedBox(height: 14),
-                DropdownButtonFormField<String>(
-                  initialValue: _repsInputMode,
-                  decoration: InputDecoration(labelText: strings.repsInputMode),
-                  items:
-                      <String>[
-                            ExerciseRepsInputMode.totalReps,
-                            ExerciseRepsInputMode.perSide,
-                          ]
-                          .map(
-                            (value) => DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(strings.repsInputModeLabel(value)),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() => _repsInputMode = value);
-                  },
-                ),
-              ],
-            ] else ...<Widget>[
-              const SizedBox(height: 14),
-              Text(
-                strings.customCardioDefinitionHint,
-                style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 336),
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0xFFE2ECDD)),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: const Color(0xFF13200F).withValues(alpha: 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.check),
-              label: Text(strings.addExercise),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final thumbWidth = (constraints.maxWidth - 4) / 2;
+              return Stack(
+                children: <Widget>[
+                  AnimatedAlign(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    alignment: isCardio
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Container(
+                      width: thumbWidth,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE7F6D8),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: const Color(0xFFD1E8B6)),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: <Widget>[
+                      buildSegment(
+                        value: false,
+                        label: strengthLabel,
+                        icon: Icons.fitness_center_rounded,
+                      ),
+                      buildSegment(
+                        value: true,
+                        label: cardioLabel,
+                        icon: Icons.directions_run_rounded,
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomExerciseSectionCard extends StatelessWidget {
+  const _CustomExerciseSectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+
+  final Widget icon;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(18),
+      borderRadius: 30,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF6E3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: IconTheme(
+                  data: const IconThemeData(color: Color(0xFF5D7E53), size: 24),
+                  child: icon,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF152013),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomExerciseInfoTile extends StatelessWidget {
+  const _CustomExerciseInfoTile({
+    required this.label,
+    required this.value,
+    required this.leading,
+    this.onTap,
+    this.compact = false,
+  });
+
+  final String label;
+  final String value;
+  final Widget leading;
+  final VoidCallback? onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        compact ? 12 : 14,
+        compact ? 11 : 12,
+        compact ? 12 : 14,
+        compact ? 11 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FBF5),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE1E9DD)),
+      ),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: compact ? 28 : 32,
+            height: compact ? 28 : 32,
+            child: IconTheme(
+              data: IconThemeData(
+                color: const Color(0xFF6A8760),
+                size: compact ? 22 : 24,
+              ),
+              child: Center(child: leading),
             ),
-          ],
+          ),
+          SizedBox(width: compact ? 8 : 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  label,
+                  style:
+                      (compact
+                              ? Theme.of(context).textTheme.bodyMedium
+                              : Theme.of(context).textTheme.bodySmall)
+                          ?.copyWith(
+                            color: const Color(0xFF71806C),
+                            fontWeight: FontWeight.w700,
+                          ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: compact ? 3 : 4),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF172116),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onTap != null)
+            Icon(
+              Icons.chevron_right_rounded,
+              color: const Color(0xFF72806F),
+              size: compact ? 20 : 24,
+            ),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return tile;
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: tile,
+    );
+  }
+}
+
+class _CustomExerciseTinyChip extends StatelessWidget {
+  const _CustomExerciseTinyChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FAF4),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2ECDD)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF55644F),
         ),
       ),
     );

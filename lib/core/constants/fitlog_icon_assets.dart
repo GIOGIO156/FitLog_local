@@ -34,12 +34,12 @@ class FitLogIconAssets {
       'assets/icons/exercises/seated_row.png';
   static const String exerciseSquat = 'assets/icons/exercises/squat.png';
 
-  static const String workoutChest = 'assets/icons/workouts/chest.svg';
-  static const String workoutBack = 'assets/icons/workouts/back.svg';
-  static const String workoutLegs = 'assets/icons/workouts/legs.svg';
-  static const String workoutShoulders = 'assets/icons/workouts/shoulders.svg';
-  static const String workoutArms = 'assets/icons/workouts/arms.svg';
-  static const String workoutCore = 'assets/icons/workouts/core.svg';
-  static const String workoutCardio = 'assets/icons/workouts/cardio.svg';
-  static const String workoutFullBody = 'assets/icons/workouts/full_body.svg';
+  static const String workoutChest = 'assets/icons/workouts/chest.png';
+  static const String workoutBack = 'assets/icons/workouts/back.png';
+  static const String workoutLegs = 'assets/icons/workouts/legs.png';
+  static const String workoutShoulders = 'assets/icons/workouts/shoulders.png';
+  static const String workoutArms = 'assets/icons/workouts/arms.png';
+  static const String workoutCore = 'assets/icons/workouts/core.png';
+  static const String workoutCardio = 'assets/icons/workouts/cardio.png';
+  static const String workoutFullBody = 'assets/icons/workouts/full_body.png';
 }

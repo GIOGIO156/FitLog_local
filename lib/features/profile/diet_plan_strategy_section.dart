@@ -9,6 +9,7 @@ class DietPlanStrategySection extends StatelessWidget {
   const DietPlanStrategySection({
     super.key,
     required this.strings,
+    this.showStrategyPicker = true,
     required this.canUseCuttingStrategy,
     required this.isBulkingPhase,
     required this.dietPlanStrategy,
@@ -31,6 +32,7 @@ class DietPlanStrategySection extends StatelessWidget {
   });
 
   final AppStrings strings;
+  final bool showStrategyPicker;
   final bool canUseCuttingStrategy;
   final bool isBulkingPhase;
   final String dietPlanStrategy;
@@ -67,14 +69,16 @@ class DietPlanStrategySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        ProfileOptionField<String>(
-          value: dietPlanStrategy,
-          labelText: strings.dietPlanStrategyLabel,
-          options: AppConstants.dietPlanStrategies,
-          labelBuilder: strings.strategyLabel,
-          onChanged: onStrategyChanged,
-        ),
-        const SizedBox(height: 8),
+        if (showStrategyPicker) ...<Widget>[
+          ProfileOptionField<String>(
+            value: dietPlanStrategy,
+            labelText: strings.dietPlanStrategyLabel,
+            options: AppConstants.dietPlanStrategies,
+            labelBuilder: strings.strategyLabel,
+            onChanged: onStrategyChanged,
+          ),
+          const SizedBox(height: 8),
+        ],
         Text(
           canUseCuttingStrategy
               ? strings.cuttingOnlyStrategyNotice

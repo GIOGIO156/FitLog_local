@@ -19,6 +19,16 @@ class ExerciseThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final exerciseAsset = fitLogWorkoutAssetForExercise(exerciseName);
+    final assetScale = switch (bodyPart) {
+      'Full Body' => 0.82,
+      'Cardio' => 0.74,
+      _ => 0.66,
+    };
+    final fallbackScale = switch (bodyPart) {
+      'Full Body' => 0.7,
+      'Cardio' => 0.62,
+      _ => 0.52,
+    };
 
     if (exerciseAsset != null) {
       return Container(
@@ -31,18 +41,18 @@ class ExerciseThumbnail extends StatelessWidget {
         alignment: Alignment.center,
         child: Image.asset(
           exerciseAsset,
-          width: size * 0.66,
-          height: size * 0.66,
+          width: size * assetScale,
+          height: size * assetScale,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
         ),
       );
     }
 
-    return FitLogSvgIconCircle(
+    return FitLogAssetIconCircle(
       assetName: fitLogWorkoutAssetForBodyPart(bodyPart),
       size: size,
-      iconSize: size * 0.52,
+      iconSize: size * fallbackScale,
       backgroundColor: color.withValues(alpha: 0.14),
       tintColor: color,
     );

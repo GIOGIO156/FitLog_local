@@ -161,6 +161,7 @@ How it works:
 - Reusable custom exercises appear under their own `Custom exercises` filter instead of the built-in body-part filters.
 - Temporary custom exercises can be saved to the reusable local custom library when the user saves the workout record.
 - When the user is inside that dedicated custom filter, reusable custom exercises can be hidden from future selection through inline swipe-to-delete with confirmation.
+- The temporary custom-exercise page is no longer a plain vertical dropdown form; it reuses the Add Workout title scale, starts with a compact slider-style strength/cardio mode switch, keeps the name in its own identity card, groups strength metadata into tappable bento tiles, gives long rules a full-width row, uses short tile labels, falls back to one column only on very narrow screens, aligns section headers to the shared workout card-title scale, tightens typography to match the real mobile app surfaces, and uses a fixed bottom add action.
 - Cardio exercises use duration and session intensity, and have no set checklist.
 - The cardio duration explanation sits above the duration field, and the cardio intensity question sits above the intensity picker, which keeps the dropdown readable on small screens.
 - The interval/very-high cardio option asks for active movement time so rest time is not overestimated.
@@ -211,12 +212,14 @@ Read more:
 
 ## Profile
 
-Profile is where users configure personal data, diet behavior, language, export, and local data actions.
+Profile is a summary-first control surface for personal data, diet behavior, language, export, and local data actions.
 
 What users can set:
 
-- nickname for local-only UI display
-- age, height, weight, and sex option
+- nickname for local-only UI display, shown under the visible `User Settings` header as a compact one-line identity row with a trailing pen trigger and inline edit on demand
+- a current-plan summary and macro target strip below the top identity row
+- body-profile summary grid
+- age, height, weight, and sex option inside a display-first 2x2 body-profile grid where only the tapped tile becomes editable
 - language
 - `diet_goal_phase`
 - `diet_calculation_mode`
@@ -232,6 +235,11 @@ How it works:
 - Profile saves to singleton `user_profile`.
 - `nickname` is local-only profile data and is not an account identifier.
 - Saving Profile also upserts the current day's weight log.
+- The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.
+- Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.
+- The current-plan hero keeps an information trigger that opens a Home-style bottom sheet rather than a full-screen page; the sheet swaps between a `gram_per_kg` coefficient table and an `energy_ratio` default setup guide based on the selected diet mode.
+- In `energy_ratio` mode, the energy-ratio settings card sits directly under the plan matrix and above the shared training-frequency/self-check card so the mode selector and numeric inputs stay adjacent.
+- The `g/kg` setup card no longer repeats the self-check summary row or the long explanatory note; the full training-frequency self-check card stays below it as a separate section, and the note moves into the information sheet.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.
 - Training-frequency self-check can recommend the shared training-frequency setting from recent valid training days in either diet mode.
 - Carb taper review can suggest a local action, but user confirmation is required.

@@ -27,7 +27,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Local identity nickname, body profile, language, diet phase, diet mode, strategy settings, shared training-frequency self-check, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
+| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with single-tile editing, direct phase/mode/strategy matrix, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
 | Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
@@ -49,21 +49,22 @@ The app is designed for users who may use external multimodal AI to estimate com
 4. The user can add a temporary custom exercise to the current record; on save, FitLog asks whether to keep it in the reusable custom library.
 5. Reusable custom exercises appear in a dedicated `Custom exercises` picker group instead of being merged into the built-in chest/back/legs/body-part groups.
 6. When the user is viewing that dedicated custom group, reusable custom exercises support inline swipe-to-delete with confirmation instead of a separate management page or a global library action.
-7. Cardio exercises require per-exercise duration and session intensity, and have no set checklist.
-8. The cardio duration helper is shown above the duration field, and the intensity explanation is shown above the intensity picker to avoid dropdown overflow and keep the question readable.
-9. Cardio intensity is entered as a maintainable-duration basis: 60+ minutes, 30-60 minutes, 10-30 minutes, 3-10 minutes, or under 3 minutes with rests.
-10. Interval or very-high-intensity cardio records active movement time so rest time is not treated as extreme-intensity work.
-11. Strength exercises use set rows with weight, reps or single-set duration, and completed state.
-12. Built-in and custom strength exercises store the input mode used for the session: total load, per-side load, bodyweight plus added load, assistance load, total reps, per-side reps, or duration-based sets.
-13. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
-14. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
-15. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
-16. Save validation completes before any saved-record persistence happens.
-17. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
-18. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
-19. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
-20. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
-21. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
+7. The temporary custom-exercise creation page is a card-first control surface with the same title scale as Add Workout, a compact slider-style strength/cardio switch, one identity card for the name, a bento-style strength metadata card, short tappable tile labels, a compact recording-rules card that gives long load labels a full-width row, narrow-screen single-column fallback, section headers aligned to the shared workout card-title scale, tighter real-device typography, and a fixed bottom add action.
+8. Cardio exercises require per-exercise duration and session intensity, and have no set checklist.
+9. The cardio duration helper is shown above the duration field, and the intensity explanation is shown above the intensity picker to avoid dropdown overflow and keep the question readable.
+10. Cardio intensity is entered as a maintainable-duration basis: 60+ minutes, 30-60 minutes, 10-30 minutes, 3-10 minutes, or under 3 minutes with rests.
+11. Interval or very-high-intensity cardio records active movement time so rest time is not treated as extreme-intensity work.
+12. Strength exercises use set rows with weight, reps or single-set duration, and completed state.
+13. Built-in and custom strength exercises store the input mode used for the session: total load, per-side load, bodyweight plus added load, assistance load, total reps, per-side reps, or duration-based sets.
+14. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
+15. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
+16. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
+17. Save validation completes before any saved-record persistence happens.
+18. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
+19. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
+20. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
+21. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
+22. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
 
 ## Daily Dashboard Behavior
 
@@ -81,14 +82,17 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 ## Diet Setup UX
 
-Profile presents diet setup in this order:
+Profile presents diet setup as a summary-first control surface instead of a long first-screen form:
 
-1. Local identity: nickname used only for on-device UI such as the Home greeting.
-2. Body profile: age, height, weight, and sex option.
-3. Goal phase: `cutting` or `bulking`.
-4. Calculation mode: `energy_ratio` or `gram_per_kg`.
-5. Optional strategy: `none`, `carb_cycling`, or `carb_tapering`.
-6. Phase/mode/strategy-specific controls.
+1. Local identity summary: nickname used only for on-device UI such as the Home greeting, shown under the `User Settings` header as a compact one-line identity row with a trailing pen trigger, and edited inline only when the user activates it.
+2. Current-plan hero: current phase, diet mode, training-frequency/self-check summary, strategy label, and static macro target strip.
+3. Body-profile summary and single-tile editing: age, height, weight, and sex option stay in a readable 2x2 display grid; tapping one tile turns only that tile into an editor, unchanged editors can collapse when the user taps elsewhere, and dirty values use card-local save/cancel actions instead of a separate long editing form.
+4. Plan matrix: direct tap chips for `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy`, kept in a stable horizontal wrap layout instead of switching into full-width vertical buttons.
+5. Current-plan help sheet: the hero keeps a small information trigger at the upper-right edge and opens the same non-full-screen bottom-sheet pattern used by the Home strategy guide; `gram_per_kg` shows the current phase/sex coefficient table by training-frequency row, while `energy_ratio` shows the default macro split plus the default lifestyle-factor table.
+6. Shared training-frequency/self-check card near the top, with direct-save chips for training frequency and self-check period, four self-check period choices kept on one row, without duplicating the self-check summary inside the setup card, and with one stable card title across diet modes.
+7. In `energy_ratio` mode, the energy-ratio settings card appears immediately below the plan matrix and above the shared training-frequency/self-check card so the mode-specific numeric inputs stay adjacent to the mode selector.
+8. Input-heavy cards such as nickname, body fields, and `energy_ratio` details save locally from within the same card; nickname and body fields default to read-only display, while direct chips and switches save immediately.
+9. The full training-frequency self-check card stays below the setup cards instead of being mixed into the `g/kg` setup body, and the long g/kg explanatory note now lives in the help sheet rather than inside the setup card.
 
 Expected behavior:
 
