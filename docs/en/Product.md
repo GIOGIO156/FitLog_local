@@ -21,13 +21,13 @@ The app is designed for users who may use external multimodal AI to estimate com
 | --- | --- | --- |
 | Home | Low-density selected-day entry screen for greeting, primary calorie/macro overview, current diet context, and compact food/workout summaries. | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | Date-filtered food records with open/edit, copy-to-date, delete, and add entry points. | `lib/features/food/food_log_page.dart`, `FoodRepository` |
-| Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
-| Food Detail | Editable saved food record and item rows. | `food_detail_page.dart` |
+| Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`; manual entry uses the same compact food-form grid as saved-record editing. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
+| Food Detail | Editable saved food record and item rows with localized field labels and suffix units while storage/JSON keys stay unchanged. | `food_detail_page.dart` |
 | Workout Log | Date-filtered saved workout records grouped by internal `plan_id`. | `workout_log_page.dart`, `WorkoutRepository` |
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with single-tile editing, direct phase/mode/strategy matrix, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
+| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with one shared edit state for age/height/weight/sex, direct phase/mode/strategy matrix, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
 | Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow

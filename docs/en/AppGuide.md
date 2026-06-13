@@ -100,6 +100,8 @@ How it works:
 - Prompt copy is static text, not an AI call.
 - Pasted JSON is parsed locally by `NutritionCalculator`.
 - The preview page lets users correct parsed values before saving.
+- Food Detail, AI preview, and Manual Entry all show user-facing field labels instead of raw snake_case keys, and numeric units stay in the field suffix so JSON keys and storage fields can remain unchanged.
+- Manual Entry uses the same compact grid as the Food Detail main section: meal name full width, weight and calories on one row, protein/carbs/fat on one row, and notes full width.
 - Manual entry writes a local record without item rows unless later edited.
 
 Read more:
@@ -220,7 +222,7 @@ What users can set:
 - nickname for local-only UI display, shown under the visible `User Settings` header as a compact one-line identity row with a trailing pen trigger and inline edit on demand
 - a current-plan summary and macro target strip below the top identity row
 - body-profile summary grid
-- age, height, weight, and sex option inside a display-first 2x2 body-profile grid where only the tapped tile becomes editable
+- age, height, weight, and sex option inside a display-first 2x2 body-profile grid
 - language
 - `diet_goal_phase`
 - `diet_calculation_mode`
@@ -238,6 +240,8 @@ How it works:
 - Saving Profile also upserts the current day's weight log.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.
 - Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.
+- Body Profile now enters one shared edit state: tapping any of the four tiles opens the whole 2x2 body-profile grid for cross-field editing, and one save action persists age, height, weight, and sex together.
+- The English compact profile copy keeps short strategy and self-check labels, including `N/A` for no diet strategy and concise current/suggested training-frequency actions.
 - The current-plan hero keeps an information trigger that opens a Home-style bottom sheet rather than a full-screen page; the sheet swaps between a `gram_per_kg` coefficient table and an `energy_ratio` default setup guide based on the selected diet mode.
 - In `energy_ratio` mode, the energy-ratio settings card sits directly under the plan matrix and above the shared training-frequency/self-check card so the mode selector and numeric inputs stay adjacent.
 - The `g/kg` setup card no longer repeats the self-check summary row or the long explanatory note; the full training-frequency self-check card stays below it as a separate section, and the note moves into the information sheet.

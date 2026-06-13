@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../domain/models/food_item.dart';
@@ -66,6 +67,7 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
   }
 
   Future<void> _save() async {
+    final strings = context.stringsRead;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -96,7 +98,7 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
 
       context.read<RefreshNotifier>().markDataChanged();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Manual food record saved.')),
+        SnackBar(content: Text(strings.manualFoodRecordSaved)),
       );
       Navigator.of(context).pop(true);
     } catch (error) {
@@ -104,7 +106,7 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
         return;
       }
       messenger.showSnackBar(
-        SnackBar(content: Text('Failed to save manual record: $error')),
+        SnackBar(content: Text(strings.failedToSaveManualFoodRecord(error))),
       );
     } finally {
       if (mounted) {
@@ -115,8 +117,9 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     return Scaffold(
-      appBar: AppBar(title: const Text('Manual Entry')),
+      appBar: AppBar(title: Text(strings.manualEntry)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -126,7 +129,7 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
             const SizedBox(height: 8),
             FoodFormField(
               controller: _mealNameController,
-              labelText: 'meal_name',
+              labelText: strings.foodMealNameLabel,
               validator: (value) {
                 if ((value ?? '').trim().isEmpty) {
                   return 'Please enter meal name';
@@ -135,49 +138,72 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
               },
             ),
             const SizedBox(height: 10),
-            FoodFormField(
-              controller: _weightController,
-              labelText: 'total_weight_g',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FoodFormField(
+                    controller: _weightController,
+                    labelText: strings.foodTotalWeightLabel,
+                    suffixText: strings.unitGram,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FoodFormField(
+                    controller: _caloriesController,
+                    labelText: strings.foodCaloriesLabel,
+                    suffixText: strings.unitKcal,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            FoodFormField(
-              controller: _caloriesController,
-              labelText: 'total_calories_kcal',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FoodFormField(
-              controller: _proteinController,
-              labelText: 'protein_g',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FoodFormField(
-              controller: _carbsController,
-              labelText: 'carbs_g',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FoodFormField(
-              controller: _fatController,
-              labelText: 'fat_g',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FoodFormField(
+                    controller: _proteinController,
+                    labelText: strings.foodProteinLabel,
+                    suffixText: strings.unitGram,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FoodFormField(
+                    controller: _carbsController,
+                    labelText: strings.foodCarbsLabel,
+                    suffixText: strings.unitGram,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FoodFormField(
+                    controller: _fatController,
+                    labelText: strings.foodFatLabel,
+                    suffixText: strings.unitGram,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             FoodFormField(
               controller: _notesController,
-              labelText: 'notes',
+              labelText: strings.foodNotesLabel,
               maxLines: 3,
             ),
           ],
@@ -188,7 +214,7 @@ class _ManualFoodEntryPageState extends State<ManualFoodEntryPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: FoodSaveButton(
             saving: _saving,
-            label: 'Save',
+            label: strings.save,
             onPressed: _save,
           ),
         ),

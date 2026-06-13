@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-06-14 Profile And Food Form Editing Follow-up
+
+### Changed
+
+- Reworked Body Profile editing so tapping any age/height/weight/sex tile opens one shared edit state for all four fields, allowing users to move across the 2 x 2 grid and save once instead of saving one field at a time.
+- Tightened agreed English UI copy on Profile, Home, and Add Workout, including the shorter training self-check title and period pills, shorter diet-mode and diet-strategy labels, compact current-plan training summary, shortened greetings, `Remaining`, `Exercise kcal`, `Calories Intake`, and the `Add` / `Custom` workout entry buttons.
+- Followed up the English Profile copy with `Current: x times/week`, `Suggested: x times/week`, shorter `Apply` / `Keep Current` action buttons, and `N/A` for the no-strategy diet pill.
+- Rebuilt Manual Entry to match the saved Food Detail main-section layout: meal name full width, weight and calories on one row, protein/carbs/fat on one row, and no confidence field.
+- Switched Food Detail, AI preview, and Manual Entry field labels from raw storage keys to user-facing localized labels, while keeping the underlying JSON/database/export keys unchanged and moving units such as `g` and `kcal` into input suffixes.
+- Updated bilingual Product and AppGuide docs so the body-profile shared edit state and the food-form presentation rules are recorded in the stable design docs.
+
+### Validation
+
+- `dart format` on modified Dart files: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug`: success; generated `build/app/outputs/flutter-apk/app-debug.apk`.
+- `flutter build apk --debug --split-per-abi --build-number 23`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
+- `flutter build apk --debug --split-per-abi --build-number 24`: success; regenerated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk` with the latest compact Profile copy follow-up.
+
 ## 2026-06-13 Source Baseline Cleanup
 
 ### Changed

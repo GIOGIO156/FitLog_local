@@ -15,9 +15,9 @@ class AppStrings {
   String get nicknameLabel => _t('Nickname', '昵称');
   String get nicknameHint => _t('Used for the Home greeting', '用于首页问候语');
   String get nicknameFallback => _t('there', '你');
-  String get morningGreeting => _t('Good morning', '早上好');
-  String get afternoonGreeting => _t('Good afternoon', '下午好');
-  String get eveningGreeting => _t('Good evening', '晚上好');
+  String get morningGreeting => _t('Morning', '早上好');
+  String get afternoonGreeting => _t('Afternoon', '下午好');
+  String get eveningGreeting => _t('Evening', '晚上好');
   String homeGreeting(String greeting, String nickname) =>
       isChinese ? '$greeting，$nickname！' : '$greeting, $nickname!';
   String get homeConsistencyHint => _t("Let's stay consistent.", '今天也稳稳记录。');
@@ -136,6 +136,33 @@ class AppStrings {
   String get manualEntry => _t('Manual Entry', '手动录入');
   String get manualEntrySubtitle =>
       _t('Manually input a food record', '手动填写一条食物记录');
+  String get foodDetailTitle => _t('Food Detail', '食物详情');
+  String get previewAiResultTitle => _t('Preview AI Result', 'AI 结果预览');
+  String get foodMealNameLabel => _t('Meal name', '餐食名称');
+  String get foodTotalWeightLabel => _t('Total weight', '总重量');
+  String get foodCaloriesLabel => _t('Calories', '热量');
+  String get foodProteinLabel => _t('Protein', '蛋白质');
+  String get foodCarbsLabel => _t('Carbs', '碳水');
+  String get foodFatLabel => _t('Fat', '脂肪');
+  String get foodConfidenceLabel => _t('Confidence', '置信度');
+  String get foodEstimationNotesLabel => _t('Estimation notes', '估算说明');
+  String get foodNotesLabel => _t('Notes', '备注');
+  String foodItemNameLabel(int index) => _t('Item $index name', '项目 $index 名称');
+  String get unitGram => _t('g', 'g');
+  String get unitKcal => _t('kcal', 'kcal');
+  String get manualFoodRecordSaved =>
+      _t('Manual food record saved.', '手动食物记录已保存。');
+  String get foodRecordSaved => _t('Food record saved.', '食物记录已保存。');
+  String get foodRecordUpdated => _t('Food record updated.', '食物记录已更新。');
+  String failedToSaveFoodRecord(Object error) =>
+      _t('Failed to save food record: $error', '保存食物记录失败：$error');
+  String failedToSaveManualFoodRecord(Object error) =>
+      _t('Failed to save manual record: $error', '保存手动食物记录失败：$error');
+  String get foodRecordNotFound => _t('Record not found.', '未找到该记录。');
+  String get noFoodItemRows =>
+      _t('No item rows for this record.', '这条记录暂无 item 明细。');
+  String get noFoodItemListDetected =>
+      _t('No item list detected in JSON.', 'JSON 中未检测到 item 列表。');
   String get photoAiAnalysis => _t('Photo AI Analysis', '图片 AI 分析');
   String get comingSoon => _t('Coming soon', '即将上线');
 
@@ -164,10 +191,10 @@ class AppStrings {
   String get goalPhaseLabel => _t('Goal phase', '目标阶段');
   String get cuttingLabel => _t('Cutting', '减脂期');
   String get bulkingLabel => _t('Bulking', '增肌期');
-  String get dietPlanStrategyLabel => _t('Diet plan strategy', '饮食计划策略');
-  String get strategyNoneLabel => _t('None', '不使用');
-  String get carbCyclingLabel => _t('Carb Cycling', '碳循环');
-  String get carbTaperingLabel => _t('Carb Tapering', '碳水渐降');
+  String get dietPlanStrategyLabel => _t('Diet strategy', '饮食计划策略');
+  String get strategyNoneLabel => _t('N/A', '不使用');
+  String get carbCyclingLabel => _t('Carb cycle', '碳循环');
+  String get carbTaperingLabel => _t('Carb Taper', '碳水渐降');
   String get cuttingOnlyStrategyNotice => _t(
     'This release supports carb cycling and carb tapering only in the cutting phase.',
     '本轮仅在减脂期支持碳循环和碳水渐降。',
@@ -362,43 +389,40 @@ class AppStrings {
   String get dailyGoalKcalLabel => dailyGoalKcalLabelForPhase('cutting');
   String get dietCalculationModeLabel =>
       _t('Diet calculation method', '饮食计算方法');
-  String get energyRatioModeLabel => _t('Energy ratio method', '热量比例算法');
-  String get gramPerKgModeLabel => _t('g/kg bodyweight method', 'g/kg 体重算法');
+  String get energyRatioModeLabel => _t('Energy ratio', '热量比例算法');
+  String get gramPerKgModeLabel => _t('g/kg method', 'g/kg 体重算法');
   String get trainingFrequencyPerWeekLabel =>
       _t('Training Frequency / Week', '每周训练频率');
   String trainingFrequencyOptionLabel(int value) =>
       _t('$value sessions/week', '每周 $value 次');
   String get macroSelfCheckPeriodLabel => _t('Self-check Period', '自检周期');
   String macroSelfCheckPeriodOptionLabel(int value) =>
-      _t('$value days', '$value 天');
+      _t('${value}d', '$value 天');
   String get macroSelfCheckEnabledLabel =>
-      _t('Enable training history self-check suggestions', '启用历史训练记录自检建议');
-  String get macroSelfCheckTitle =>
-      _t('Training Frequency Self-check', '训练频率自检');
-  String get applySuggestion => _t('Apply Suggestion', '应用建议');
-  String get keepCurrentSetting => _t('Keep Current Setting', '保持当前设置');
+      _t('History-based suggestions', '启用历史训练记录自检建议');
+  String get macroSelfCheckTitle => _t('Training Freq Check', '训练频率自检');
+  String get applySuggestion => _t('Apply', '应用建议');
+  String get keepCurrentSetting => _t('Keep Current', '保持当前设置');
   String get macroSelfCheckNoData =>
       _t('No valid training days in selected period yet.', '所选周期内暂无有效训练日。');
-  String get macroSelfCheckConsistent => _t(
-    'Current setting is consistent with recent training history.',
-    '当前设置与历史训练记录基本一致。',
-  );
+  String get macroSelfCheckConsistent =>
+      _t('Your setting matches recent training.', '当前设置与历史训练记录基本一致。');
   String get macroSelfCheckReminderCooldownHint => _t(
     'A recommendation exists but reminder cooldown is active. You can adjust it manually below.',
     '当前存在推荐档位，但提醒冷却中。你可以在下方手动调整。',
   );
   String macroSelfCheckCurrentFrequencyText(int value) =>
-      _t('Current setting: $value sessions/week', '当前设置：每周训练 $value 次');
+      _t('Current: $value times/week', '当前设置：每周训练 $value 次');
   String macroSelfCheckActiveDaysText(int periodDays, int activeDays) => _t(
     'Past $periodDays days: trained on $activeDays days',
     '过去 $periodDays 天：实际训练 $activeDays 天',
   );
   String macroSelfCheckAverageFrequencyText(double weeklyFrequency) => _t(
-    'Logged frequency: about ${weeklyFrequency.toStringAsFixed(1)} sessions/week',
+    'Logged: ~${weeklyFrequency.toStringAsFixed(1)} sessions/week',
     '记录折算频率：约每周 ${weeklyFrequency.toStringAsFixed(1)} 次',
   );
   String macroSelfCheckRecommendedText(int value) =>
-      _t('Suggested setting: $value sessions/week', '建议设置为：每周训练 $value 次');
+      _t('Suggested: $value times/week', '建议设置为：每周训练 $value 次');
   String get macroSelfCheckBelowRangeNotice => _t(
     'Recent logged frequency is below the shared training-frequency range. FitLog keeps the 2 sessions/week tier as the minimum default.',
     '最近记录频率低于共享训练频率范围，FitLog 会把每周 2 次作为最低默认档位。',
@@ -555,7 +579,7 @@ class AppStrings {
       _t('$count selected', '已选 $count 个');
   String addExercisesWithCount(int count) =>
       _t('Add selected exercises ($count)', '添加已选动作（$count）');
-  String get addExercises => _t('Add Exercises', '添加运动');
+  String get addExercises => _t('Add', '添加运动');
   String get exercisePlanDetails => _t('Exercise Record Details', '动作记录详情');
   String get exercisePickerCollapsedHint => _t(
     'Exercise library is hidden by default. Tap the button to select multiple exercises.',
@@ -564,7 +588,7 @@ class AppStrings {
   String get noExerciseSelectedYet =>
       _t('No exercise selected yet.', '还没有选择动作。');
   String get tapAddExerciseToBuildPlan => _t(
-    'Tap Add Exercises to build your workout record first.',
+    'Tap Add to build your workout record first.',
     '先点击“添加运动”，再填写每个动作的详细信息。',
   );
   String get tapExerciseToBuildPlan => _t(
@@ -592,7 +616,7 @@ class AppStrings {
     'At this pace, about how long could you keep going continuously?',
     '保持这次的速度 / 节奏，你大概能连续维持多久？',
   );
-  String get customExercise => _t('Custom exercise', '自定义动作');
+  String get customExercise => _t('Custom', '自定义动作');
   String get addExercise => _t('Add exercise', '添加动作');
   String get strengthExercise => _t('Strength', '力量');
   String get cardioExercise => _t('Cardio', '有氧');
@@ -701,15 +725,14 @@ class AppStrings {
   String get todayFoodList => _t('Today Food Records', '今日食物记录');
   String get todayWorkoutList => _t('Today Workout Records', '今日训练记录');
 
-  String get caloriesInTodayLabel => _t('Calories in today', '今日摄入热量');
+  String get caloriesInTodayLabel => _t('Calories Intake', '今日摄入热量');
   String todayCaloriesAux(double caloriesIn) => _t(
     'Today intake: ${caloriesIn.toStringAsFixed(0)} kcal',
     '今日已摄入：${caloriesIn.toStringAsFixed(0)} kcal',
   );
-  String get exerciseCaloriesTodayLabel =>
-      _t('Exercise calories today', '今日运动消耗');
+  String get exerciseCaloriesTodayLabel => _t('Exercise kcal', '今日运动消耗');
   String get targetIntakeLabel => _t('Target intake', '今日目标摄入');
-  String get remainingCaloriesLabel => _t('Remaining calories', '剩余热量');
+  String get remainingCaloriesLabel => _t('Remaining', '剩余热量');
   String get macroTargetModeGramPerKg =>
       _t('Macro Targets (g/kg)', '三大营养目标（g/kg）');
   String get gramPerKgModeNotice => _t(

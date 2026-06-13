@@ -72,7 +72,7 @@ void main() {
 
     expect(find.text("Today's Macro Progress"), findsOneWidget);
     expect(find.text("Today's Records"), findsNothing);
-    expect(find.textContaining('Carb Cycling'), findsNothing);
+    expect(find.textContaining('Carb cycle'), findsNothing);
     expect(find.textContaining('1365', findRichText: true), findsOneWidget);
     expect(find.textContaining('220', findRichText: true), findsOneWidget);
     expect(find.text('Protein'), findsWidgets);
@@ -83,7 +83,7 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
 
-    final strategyLabelFinder = find.textContaining('Carb Cycling');
+    final strategyLabelFinder = find.textContaining('Carb cycle');
     expect(strategyLabelFinder, findsOneWidget);
     expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(800));
     expect(tester.takeException(), isNull);
@@ -132,7 +132,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final strategyLabelFinder = find.textContaining('Carb Cycling');
+    final strategyLabelFinder = find.textContaining('Carb cycle');
     expect(strategyLabelFinder, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -500));
@@ -187,7 +187,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final strategyLabelFinder = find.textContaining('Carb Cycling');
+    final strategyLabelFinder = find.textContaining('Carb cycle');
     expect(strategyLabelFinder, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -500));

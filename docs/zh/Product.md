@@ -21,13 +21,13 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | --- | --- | --- |
 | Home | 低信息密度的每日入口页，展示问候语、主 calorie/macro 概览、当前饮食上下文和简洁的饮食/训练摘要。 | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | 按日期查看饮食记录，支持打开/编辑、复制到指定日期、删除和新增入口。 | `lib/features/food/food_log_page.dart`, `FoodRepository` |
-| Add Food | 手动录入、外部 AI JSON 粘贴、Prompt 复制和占位的 `Photo AI Analysis`。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
-| Food Detail | 编辑已保存的饮食记录和 item 行。 | `food_detail_page.dart` |
+| Add Food | 手动录入、外部 AI JSON 粘贴、Prompt 复制和占位的 `Photo AI Analysis`；手动录入复用与已保存饮食详情一致的紧凑表单网格。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
+| Food Detail | 编辑已保存的饮食记录和 item 行；显示使用本地化字段标签与后缀单位，底层存储/JSON key 不变。 | `food_detail_page.dart` |
 | Workout Log | 按日期展示已保存的训练记录，内部通过 `plan_id` 分组。 | `workout_log_page.dart`, `WorkoutRepository` |
 | Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、临时或可复用自定义动作、有氧时长/强度、力量输入口径、已完成组持久化、备注和摘要计算。 | `add_workout_page.dart` |
 | Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
 | Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
-| Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、默认展示且支持单 tile 编辑的身体资料网格、可点按的阶段/模式/策略矩阵、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
+| Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、默认展示且支持年龄/身高/体重/性别统一编辑态的身体资料网格、可点按的阶段/模式/策略矩阵、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository` |
 | Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、自定义动作、保存时的训练输入 metadata、每日汇总、资料、策略字段和 review 历史。 | `lib/export/*` |
 
 ## 饮食流程

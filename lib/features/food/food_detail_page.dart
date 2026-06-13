@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../domain/models/food_record.dart';
@@ -54,6 +55,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
   }
 
   Future<void> _load() async {
+    final strings = context.stringsRead;
     final record = await context
         .read<AppServices>()
         .foodRepository
@@ -66,7 +68,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
     if (record == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Record not found.')));
+      ).showSnackBar(SnackBar(content: Text(strings.foodRecordNotFound)));
       Navigator.of(context).pop(false);
       return;
     }
@@ -101,6 +103,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
   }
 
   Future<void> _save() async {
+    final strings = context.stringsRead;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -136,7 +139,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
 
       context.read<RefreshNotifier>().markDataChanged();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Food record updated.')),
+        SnackBar(content: Text(strings.foodRecordUpdated)),
       );
       Navigator.of(context).pop(true);
     } catch (error) {
@@ -144,7 +147,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
         return;
       }
       messenger.showSnackBar(
-        SnackBar(content: Text('Failed to save food record: $error')),
+        SnackBar(content: Text(strings.failedToSaveFoodRecord(error))),
       );
     } finally {
       if (mounted) {
@@ -155,12 +158,13 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Food Detail')),
+      appBar: AppBar(title: Text(strings.foodDetailTitle)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -175,7 +179,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     const SizedBox(height: 8),
                     FoodFormField(
                       controller: _mealNameController,
-                      labelText: 'meal_name',
+                      labelText: strings.foodMealNameLabel,
                       validator: (value) {
                         if ((value ?? '').trim().isEmpty) {
                           return 'Please enter meal name';
@@ -189,7 +193,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         Expanded(
                           child: FoodFormField(
                             controller: _weightController,
-                            labelText: 'total_weight_g',
+                            labelText: strings.foodTotalWeightLabel,
+                            suffixText: strings.unitGram,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -199,7 +204,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         Expanded(
                           child: FoodFormField(
                             controller: _caloriesController,
-                            labelText: 'calories_kcal',
+                            labelText: strings.foodCaloriesLabel,
+                            suffixText: strings.unitKcal,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -213,7 +219,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         Expanded(
                           child: FoodFormField(
                             controller: _proteinController,
-                            labelText: 'protein_g',
+                            labelText: strings.foodProteinLabel,
+                            suffixText: strings.unitGram,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -223,7 +230,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         Expanded(
                           child: FoodFormField(
                             controller: _carbsController,
-                            labelText: 'carbs_g',
+                            labelText: strings.foodCarbsLabel,
+                            suffixText: strings.unitGram,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -233,7 +241,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                         Expanded(
                           child: FoodFormField(
                             controller: _fatController,
-                            labelText: 'fat_g',
+                            labelText: strings.foodFatLabel,
+                            suffixText: strings.unitGram,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -244,7 +253,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     const SizedBox(height: 10),
                     FoodFormField(
                       controller: _confidenceController,
-                      labelText: 'confidence',
+                      labelText: strings.foodConfidenceLabel,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -252,7 +261,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     const SizedBox(height: 10),
                     FoodFormField(
                       controller: _notesController,
-                      labelText: 'estimation_notes',
+                      labelText: strings.foodEstimationNotesLabel,
                       maxLines: 3,
                     ),
                     const SizedBox(height: 10),
@@ -276,7 +285,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                     ),
                     const SizedBox(height: 8),
                     if (_items.isEmpty)
-                      const Text('No item rows for this record.')
+                      Text(strings.noFoodItemRows)
                     else
                       ..._items.asMap().entries.map((entry) {
                         final index = entry.key;
@@ -289,13 +298,16 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                               children: <Widget>[
                                 FoodFormField(
                                   initialValue: item.name,
-                                  labelText: 'Item ${index + 1} name',
+                                  labelText: strings.foodItemNameLabel(
+                                    index + 1,
+                                  ),
                                   onChanged: (value) => item.name = value,
                                 ),
                                 const SizedBox(height: 8),
                                 FoodFormField(
                                   initialValue: item.estimatedWeightG,
-                                  labelText: 'estimated_weight_g',
+                                  labelText: strings.foodTotalWeightLabel,
+                                  suffixText: strings.unitGram,
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
@@ -306,7 +318,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                 const SizedBox(height: 8),
                                 FoodFormField(
                                   initialValue: item.caloriesKcal,
-                                  labelText: 'calories_kcal',
+                                  labelText: strings.foodCaloriesLabel,
+                                  suffixText: strings.unitKcal,
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
@@ -320,7 +333,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                     Expanded(
                                       child: FoodFormField(
                                         initialValue: item.proteinG,
-                                        labelText: 'protein_g',
+                                        labelText: strings.foodProteinLabel,
+                                        suffixText: strings.unitGram,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -333,7 +347,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                     Expanded(
                                       child: FoodFormField(
                                         initialValue: item.carbsG,
-                                        labelText: 'carbs_g',
+                                        labelText: strings.foodCarbsLabel,
+                                        suffixText: strings.unitGram,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -346,7 +361,8 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                     Expanded(
                                       child: FoodFormField(
                                         initialValue: item.fatG,
-                                        labelText: 'fat_g',
+                                        labelText: strings.foodFatLabel,
+                                        suffixText: strings.unitGram,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
@@ -359,7 +375,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                                 const SizedBox(height: 8),
                                 FoodFormField(
                                   initialValue: item.notes,
-                                  labelText: 'notes',
+                                  labelText: strings.foodNotesLabel,
                                   onChanged: (value) => item.notes = value,
                                 ),
                               ],
@@ -379,7 +395,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: FoodSaveButton(
             saving: _saving,
-            label: 'Save Changes',
+            label: strings.save,
             onPressed: _save,
           ),
         ),

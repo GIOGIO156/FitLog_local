@@ -48,7 +48,7 @@ void main() {
     await tester.pumpWidget(_buildAddWorkoutTestApp(customRepository));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Add Exercises'));
+    await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
     expect(find.text('Exercise Library'), findsOneWidget);
 

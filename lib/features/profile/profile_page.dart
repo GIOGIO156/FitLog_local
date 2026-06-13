@@ -263,11 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (_editingNickname && !_hasNicknameDraft) {
         _editingNickname = false;
       }
-      if (_editingBodyField == null ||
-          !_hasBodyProfileDraft ||
-          _editingBodyField == field) {
-        _editingBodyField = field;
-      }
+      _editingBodyField = field;
     });
   }
 
@@ -731,6 +727,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _trainingSummaryLabel(BuildContext context) {
     final strings = context.strings;
+    if (!strings.isChinese) {
+      return '$_trainingFrequencyPerWeek times/wk · ${_macroSelfCheckPeriodDays}d check';
+    }
     return strings.isChinese
         ? '每周训练 $_trainingFrequencyPerWeek 次 · $_macroSelfCheckPeriodDays 天自检'
         : '$_trainingFrequencyPerWeek sessions/week · $_macroSelfCheckPeriodDays-day self-check';
@@ -1399,12 +1398,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             label: strings.ageLabel,
                             icon: Icons.accessibility_new_rounded,
                             value: _ageController.text,
-                            editing: _editingBodyField == _BodyProfileField.age,
+                            editing: _editingBodyField != null,
                             onTap: () => _activateBodyProfileField(
                               _BodyProfileField.age,
                             ),
                             editor: _BorderlessProfileTextField(
                               controller: _ageController,
+                              autofocus:
+                                  _editingBodyField == _BodyProfileField.age,
                               keyboardType: TextInputType.number,
                               onChanged: (_) => setState(() {}),
                             ),
@@ -1417,13 +1418,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             icon: Icons.straighten_rounded,
                             value: _heightCm.toStringAsFixed(1),
                             unit: 'cm',
-                            editing:
-                                _editingBodyField == _BodyProfileField.height,
+                            editing: _editingBodyField != null,
                             onTap: () => _activateBodyProfileField(
                               _BodyProfileField.height,
                             ),
                             editor: _InlineUnitEditor(
                               controller: _heightController,
+                              autofocus:
+                                  _editingBodyField == _BodyProfileField.height,
                               unit: 'cm',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
@@ -1444,13 +1446,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             icon: Icons.monitor_weight_outlined,
                             value: _weightKg.toStringAsFixed(1),
                             unit: 'kg',
-                            editing:
-                                _editingBodyField == _BodyProfileField.weight,
+                            editing: _editingBodyField != null,
                             onTap: () => _activateBodyProfileField(
                               _BodyProfileField.weight,
                             ),
                             editor: _InlineUnitEditor(
                               controller: _weightController,
+                              autofocus:
+                                  _editingBodyField == _BodyProfileField.weight,
                               unit: 'kg',
                               keyboardType:
                                   const TextInputType.numberWithOptions(
@@ -1466,7 +1469,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             label: strings.sexForFormulaLabel,
                             icon: Icons.person_2_outlined,
                             value: strings.sexOptionLabel(_sexForFormula),
-                            editing: _editingBodyField == _BodyProfileField.sex,
+                            editing: _editingBodyField != null,
                             onTap: () => _activateBodyProfileField(
                               _BodyProfileField.sex,
                             ),
@@ -2707,11 +2710,13 @@ class _ProfileTileValue extends StatelessWidget {
 class _BorderlessProfileTextField extends StatelessWidget {
   const _BorderlessProfileTextField({
     required this.controller,
+    required this.autofocus,
     required this.keyboardType,
     required this.onChanged,
   });
 
   final TextEditingController controller;
+  final bool autofocus;
   final TextInputType keyboardType;
   final ValueChanged<String> onChanged;
 
@@ -2720,7 +2725,7 @@ class _BorderlessProfileTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      autofocus: true,
+      autofocus: autofocus,
       onChanged: onChanged,
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
         fontWeight: FontWeight.w800,
@@ -2740,12 +2745,14 @@ class _BorderlessProfileTextField extends StatelessWidget {
 class _InlineUnitEditor extends StatelessWidget {
   const _InlineUnitEditor({
     required this.controller,
+    required this.autofocus,
     required this.unit,
     required this.keyboardType,
     required this.onChanged,
   });
 
   final TextEditingController controller;
+  final bool autofocus;
   final String unit;
   final TextInputType keyboardType;
   final ValueChanged<String> onChanged;
@@ -2758,6 +2765,7 @@ class _InlineUnitEditor extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
+            autofocus: autofocus,
             keyboardType: keyboardType,
             onChanged: onChanged,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../domain/models/food_item.dart';
@@ -60,6 +61,7 @@ class FoodFormField extends StatelessWidget {
     this.controller,
     this.initialValue,
     required this.labelText,
+    this.suffixText,
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
@@ -69,6 +71,7 @@ class FoodFormField extends StatelessWidget {
   final TextEditingController? controller;
   final String? initialValue;
   final String labelText;
+  final String? suffixText;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
@@ -79,7 +82,7 @@ class FoodFormField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       initialValue: initialValue,
-      decoration: InputDecoration(labelText: labelText),
+      decoration: InputDecoration(labelText: labelText, suffixText: suffixText),
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
@@ -96,11 +99,12 @@ class FoodDateTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: const Text('Date'),
+      title: Text(strings.date),
       subtitle: Text(DateUtilsX.formatReadable(date)),
-      trailing: TextButton(onPressed: onChange, child: const Text('Change')),
+      trailing: TextButton(onPressed: onChange, child: Text(strings.change)),
     );
   }
 }
@@ -119,6 +123,7 @@ class FoodSaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     return FilledButton.icon(
       onPressed: saving ? null : onPressed,
       icon: saving
@@ -128,7 +133,7 @@ class FoodSaveButton extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.save_outlined),
-      label: Text(saving ? 'Saving...' : label),
+      label: Text(saving ? strings.saving : label),
     );
   }
 }
