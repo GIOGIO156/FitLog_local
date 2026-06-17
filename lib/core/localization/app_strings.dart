@@ -41,10 +41,10 @@ class AppStrings {
     '复制静态 prompt 给外部 AI 工具使用',
   );
   String foodRecordsSummary(int mealCount) =>
-      _t('$mealCount meals logged', '已记录 $mealCount 餐');
+      _t('$mealCount meals', '已记录 $mealCount 餐');
   String workoutRecordsSummary(int sessionCount) => _t(
     '$sessionCount session${sessionCount == 1 ? '' : 's'}',
-    '已记录 $sessionCount 次训练',
+    '已记录 $sessionCount 次',
   );
   String macroProgressText(double current, double target) =>
       '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} g';
