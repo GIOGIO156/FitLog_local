@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/app_constants.dart';
 import '../constants/fitlog_icon_assets.dart';
+import '../fitlog_theme.dart';
 import '../localization/localization_extensions.dart';
 import '../utils/date_utils.dart';
 
@@ -24,14 +25,14 @@ class FitLogPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final titleStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
       fontWeight: FontWeight.w800,
-      color: const Color(0xFF152013),
+      color: palette.textPrimary,
     );
-    final subtitleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      color: const Color(0xFF61715D),
-      height: 1.4,
-    );
+    final subtitleStyle = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(color: palette.textSecondary, height: 1.4);
 
     return Padding(
       padding: padding,
@@ -76,6 +77,7 @@ class FitLogSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final actionEnabled =
         onTap != null && (actionLabel ?? '').trim().isNotEmpty;
     return Padding(
@@ -87,7 +89,7 @@ class FitLogSectionHeader extends StatelessWidget {
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF152013),
+                color: palette.textPrimary,
               ),
             ),
           ),
@@ -260,6 +262,7 @@ class FitLogStrategyGuideSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
@@ -269,7 +272,7 @@ class FitLogStrategyGuideSection extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF152013),
+              color: palette.textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -283,8 +286,8 @@ class FitLogStrategyGuideSection extends StatelessWidget {
                     width: 6,
                     height: 6,
                     margin: const EdgeInsets.only(top: 7),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF74BF56),
+                    decoration: BoxDecoration(
+                      color: palette.primaryBright,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -293,7 +296,7 @@ class FitLogStrategyGuideSection extends StatelessWidget {
                     child: Text(
                       line,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF51614E),
+                        color: palette.textSecondary,
                         height: 1.45,
                       ),
                     ),
@@ -384,12 +387,13 @@ class FitLogActionIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return IconButton.filledTonal(
       onPressed: onPressed,
       tooltip: tooltip,
       style: IconButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF234120),
+        backgroundColor: palette.surface,
+        foregroundColor: palette.primaryText,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       icon: Icon(icon, size: 20),
@@ -411,6 +415,7 @@ class FitLogDateStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final selected = DateUtilsX.parseDay(selectedDate);
     final startOfWeek = selected.subtract(Duration(days: selected.weekday - 1));
 
@@ -423,7 +428,7 @@ class FitLogDateStrip extends StatelessWidget {
                 DateUtilsX.formatReadable(selectedDate),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF152013),
+                  color: palette.textPrimary,
                 ),
               ),
             ),
@@ -450,12 +455,12 @@ class FitLogDateStrip extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF7BC75B) : Colors.white,
+                    color: isSelected ? palette.primaryBright : palette.surface,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFF7BC75B)
-                          : const Color(0xFFE2ECDD),
+                          ? palette.primaryBright
+                          : palette.outline,
                     ),
                   ),
                   child: Column(
@@ -467,8 +472,8 @@ class FitLogDateStrip extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: isSelected
-                              ? Colors.white.withValues(alpha: 0.92)
-                              : const Color(0xFF75856F),
+                              ? palette.onPrimary.withValues(alpha: 0.92)
+                              : palette.textMuted,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -478,8 +483,8 @@ class FitLogDateStrip extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF152013),
+                              ? palette.onPrimary
+                              : palette.textPrimary,
                         ),
                       ),
                     ],

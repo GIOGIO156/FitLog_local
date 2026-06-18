@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/fitlog_theme.dart';
 import '../../core/constants/fitlog_icon_assets.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
@@ -147,6 +148,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
   ) {
     final display = _draftDisplay(draft, strings);
     final theme = Theme.of(context);
+    final palette = context.fitLogColors;
     final surfaceColor = theme.colorScheme.surfaceContainerHighest;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -158,7 +160,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
           child: Ink(
             decoration: BoxDecoration(
               color: Color.alphaBlend(
-                const Color(0x1474BF56),
+                palette.primarySoft.withValues(alpha: 0.45),
                 surfaceColor.withValues(alpha: 0.9),
               ),
               borderRadius: BorderRadius.circular(20),
@@ -170,9 +172,9 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                 Container(
                   width: 4,
                   height: 42,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF74BF56),
-                    borderRadius: BorderRadius.all(Radius.circular(999)),
+                  decoration: BoxDecoration(
+                    color: palette.primaryBright,
+                    borderRadius: const BorderRadius.all(Radius.circular(999)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -186,8 +188,8 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                           Container(
                             width: 10,
                             height: 10,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF74BF56),
+                            decoration: BoxDecoration(
+                              color: palette.primaryBright,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -421,6 +423,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
+    final palette = context.fitLogColors;
 
     return SafeArea(
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
@@ -505,16 +508,16 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFEAF6E3),
+                                        color: palette.primarySoft,
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
                                       ),
                                       child: Text(
                                         _formatStartTime(plan.startedAt),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF4E9E3B),
+                                          color: palette.primary,
                                         ),
                                       ),
                                     ),
@@ -537,9 +540,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                                 Text(
                                   DateUtilsX.formatReadable(plan.date),
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: const Color(0xFF75856F),
-                                      ),
+                                      ?.copyWith(color: palette.textMuted),
                                 ),
                                 const SizedBox(height: 14),
                                 Row(
@@ -594,9 +595,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                                       .map(strings.exerciseDisplayName)
                                       .join(' · '),
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: const Color(0xFF61715D),
-                                      ),
+                                      ?.copyWith(color: palette.textSecondary),
                                 ),
                               ],
                             ),
@@ -625,8 +624,8 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                   label: Text(strings.addWorkout),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
-                    backgroundColor: const Color(0xFF74BF56),
-                    foregroundColor: Colors.white,
+                    backgroundColor: palette.primaryBright,
+                    foregroundColor: palette.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
@@ -649,6 +648,7 @@ class _WorkoutMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -656,7 +656,7 @@ class _WorkoutMetric extends StatelessWidget {
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF7A8973)),
+          ).textTheme.bodySmall?.copyWith(color: palette.textMuted),
         ),
         const SizedBox(height: 4),
         Text(

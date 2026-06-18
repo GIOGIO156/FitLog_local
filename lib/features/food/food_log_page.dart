@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
+import '../../core/fitlog_theme.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/fitlog_ui.dart';
@@ -179,6 +180,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
+    final palette = context.fitLogColors;
 
     return SafeArea(
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
@@ -244,7 +246,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
                               strings.estimateNotice,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color: const Color(0xFF61715D),
+                                    color: palette.textSecondary,
                                     height: 1.4,
                                   ),
                             ),
@@ -280,16 +282,16 @@ class _FoodLogPageState extends State<FoodLogPage> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFEAF6E3),
+                                        color: palette.primarySoft,
                                         borderRadius: BorderRadius.circular(
                                           999,
                                         ),
                                       ),
                                       child: Text(
                                         strings.sourceLabel(record.source),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF4E9E3B),
+                                          color: palette.primary,
                                         ),
                                       ),
                                     ),
@@ -299,9 +301,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
                                 Text(
                                   _buildSubtitle(record),
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: const Color(0xFF74836E),
-                                      ),
+                                      ?.copyWith(color: palette.textMuted),
                                 ),
                                 const SizedBox(height: 12),
                                 Row(
@@ -325,9 +325,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
-                                          ?.copyWith(
-                                            color: const Color(0xFF7A8973),
-                                          ),
+                                          ?.copyWith(color: palette.textMuted),
                                     ),
                                     const Spacer(),
                                     FitLogActionIconButton(
@@ -365,8 +363,8 @@ class _FoodLogPageState extends State<FoodLogPage> {
                   label: Text(strings.addFood),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
-                    backgroundColor: const Color(0xFF74BF56),
-                    foregroundColor: Colors.white,
+                    backgroundColor: palette.primaryBright,
+                    foregroundColor: palette.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
@@ -395,18 +393,19 @@ class _FoodMetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FAF4),
+        color: palette.surfaceSubtle,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE5EDE0)),
+        border: Border.all(color: palette.outlineSubtle),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w700,
-          color: const Color(0xFF4B5A47),
+          color: palette.textSecondary,
         ),
       ),
     );

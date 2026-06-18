@@ -28,7 +28,7 @@ FitLog Local 当前提供：
 - 本地饮食记录、手动录入、外部 AI JSON 粘贴、预览编辑、复制到指定日期和删除
 - 本地训练记录，支持命名的多动作训练记录、内置和可复用自定义动作、独立的自定义动作分组与组内左滑删除、有氧时长与强度、力量组输入口径、仅保存已完成组、保存后摘要和记录编辑
 - 每日看板，展示摄入、运动消耗、BMR、非运动 TDEE 参考、目标、剩余 kcal/宏量和选中日期记录
-- Profile 设置，管理身体数据、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
+- Profile 设置，管理身体数据、主题、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
 - 本地确定性饮食策略：`carb_cycling` 和 `carb_tapering`
 - XLSX 导出和 CSV ZIP 导出
 
@@ -73,7 +73,7 @@ FitLog Local 当前不提供：
 
 Profile：
 
-- 保存年龄、身高、体重、性别选项、共享训练频率设置、饮食阶段、计算模式、宏量比例、自检设置、兼容活动元数据和策略设置。
+- 保存年龄、身高、体重、性别选项、共享训练频率设置、饮食阶段、计算模式、宏量比例、自检设置、兼容活动元数据和策略设置；主题偏好保存在本地 UI 偏好中，不写入 SQLite profile。
 - `diet_goal_phase` 是 cutting/bulking 语义的唯一来源。
 - 未成年人保护会阻止成人式减脂赤字行为和减脂碳水策略。
 - 导出和清空本地数据都只作用于本地。
@@ -123,7 +123,7 @@ FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来�
 - Flutter + Dart
 - SQLite via `sqflite`
 - `provider` 用于应用服务和 UI 状态
-- `shared_preferences` 保存语言偏好
+- `shared_preferences` 保存语言和主题偏好
 - `excel` 用于 XLSX 导出
 - `csv` 和 `archive` 用于 CSV ZIP 导出
 
@@ -198,7 +198,7 @@ FitLog Local currently provides:
 - local food records, manual food entry, external AI JSON paste, preview/edit, copy-to-date, and delete
 - local workout records with named multi-exercise records, built-in and reusable custom exercises, a dedicated custom-exercise picker group with inline swipe-to-delete for saved custom entries, cardio duration and intensity, strength set input modes, completed-set persistence, saved-record summaries, and record editing
 - a daily dashboard for intake, exercise calories, BMR, no-exercise TDEE reference, targets, remaining kcal/macros, and selected-day records
-- Profile settings for body data, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
+- Profile settings for body data, theme, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
 - local deterministic diet strategy support for `carb_cycling` and `carb_tapering`
 - XLSX export and CSV ZIP export
 
@@ -243,7 +243,7 @@ Home:
 
 Profile:
 
-- Stores age, height, weight, sex option, a shared training-frequency setting, diet phase, calculation mode, macro ratios, self-check settings, compatibility activity metadata, and strategy settings.
+- Stores age, height, weight, sex option, a shared training-frequency setting, diet phase, calculation mode, macro ratios, self-check settings, compatibility activity metadata, and strategy settings; theme preference is stored as a local UI preference, not in the SQLite profile.
 - `diet_goal_phase` is the source of truth for cutting/bulking semantics.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.
 - Export and clear-local-data actions stay local.
@@ -293,7 +293,7 @@ For the user-facing explanation, see [Methodology](docs/en/Methodology.md). For 
 - Flutter + Dart
 - SQLite via `sqflite`
 - `provider` for app services and UI state
-- `shared_preferences` for language preference
+- `shared_preferences` for language and theme preference
 - XLSX export via `excel`
 - CSV ZIP export via `csv` and `archive`
 

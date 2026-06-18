@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/fitlog_icon_assets.dart';
+import '../../core/fitlog_theme.dart';
 import '../../core/localization/app_language.dart';
 import '../../core/localization/language_controller.dart';
 import '../../core/localization/localization_extensions.dart';
+import '../../core/theme_controller.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
 import '../../core/widgets/fitlog_ui.dart';
@@ -500,6 +502,7 @@ class _ProfilePageState extends State<ProfilePage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final palette = context.fitLogColors;
         return SafeArea(
           top: false,
           child: Padding(
@@ -512,9 +515,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      const FitLogIconCircle(
+                      FitLogIconCircle(
                         icon: Icons.info_outline_rounded,
-                        color: Color(0xFF4E9E3B),
+                        color: palette.primary,
                         size: 44,
                       ),
                       const SizedBox(width: 12),
@@ -627,7 +630,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         .textTheme
                                         .bodyMedium
                                         ?.copyWith(
-                                          color: const Color(0xFF5D6B58),
+                                          color: palette.textSecondary,
                                           height: 1.45,
                                         ),
                                   ),
@@ -1276,7 +1279,9 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     final strings = context.strings;
+    final palette = context.fitLogColors;
     final languageController = context.watch<LanguageController>();
+    final themeController = context.watch<ThemeController>();
 
     final bmr = _calculateBmr();
     final lifestyleFactor = _currentLifestyleFactor();
@@ -1317,7 +1322,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       strings.nicknameLabel,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF6B7A67),
+                        color: palette.textMuted,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1331,7 +1336,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: Theme.of(context).textTheme.headlineSmall
                                   ?.copyWith(
                                     fontWeight: FontWeight.w900,
-                                    color: const Color(0xFF152013),
+                                    color: palette.textPrimary,
                                     height: 1.0,
                                   ),
                               decoration: InputDecoration(
@@ -1359,7 +1364,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       .headlineSmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.w900,
-                                        color: const Color(0xFF152013),
+                                        color: palette.textPrimary,
                                         height: 1.0,
                                       ),
                                 ),
@@ -1481,7 +1486,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF152013),
+                                      color: palette.textPrimary,
                                     ),
                                 items: AppConstants.sexOptions.map((value) {
                                   return DropdownMenuItem<String>(
@@ -1918,9 +1923,45 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               _ProfileSummarySectionCard(
+                title: strings.themeSettings,
+                icon: Icons.palette_outlined,
+                key: _settingsSectionKey,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _ThemeOptionButton(
+                        label: strings.themeGreen,
+                        selected: themeController.theme == FitLogThemeKey.green,
+                        onTap: () =>
+                            themeController.setTheme(FitLogThemeKey.green),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ThemeOptionButton(
+                        label: strings.themeBlue,
+                        selected: themeController.theme == FitLogThemeKey.blue,
+                        onTap: () =>
+                            themeController.setTheme(FitLogThemeKey.blue),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ThemeOptionButton(
+                        label: strings.themeBlackOrange,
+                        selected:
+                            themeController.theme == FitLogThemeKey.blackOrange,
+                        onTap: () => themeController.setTheme(
+                          FitLogThemeKey.blackOrange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _ProfileSummarySectionCard(
                 title: strings.languageSettings,
                 icon: Icons.translate_rounded,
-                key: _settingsSectionKey,
                 child: SegmentedButton<AppLanguage>(
                   segments: <ButtonSegment<AppLanguage>>[
                     ButtonSegment<AppLanguage>(
@@ -2100,6 +2141,7 @@ class _ProfilePlanGuideInPageOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final isGramPerKgMode =
         profile.dietCalculationMode ==
         AppConstants.dietCalculationModeGramPerKg;
@@ -2134,9 +2176,9 @@ class _ProfilePlanGuideInPageOverlay extends StatelessWidget {
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          const FitLogIconCircle(
+                          FitLogIconCircle(
                             icon: Icons.info_outline_rounded,
-                            color: Color(0xFF4E9E3B),
+                            color: palette.primary,
                             size: 44,
                           ),
                           const SizedBox(width: 12),
@@ -2252,7 +2294,7 @@ class _ProfilePlanGuideInPageOverlay extends StatelessWidget {
                                             .textTheme
                                             .bodyMedium
                                             ?.copyWith(
-                                              color: const Color(0xFF5D6B58),
+                                              color: palette.textSecondary,
                                               height: 1.45,
                                             ),
                                       ),
@@ -2359,6 +2401,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
@@ -2367,18 +2410,14 @@ class _ProfilePlanHeroCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
-                Icons.flag_outlined,
-                color: Color(0xFF4E9E3B),
-                size: 20,
-              ),
+              Icon(Icons.flag_outlined, color: palette.primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   strings.isChinese ? '当前计划' : 'Current Plan',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF355A32),
+                    color: palette.primaryDeep,
                   ),
                 ),
               ),
@@ -2397,7 +2436,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
                   phaseLabel,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w900,
-                    color: const Color(0xFF152013),
+                    color: palette.textPrimary,
                     height: 1.0,
                   ),
                 ),
@@ -2409,9 +2448,9 @@ class _ProfilePlanHeroCard extends StatelessWidget {
           const SizedBox(height: 16),
           _ProfilePlanInfoRow(
             leadingSize: 28,
-            leading: const Icon(
+            leading: Icon(
               Icons.fitness_center_rounded,
-              color: Color(0xFF355A32),
+              color: palette.primaryDeep,
               size: 20,
             ),
             text: trainingSummary,
@@ -2423,7 +2462,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
               assetName: FitLogIconAssets.strategy,
               iconSize: 23,
               badgeSize: 28,
-              backgroundColor: const Color(0xFFEAF6E3),
+              backgroundColor: palette.primarySoft,
             ),
             text: '${strings.isChinese ? '策略' : 'Strategy'}: $strategyLabel',
           ),
@@ -2431,9 +2470,9 @@ class _ProfilePlanHeroCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFBFDF9),
+              color: palette.surfaceVariant,
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFE2ECDD)),
+              border: Border.all(color: palette.outline),
             ),
             child: Row(
               children: <Widget>[
@@ -2504,6 +2543,7 @@ class _ProfileInfoButtonState extends State<_ProfileInfoButton> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (event) {
@@ -2541,22 +2581,22 @@ class _ProfileInfoButtonState extends State<_ProfileInfoButton> {
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _pressed ? const Color(0xFFDCEFD1) : const Color(0xFFEAF6E3),
+          color: _pressed ? palette.primarySoftPressed : palette.primarySoft,
           shape: BoxShape.circle,
           boxShadow: _pressed
-              ? const <BoxShadow>[
+              ? <BoxShadow>[
                   BoxShadow(
-                    color: Color(0x22355A32),
+                    color: palette.primaryDeep.withValues(alpha: 0.14),
                     blurRadius: 8,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : const <BoxShadow>[],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.info_outline_rounded,
           size: 28,
-          color: Color(0xFF4E7B42),
+          color: palette.primaryDeep,
         ),
       ),
     );
@@ -2577,6 +2617,7 @@ class _ProfileSummarySectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(18),
@@ -2585,7 +2626,7 @@ class _ProfileSummarySectionCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, color: const Color(0xFF355A32), size: 24),
+              Icon(icon, color: palette.primaryDeep, size: 24),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -2593,7 +2634,7 @@ class _ProfileSummarySectionCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF152013),
+                    color: palette.textPrimary,
                   ),
                 ),
               ),
@@ -2602,6 +2643,52 @@ class _ProfileSummarySectionCard extends StatelessWidget {
           const SizedBox(height: 14),
           child,
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeOptionButton extends StatelessWidget {
+  const _ThemeOptionButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: selected ? palette.primarySoftSelected : palette.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? palette.primaryBright : palette.outline,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: selected ? palette.primaryStrong : palette.textPrimary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2628,26 +2715,27 @@ class _BodyProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final tile = Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FBF5),
+        color: palette.surfaceSubtle,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2ECDD)),
+        border: Border.all(color: palette.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, color: const Color(0xFF5B7C54), size: 20),
+              Icon(icon, color: palette.primaryDeep, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF70806D),
+                    color: palette.textMuted,
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 2,
@@ -2677,13 +2765,14 @@ class _ProfileTileValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final valueStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
       fontWeight: FontWeight.w800,
-      color: const Color(0xFF152013),
+      color: palette.textPrimary,
     );
     final unitStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w700,
-      color: const Color(0xFF42513F),
+      color: palette.textSecondary,
     );
 
     return Align(
@@ -2722,6 +2811,7 @@ class _BorderlessProfileTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -2729,7 +2819,7 @@ class _BorderlessProfileTextField extends StatelessWidget {
       onChanged: onChanged,
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
         fontWeight: FontWeight.w800,
-        color: const Color(0xFF152013),
+        color: palette.textPrimary,
       ),
       decoration: const InputDecoration(
         isDense: true,
@@ -2759,6 +2849,7 @@ class _InlineUnitEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
@@ -2770,7 +2861,7 @@ class _InlineUnitEditor extends StatelessWidget {
             onChanged: onChanged,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF152013),
+              color: palette.textPrimary,
             ),
             decoration: const InputDecoration(
               isDense: true,
@@ -2788,7 +2879,7 @@ class _InlineUnitEditor extends StatelessWidget {
             unit,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF42513F),
+              color: palette.textSecondary,
             ),
           ),
         ),
@@ -2812,6 +2903,7 @@ class _InlineSaveActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Row(
       children: <Widget>[
         TextButton(
@@ -2832,8 +2924,8 @@ class _InlineSaveActions extends StatelessWidget {
             label: Text(saveLabel),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
-              backgroundColor: const Color(0xFF4E9E3B),
-              foregroundColor: Colors.white,
+              backgroundColor: palette.primary,
+              foregroundColor: palette.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -2858,13 +2950,14 @@ class _InlineCompactSaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return FilledButton(
       onPressed: saving ? null : onPressed,
       style: FilledButton.styleFrom(
         minimumSize: const Size(58, 34),
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        backgroundColor: const Color(0xFF4E9E3B),
-        foregroundColor: Colors.white,
+        backgroundColor: palette.primary,
+        foregroundColor: palette.onPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: saving
@@ -2886,6 +2979,7 @@ class _ProfileChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -2893,7 +2987,7 @@ class _ProfileChipRow extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF32412E),
+            color: palette.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -2917,6 +3011,7 @@ class _EvenPillRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -2924,7 +3019,7 @@ class _EvenPillRow extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF32412E),
+            color: palette.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -2960,6 +3055,7 @@ class _SelectablePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: disabled ? null : onTap,
@@ -2971,14 +3067,14 @@ class _SelectablePill extends StatelessWidget {
           vertical: compact ? 9 : 9,
         ),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE9F7DF) : Colors.white,
+          color: selected ? palette.primarySoftSelected : palette.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: selected
-                ? const Color(0xFF74BF56)
+                ? palette.primaryBright
                 : disabled
-                ? const Color(0xFFE8ECE4)
-                : const Color(0xFFDDE7D8),
+                ? palette.outlineSubtle
+                : palette.outline,
           ),
         ),
         child: Center(
@@ -2989,10 +3085,10 @@ class _SelectablePill extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.w800,
               color: disabled
-                  ? const Color(0xFF98A494)
+                  ? palette.textDisabled
                   : selected
-                  ? const Color(0xFF3E7A31)
-                  : const Color(0xFF2E3C2E),
+                  ? palette.primaryStrong
+                  : palette.textPrimary,
             ),
           ),
         ),
@@ -3018,6 +3114,7 @@ class _TrainingSelfCheckSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     if (!result.isEnabled) {
       return Text(strings.macroSelfCheckEnabledLabel);
     }
@@ -3055,7 +3152,7 @@ class _TrainingSelfCheckSummary extends StatelessWidget {
                 ),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF2E4E2A),
+            color: palette.primaryStrong,
           ),
         ),
         if (result.belowRecommendedRange) ...<Widget>[
@@ -3103,6 +3200,7 @@ class _ProfilePlanInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Row(
       children: <Widget>[
         SizedBox(
@@ -3116,7 +3214,7 @@ class _ProfilePlanInfoRow extends StatelessWidget {
             text,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF31412F),
+              color: palette.textPrimary,
             ),
           ),
         ),
@@ -3132,17 +3230,18 @@ class _OutlinedMetaPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF74BF56)),
+        border: Border.all(color: palette.primaryBright),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w800,
-          color: const Color(0xFF3E7A31),
+          color: palette.primaryStrong,
         ),
       ),
     );
@@ -3162,15 +3261,16 @@ class _ProfileGuideSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFBFDF9),
+          color: palette.surfaceVariant,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE2ECDD)),
+          border: Border.all(color: palette.outline),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -3179,7 +3279,7 @@ class _ProfileGuideSectionCard extends StatelessWidget {
               title,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1C2818),
+                color: palette.textPrimary,
               ),
             ),
             if ((subtitle ?? '').trim().isNotEmpty) ...<Widget>[
@@ -3188,7 +3288,7 @@ class _ProfileGuideSectionCard extends StatelessWidget {
                 subtitle!,
                 style: Theme.of(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF70806D)),
+                ).textTheme.bodySmall?.copyWith(color: palette.textMuted),
               ),
             ],
             const SizedBox(height: 12),
@@ -3208,12 +3308,13 @@ class _ProfileGuideTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2ECDD)),
+        border: Border.all(color: palette.outline),
       ),
       child: Table(
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -3225,7 +3326,7 @@ class _ProfileGuideTable extends StatelessWidget {
         },
         children: <TableRow>[
           TableRow(
-            decoration: const BoxDecoration(color: Color(0xFFF4F8EF)),
+            decoration: BoxDecoration(color: palette.primarySoft),
             children: headers
                 .map(
                   (header) =>
@@ -3253,12 +3354,13 @@ class _ProfileGuideTableCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Color(0xFFE9EFE4)),
-          bottom: BorderSide(color: Color(0xFFE9EFE4)),
+          right: BorderSide(color: palette.outlineSubtle),
+          bottom: BorderSide(color: palette.outlineSubtle),
         ),
       ),
       child: Text(
@@ -3272,7 +3374,7 @@ class _ProfileGuideTableCell extends StatelessWidget {
                     : Theme.of(context).textTheme.bodyMedium)
                 ?.copyWith(
                   fontWeight: isHeader ? FontWeight.w800 : FontWeight.w700,
-                  color: const Color(0xFF253223),
+                  color: palette.textPrimary,
                 ),
       ),
     );
@@ -3292,6 +3394,7 @@ class _MacroTargetColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final iconSize = assetName == FitLogIconAssets.macroCarbs ? 30.0 : 24.0;
 
     return Column(
@@ -3300,13 +3403,13 @@ class _MacroTargetColumn extends StatelessWidget {
         _SmallAssetBadge(
           assetName: assetName,
           iconSize: iconSize,
-          backgroundColor: const Color(0xFFF0F6E8),
+          backgroundColor: palette.primarySoft,
         ),
         const SizedBox(height: 8),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: const Color(0xFF6E7C69),
+            color: palette.textMuted,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -3315,7 +3418,7 @@ class _MacroTargetColumn extends StatelessWidget {
           text: TextSpan(
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF152013),
+              color: palette.textPrimary,
             ),
             children: <InlineSpan>[
               TextSpan(text: value),
@@ -3323,7 +3426,7 @@ class _MacroTargetColumn extends StatelessWidget {
                 text: ' g',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF445142),
+                  color: palette.textSecondary,
                 ),
               ),
             ],
@@ -3373,11 +3476,12 @@ class _MacroDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Container(
       width: 1,
       height: 72,
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      color: const Color(0xFFE2ECDD),
+      color: palette.outline,
     );
   }
 }

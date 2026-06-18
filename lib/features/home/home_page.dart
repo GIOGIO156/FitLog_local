@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/fitlog_icon_assets.dart';
+import '../../core/fitlog_theme.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
@@ -69,6 +70,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
+    final palette = context.fitLogColors;
 
     return SafeArea(
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
@@ -144,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                               child: Text(
                                 DateUtilsX.formatReadable(summary.date),
                                 style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: const Color(0xFF7A8973)),
+                                    ?.copyWith(color: palette.textMuted),
                               ),
                             ),
                             Expanded(
@@ -239,6 +241,7 @@ class _CaloriesHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final isGramPerKgMode =
         summary.dietCalculationMode ==
         AppConstants.dietCalculationModeGramPerKg;
@@ -249,16 +252,16 @@ class _CaloriesHero extends StatelessWidget {
     final heroValue = isGramPerKgMode
         ? summary.macroEnergyEquivalentKcal
         : summary.caloriesIn;
-    final energyRingState = _energyRingState(summary);
+    final energyRingState = _energyRingState(summary, palette);
     final ringValue = isGramPerKgMode ? progress : energyRingState.ringValue;
     final ringColor = isGramPerKgMode
-        ? const Color(0xFF74BF56)
+        ? palette.primaryBright
         : energyRingState.ringColor;
     final ringBackgroundColor = isGramPerKgMode
-        ? const Color(0xFFEEF3E7)
+        ? palette.primarySoft
         : energyRingState.backgroundColor;
     final remainingAccent = isGramPerKgMode
-        ? const Color(0xFF4E9E3B)
+        ? palette.primary
         : energyRingState.accentColor;
 
     return GlassPanel(
@@ -299,7 +302,7 @@ class _CaloriesHero extends StatelessWidget {
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF152013),
+                                color: palette.textPrimary,
                               ),
                         ),
                         const SizedBox(height: 2),
@@ -365,6 +368,7 @@ class _HeroMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,13 +377,13 @@ class _HeroMetric extends StatelessWidget {
           label,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF75856F)),
+          ).textTheme.bodySmall?.copyWith(color: palette.textMuted),
         ),
         const SizedBox(height: 2),
         _HeroMetricValueLine(
           value: value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: emphasize ?? const Color(0xFF152013),
+            color: emphasize ?? palette.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: 20.5,
           ),
@@ -490,6 +494,7 @@ class _GramPerKgDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navController = context.read<RootTabController>();
+    final palette = context.fitLogColors;
     final proteinProgress = _macroProgress(
       summary.proteinG,
       summary.targetProteinG,
@@ -522,13 +527,13 @@ class _GramPerKgDashboard extends StatelessWidget {
                       strings.gramPerKgHeroTitle,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF455340),
+                        color: palette.textSecondary,
                       ),
                     ),
                     Text(
                       strings.gramPerKgHeroModeSuffix,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF7A8973),
+                        color: palette.textMuted,
                       ),
                     ),
                   ],
@@ -574,7 +579,7 @@ class _GramPerKgDashboard extends StatelessWidget {
                                 ? strings.gramPerKgAllCompleteTitle
                                 : strings.gramPerKgFocusTitle,
                             style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: const Color(0xFF7A8973)),
+                                ?.copyWith(color: palette.textMuted),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -587,7 +592,7 @@ class _GramPerKgDashboard extends StatelessWidget {
                                 ?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: allComplete
-                                      ? const Color(0xFF152013)
+                                      ? palette.textPrimary
                                       : focus.color,
                                   height: 1.02,
                                 ),
@@ -601,7 +606,7 @@ class _GramPerKgDashboard extends StatelessWidget {
                                   ),
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
-                                  color: const Color(0xFF152013),
+                                  color: palette.textPrimary,
                                   fontWeight: FontWeight.w800,
                                   height: 1.0,
                                 ),
@@ -613,7 +618,7 @@ class _GramPerKgDashboard extends StatelessWidget {
                             subtitle: strings.foodRecordsSummary(
                               summary.foodRecords.length,
                             ),
-                            color: const Color(0xFF4E9E3B),
+                            color: palette.primary,
                             onTap: () => navController.setIndex(1),
                           ),
                           const SizedBox(height: 16),
@@ -704,6 +709,7 @@ class _DashboardEnergyLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
@@ -732,7 +738,7 @@ class _DashboardEnergyLink extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: const Color(0xFF7A8973)),
+                              ?.copyWith(color: palette.textMuted),
                         ),
                         const SizedBox(height: 2),
                         SizedBox(
@@ -780,18 +786,18 @@ class _DashboardEnergyLink extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: const Color(0xFF7A8973)),
+                              ?.copyWith(color: palette.textMuted),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: Color(0xFF7A8973),
+                      color: palette.textMuted,
                     ),
                   ),
                 ],
@@ -825,6 +831,7 @@ class _GramPerKgMacroStripColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final iconSize = iconAsset == FitLogIconAssets.macroCarbs ? 30.0 : 22.0;
     final isCenter = contentAlignment.x == 0;
     final isRight = contentAlignment.x > 0;
@@ -871,7 +878,7 @@ class _GramPerKgMacroStripColumn extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: textAlign,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF455340),
+                color: palette.textSecondary,
                 fontWeight: FontWeight.w700,
                 height: 1.1,
               ),
@@ -898,8 +905,9 @@ class _MacroStripDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return Center(
-      child: Container(width: 1, height: 102, color: const Color(0xFFE2E9DB)),
+      child: Container(width: 1, height: 102, color: palette.outline),
     );
   }
 }
@@ -970,9 +978,7 @@ _MacroFocusData _macroFocus(DailySummary summary, AppStrings strings) {
   return options.first;
 }
 
-_EnergyRingState _energyRingState(DailySummary summary) {
-  const green = Color(0xFF74BF56);
-  const softGreen = Color(0xFFEAF5E4);
+_EnergyRingState _energyRingState(DailySummary summary, FitLogColors palette) {
   const softOrange = Color(0xFFF3C27A);
   const red = Color(0xFFE16759);
   const paleRed = Color(0xFFF7D9D5);
@@ -999,17 +1005,17 @@ _EnergyRingState _energyRingState(DailySummary summary) {
   }
 
   if ((intake - target).abs() < 0.5) {
-    return const _EnergyRingState(
+    return _EnergyRingState(
       ringValue: 1,
-      ringColor: green,
-      backgroundColor: softGreen,
-      accentColor: green,
+      ringColor: palette.primaryBright,
+      backgroundColor: palette.primarySoft,
+      accentColor: palette.primaryBright,
     );
   }
 
   return _EnergyRingState(
     ringValue: (intake / target).clamp(0.0, 1.0),
-    ringColor: green,
+    ringColor: palette.primaryBright,
     backgroundColor: softOrange,
     accentColor: softOrange,
   );
@@ -1108,6 +1114,7 @@ class _MacroMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final progress = target <= 0 ? 0.0 : (current / target).clamp(0.0, 1.0);
 
     return SizedBox(
@@ -1115,9 +1122,9 @@ class _MacroMetricCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCFDFC),
+          color: palette.surfaceVariant,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE8EFE3)),
+          border: Border.all(color: palette.outlineSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1148,7 +1155,7 @@ class _MacroMetricCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF7A8973),
+                  color: palette.textMuted,
                   height: 1.25,
                 ),
               ),
@@ -1183,9 +1190,10 @@ class _HomeGreeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final style = Theme.of(context).textTheme.headlineSmall?.copyWith(
       fontWeight: FontWeight.w800,
-      color: const Color(0xFF152013),
+      color: palette.textPrimary,
       height: 1.1,
     );
     final prefixText = isChinese ? '$greetingPrefix，' : '$greetingPrefix,';
@@ -1280,6 +1288,7 @@ class _StrategyCard extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final palette = context.fitLogColors;
         return SafeArea(
           top: false,
           child: Padding(
@@ -1292,9 +1301,9 @@ class _StrategyCard extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      const _PngBadgeIcon(
+                      _PngBadgeIcon(
                         assetName: FitLogIconAssets.strategy,
-                        backgroundColor: Color(0xFFEAF6E3),
+                        backgroundColor: palette.primarySoft,
                         size: 44,
                         iconSize: 29,
                       ),
@@ -1359,6 +1368,7 @@ class _StrategyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     final strategyText =
         summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbCycling
         ? '${strings.carbCyclingLabel} - ${strings.carbDayTypeFullLabel(summary.carbDayType ?? AppConstants.carbDayMedium)}'
@@ -1383,9 +1393,9 @@ class _StrategyCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const _PngBadgeIcon(
+              _PngBadgeIcon(
                 assetName: FitLogIconAssets.strategy,
-                backgroundColor: Color(0xFFEAF6E3),
+                backgroundColor: palette.primarySoft,
                 size: 48,
                 iconSize: 31,
               ),
@@ -1396,9 +1406,9 @@ class _StrategyCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       '${strings.phaseLabel(summary.dietGoalPhase)} - $modeText',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF7A8973),
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: palette.textMuted),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -1411,11 +1421,11 @@ class _StrategyCard extends StatelessWidget {
                 ),
               ),
               if (canOpen)
-                const Padding(
-                  padding: EdgeInsets.only(top: 4),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
                   child: Icon(
                     Icons.chevron_right_rounded,
-                    color: Color(0xFF7A8973),
+                    color: palette.textMuted,
                   ),
                 ),
             ],
@@ -1435,6 +1445,7 @@ class _TodayRecordsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navController = context.read<RootTabController>();
+    final palette = context.fitLogColors;
 
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -1447,7 +1458,7 @@ class _TodayRecordsCard extends StatelessWidget {
           ),
           _RecordRow(
             assetName: FitLogIconAssets.food,
-            color: const Color(0xFF74BF56),
+            color: palette.primaryBright,
             title: strings.foodLabel,
             subtitle: strings.foodRecordsSummary(summary.foodRecords.length),
             value: Text(
@@ -1499,15 +1510,16 @@ class _RecordRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCFDFC),
+          color: palette.surfaceVariant,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE8EFE3)),
+          border: Border.all(color: palette.outlineSubtle),
         ),
         child: Row(
           children: <Widget>[
@@ -1538,7 +1550,7 @@ class _RecordRow extends StatelessWidget {
               child: Align(alignment: Alignment.centerRight, child: value),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF7A8973)),
+            Icon(Icons.chevron_right_rounded, color: palette.textMuted),
           ],
         ),
       ),

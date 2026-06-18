@@ -459,6 +459,10 @@ class AppStrings {
   String get languageSettings => _t('Language', '语言设置');
   String get english => 'English';
   String get chinese => '中文';
+  String get themeSettings => _t('Theme', '主题');
+  String get themeGreen => _t('Green', '绿色');
+  String get themeBlue => _t('Blue', '蓝色');
+  String get themeBlackOrange => _t('Black', '黑橙');
 
   String get clearAllDataTitle => _t('Clear All Local Data', '清空本地数据');
   String get clearAllDataBody => _t(

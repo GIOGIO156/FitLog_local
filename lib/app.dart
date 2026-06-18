@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/fitlog_theme.dart';
 import 'core/localization/language_controller.dart';
 import 'core/localization/localization_extensions.dart';
+import 'core/theme_controller.dart';
 import 'core/utils/date_utils.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/custom_exercise_repository.dart';
@@ -42,6 +44,7 @@ class FitLogApp extends StatefulWidget {
 class _FitLogAppState extends State<FitLogApp> {
   late final AppServices _services;
   late final LanguageController _languageController;
+  late final ThemeController _themeController;
 
   @override
   void initState() {
@@ -101,6 +104,7 @@ class _FitLogAppState extends State<FitLogApp> {
     );
 
     _languageController = LanguageController()..load();
+    _themeController = ThemeController()..load();
   }
 
   @override
@@ -120,10 +124,11 @@ class _FitLogAppState extends State<FitLogApp> {
         ChangeNotifierProvider<LanguageController>.value(
           value: _languageController,
         ),
+        ChangeNotifierProvider<ThemeController>.value(value: _themeController),
       ],
-      child: Consumer<LanguageController>(
-        builder: (context, languageController, _) {
-          if (!languageController.initialized) {
+      child: Consumer2<LanguageController, ThemeController>(
+        builder: (context, languageController, themeController, _) {
+          if (!languageController.initialized || !themeController.initialized) {
             return MaterialApp(
               debugShowCheckedModeBanner: false,
               home: Scaffold(
@@ -132,12 +137,14 @@ class _FitLogAppState extends State<FitLogApp> {
             );
           }
 
+          final palette = FitLogPalettes.byKey(themeController.theme);
+
           return MaterialApp(
             title: context.strings.appName,
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.light,
-            theme: _buildTheme(Brightness.light),
-            darkTheme: _buildTheme(Brightness.dark),
+            theme: _buildTheme(palette),
+            darkTheme: _buildTheme(palette),
             home: const _RootShell(),
           );
         },
@@ -145,15 +152,16 @@ class _FitLogAppState extends State<FitLogApp> {
     );
   }
 
-  ThemeData _buildTheme(Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
+  ThemeData _buildTheme(FitLogColors palette) {
+    final isDark = palette.isDarkLike;
     final base = ThemeData(
       useMaterial3: true,
-      brightness: brightness,
+      brightness: palette.brightness,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF78BE5B),
-        brightness: brightness,
+        seedColor: palette.seed,
+        brightness: palette.brightness,
       ),
+      extensions: <ThemeExtension<dynamic>>[palette],
     );
     final textTheme = base.textTheme
         .apply(
@@ -164,23 +172,23 @@ class _FitLogAppState extends State<FitLogApp> {
           headlineSmall: _withFontFallback(
             base.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF152013),
+              color: palette.textPrimary,
             ),
           ),
           titleLarge: _withFontFallback(
             base.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF152013),
+              color: palette.textPrimary,
             ),
           ),
           titleMedium: _withFontFallback(
             base.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF22311F),
+              color: palette.textPrimary,
             ),
           ),
           bodyMedium: _withFontFallback(
-            base.textTheme.bodyMedium?.copyWith(color: const Color(0xFF51614E)),
+            base.textTheme.bodyMedium?.copyWith(color: palette.textSecondary),
           ),
         );
 
@@ -189,9 +197,7 @@ class _FitLogAppState extends State<FitLogApp> {
       splashColor: isDark ? Colors.transparent : base.splashColor,
       highlightColor: isDark ? Colors.transparent : base.highlightColor,
       hoverColor: isDark ? Colors.transparent : base.hoverColor,
-      scaffoldBackgroundColor: isDark
-          ? const Color(0xFF0E1117)
-          : const Color(0xFFF5F8F1),
+      scaffoldBackgroundColor: palette.background,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -201,7 +207,7 @@ class _FitLogAppState extends State<FitLogApp> {
           TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: isDark ? Colors.white : const Color(0xFF111827),
+            color: palette.textPrimary,
           ),
         ),
       ),
@@ -209,50 +215,42 @@ class _FitLogAppState extends State<FitLogApp> {
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        color: isDark
-            ? const Color(0xFF171B22).withValues(alpha: 0.88)
-            : const Color(0xFFFFFFFF),
+        color: palette.surface,
       ),
       inputDecorationTheme: InputDecorationTheme(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
-        labelStyle: _withFontFallback(
-          const TextStyle(color: Color(0xFF61715D)),
-        ),
+        labelStyle: _withFontFallback(TextStyle(color: palette.textSecondary)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFDCE6D7)),
+          borderSide: BorderSide(color: palette.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFDCE6D7)),
+          borderSide: BorderSide(color: palette.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFF78BE5B), width: 1.4),
+          borderSide: BorderSide(color: palette.primaryBright, width: 1.4),
         ),
         filled: true,
-        fillColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white,
+        fillColor: palette.input,
         isDense: true,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedItemColor: const Color(0xFF4E9E3B),
+        selectedItemColor: palette.primary,
         selectedLabelStyle: _withFontFallback(
           const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
         ),
-        unselectedItemColor: isDark
-            ? Colors.white.withValues(alpha: 0.58)
-            : const Color(0xFF7A8973),
+        unselectedItemColor: palette.textMuted,
         unselectedLabelStyle: _withFontFallback(
           const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
         ),
-        backgroundColor: isDark
-            ? const Color(0xFF11161F).withValues(alpha: 0.9)
-            : Colors.white,
+        backgroundColor: palette.navBackground,
       ),
       textTheme: textTheme,
     );
@@ -284,6 +282,7 @@ class _RootShellState extends State<_RootShell> {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
+    final palette = context.fitLogColors;
     final navController = context.watch<RootTabController>();
     final items = <_ShellNavItem>[
       _ShellNavItem(
@@ -311,13 +310,13 @@ class _RootShellState extends State<_RootShell> {
     return Scaffold(
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: <Color>[
-              Color(0xFFFAFCF7),
-              Color(0xFFF3F7EE),
-              Color(0xFFF7FAF3),
+              palette.pageGradientTop,
+              palette.pageGradientMiddle,
+              palette.pageGradientBottom,
             ],
           ),
         ),
@@ -336,12 +335,14 @@ class _RootShellState extends State<_RootShell> {
             return Container(
               height: 72,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.97),
+                color: palette.navBackground.withValues(alpha: 0.97),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0xFFE2ECDD)),
+                border: Border.all(color: palette.outline),
                 boxShadow: <BoxShadow>[
                   BoxShadow(
-                    color: const Color(0xFF13200F).withValues(alpha: 0.08),
+                    color: palette.shadow.withValues(
+                      alpha: palette.isDarkLike ? 0.25 : 0.08,
+                    ),
                     blurRadius: 30,
                     offset: const Offset(0, 12),
                   ),
@@ -358,7 +359,7 @@ class _RootShellState extends State<_RootShell> {
                     height: 72 - indicatorVerticalMargin * 2,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF6E3),
+                        color: palette.navIndicator,
                         borderRadius: BorderRadius.circular(22),
                       ),
                     ),
@@ -380,8 +381,8 @@ class _RootShellState extends State<_RootShell> {
                                 Icon(
                                   selected ? item.activeIcon : item.icon,
                                   color: selected
-                                      ? const Color(0xFF4E9E3B)
-                                      : const Color(0xFF7A8973),
+                                      ? palette.primary
+                                      : palette.textMuted,
                                   size: 22,
                                 ),
                                 const SizedBox(height: 3),
@@ -396,8 +397,8 @@ class _RootShellState extends State<_RootShell> {
                                           ? FontWeight.w700
                                           : FontWeight.w500,
                                       color: selected
-                                          ? const Color(0xFF234120)
-                                          : const Color(0xFF7A8973),
+                                          ? palette.primaryText
+                                          : palette.textMuted,
                                     ),
                                   )!,
                                   child: Text(

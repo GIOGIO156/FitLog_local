@@ -27,7 +27,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with one shared edit state for age/height/weight/sex, direct phase/mode/strategy matrix, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository` |
+| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with one shared edit state for age/height/weight/sex, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
 | Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
@@ -92,7 +92,10 @@ Profile presents diet setup as a summary-first control surface instead of a long
 6. Shared training-frequency/self-check card near the top, with direct-save chips for training frequency and self-check period, four self-check period choices kept on one row, without duplicating the self-check summary inside the setup card, and with one stable card title across diet modes.
 7. In `energy_ratio` mode, the energy-ratio settings card appears immediately below the plan matrix and above the shared training-frequency/self-check card so the mode-specific numeric inputs stay adjacent to the mode selector.
 8. Input-heavy cards such as nickname, body fields, and `energy_ratio` details save locally from within the same card; nickname and body fields default to read-only display, while direct chips and switches save immediately.
-9. The full training-frequency self-check card stays below the setup cards instead of being mixed into the `g/kg` setup body, and the long g/kg explanatory note now lives in the help sheet rather than inside the setup card.
+9. Theme and language preferences are low-frequency local UI settings near the lower Profile settings area; theme choices are Green, Blue, and Black, and they only remap app color tokens.
+   The Blue theme follows the same role mapping as Green: `#55DCE2` is the brighter but soft solid button and strong-fill color, lighter aqua derivatives support page backgrounds, navigation pills, selected chips, inputs, and informational surfaces, and deeper teal derivatives carry text, icons, borders, and contrast.
+   The Black theme keeps the black-orange direction with dark background, card, input, selected-surface, and outline roles separated so orange remains an accent instead of becoming a general surface color.
+10. The full training-frequency self-check card stays below the setup cards instead of being mixed into the `g/kg` setup body, and the long g/kg explanatory note now lives in the help sheet rather than inside the setup card.
 
 Expected behavior:
 
@@ -119,6 +122,7 @@ Implemented:
 - local deterministic `carb_cycling` and `carb_tapering`
 - XLSX and CSV ZIP export
 - language switching
+- local theme switching
 - local data clearing with confirmation
 
 Not implemented:

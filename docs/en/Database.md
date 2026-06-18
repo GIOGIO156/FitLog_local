@@ -7,9 +7,9 @@ FitLog Local stores business data locally.
 | Storage | Purpose | Remote sync |
 | --- | --- | --- |
 | SQLite / `sqflite` | Profile, food records, food items, workout sessions, workout sets, custom exercises, workout record drafts, weight logs, calibration state, diet adjustment reviews. | No |
-| SharedPreferences | UI language preference, currently `language_code`. | No |
+| SharedPreferences | UI preferences: `language_code` and `theme_key`. | No |
 | Local files | XLSX and CSV ZIP exports in the app documents directory. | No |
-| In-memory providers | App services, refresh version, selected date, language state. | No |
+| In-memory providers | App services, refresh version, selected date, language state, theme state. | No |
 
 Database name: `fitlog_local.db`.
 

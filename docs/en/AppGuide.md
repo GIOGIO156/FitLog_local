@@ -215,7 +215,7 @@ Read more:
 
 ## Profile
 
-Profile is a summary-first control surface for personal data, diet behavior, language, export, and local data actions.
+Profile is a summary-first control surface for personal data, diet behavior, theme, language, export, and local data actions.
 
 What users can set:
 
@@ -223,6 +223,7 @@ What users can set:
 - a current-plan summary and macro target strip below the top identity row
 - body-profile summary grid
 - age, height, weight, and sex option inside a display-first 2x2 body-profile grid
+- local theme preference: Green, Blue, or Black
 - language
 - `diet_goal_phase`
 - `diet_calculation_mode`
@@ -237,6 +238,9 @@ How it works:
 
 - Profile saves to singleton `user_profile`.
 - `nickname` is local-only profile data and is not an account identifier.
+- Theme is a local UI preference stored outside SQLite; it only remaps app color tokens and does not change food, workout, profile, or calculation behavior.
+- The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, pale aqua supports page, navigation, selected, input, and information surfaces, and deeper teal supports readable text, icons, and borders.
+- The Black theme keeps orange as the accent while separating dark background, card, selected-surface, input, outline, and text roles for clearer hierarchy.
 - Saving Profile also upserts the current day's weight log.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.
 - Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.

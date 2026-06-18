@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../fitlog_theme.dart';
+
 class GlassPanel extends StatelessWidget {
   const GlassPanel({
     super.key,
@@ -16,24 +18,22 @@ class GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.white.withValues(alpha: 0.96);
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : const Color(0xFFE2ECDD);
+    final palette = context.fitLogColors;
 
     return Container(
       margin: margin,
       child: Container(
         decoration: BoxDecoration(
-          color: bgColor,
+          color: palette.surface.withValues(
+            alpha: palette.isDarkLike ? 1 : 0.96,
+          ),
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(color: borderColor),
+          border: Border.all(color: palette.outline),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+              color: palette.shadow.withValues(
+                alpha: palette.isDarkLike ? 0.25 : 0.05,
+              ),
               blurRadius: 26,
               offset: const Offset(0, 10),
             ),

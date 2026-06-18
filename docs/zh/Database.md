@@ -7,9 +7,9 @@ FitLog Local 将业务数据保存在本地。
 | 存储 | 用途 | 远程同步 |
 | --- | --- | --- |
 | SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、custom exercises、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
-| SharedPreferences | UI 语言偏好，目前是 `language_code`。 | No |
+| SharedPreferences | UI 偏好：`language_code` 和 `theme_key`。 | No |
 | Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件。 | No |
-| In-memory providers | App services、refresh version、selected date、language state。 | No |
+| In-memory providers | App services、refresh version、selected date、language state、theme state。 | No |
 
 数据库名：`fitlog_local.db`。
 

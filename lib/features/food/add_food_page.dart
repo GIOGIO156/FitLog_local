@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/constants/prompt_templates.dart';
+import '../../core/fitlog_theme.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
@@ -55,6 +56,7 @@ class AddFoodPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
+    final palette = context.fitLogColors;
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.addFood)),
@@ -74,7 +76,7 @@ class AddFoodPage extends StatelessWidget {
             ),
             _AddFoodActionCard(
               icon: Icons.paste_outlined,
-              color: const Color(0xFF76BE59),
+              color: palette.primaryBright,
               title: strings.pasteAiResult,
               subtitle: strings.pasteAiSubtitle,
               onTap: () => _openPasteAi(context),
@@ -112,18 +114,22 @@ class _PromptShortcutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
+    final gradientColors = palette.key == FitLogThemeKey.blue
+        ? <Color>[palette.primaryBright, palette.primarySoftPressed]
+        : <Color>[palette.primaryBright, palette.primary];
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF7BC75B), Color(0xFF5FB86B)],
+          colors: gradientColors,
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: const Color(0xFF4E9E3B).withValues(alpha: 0.18),
+            color: palette.primary.withValues(alpha: 0.18),
             blurRadius: 28,
             offset: const Offset(0, 12),
           ),
@@ -145,9 +151,9 @@ class _PromptShortcutButton extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.content_copy_rounded,
-                    color: Colors.white,
+                    color: palette.onPrimary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -160,14 +166,14 @@ class _PromptShortcutButton extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: palette.onPrimary,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.88),
+                          color: palette.onPrimary.withValues(alpha: 0.88),
                         ),
                       ),
                     ],
@@ -180,14 +186,14 @@ class _PromptShortcutButton extends StatelessWidget {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: palette.surface,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     context.strings.copy,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF3D8D3A),
+                      color: palette.primaryStrong,
                     ),
                   ),
                 ),
@@ -217,6 +223,7 @@ class _AddFoodActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
     return GlassPanel(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: EdgeInsets.zero,
@@ -236,12 +243,12 @@ class _AddFoodActionCard extends StatelessWidget {
         trailing: onTap == null
             ? Text(
                 context.strings.comingSoon,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF7A8973),
+                  color: palette.textMuted,
                 ),
               )
-            : const Icon(Icons.chevron_right_rounded, color: Color(0xFF7A8973)),
+            : Icon(Icons.chevron_right_rounded, color: palette.textMuted),
         onTap: onTap,
       ),
     );
