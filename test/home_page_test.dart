@@ -85,6 +85,7 @@ void main() {
 
     final strategyLabelFinder = find.textContaining('Carb cycle');
     expect(strategyLabelFinder, findsOneWidget);
+    expect(find.textContaining('Carb cycle\n-'), findsOneWidget);
     expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(800));
     expect(tester.takeException(), isNull);
   });

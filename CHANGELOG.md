@@ -15,6 +15,8 @@
 - Reintroduced mist-blue local surfaces, deeper indigo contrast, a Blue-only radial glow behind the Home `g/kg` macro semicircle, and a subtle Blue-only glow inside the Profile current-plan card so the Blue theme feels fuller without changing app logic.
 - Removed the experimental Blue radial glow layers and returned Blue inner informational surfaces to white after visual review showed the glow read as a cold background artifact rather than depth.
 - Aligned the Profile current-plan macro icon badge backgrounds with Home's nutrient-specific protein, carbs, and fat colors instead of using the theme primary-soft color for all three.
+- Replaced the Android launcher icon with the FitLog mark sourced from `assets/icons/app/fitlog.png` and regenerated all `mipmap-*` `ic_launcher.png` density assets.
+- Split the English Home strategy card's active-state title after the hyphen so carb-cycle and carb-taper detail text starts on the second line on narrow screens.
 - Refined the Black Orange palette with separated selected-surface, outline, secondary-text, and brighter-orange emphasis tokens so orange stays an accent on the dark interface.
 - Shortened the English black-orange theme option label from `Black Orange` to `Black` to avoid narrow-screen wrapping.
 - Updated README and bilingual Product, AppGuide, and Database docs to record the local theme preference and storage boundary.
@@ -29,7 +31,7 @@
 - `dart format` on modified Dart files: success.
 - `flutter analyze`: success.
 - `flutter test`: success.
-- `flutter build apk --debug --split-per-abi --build-number 32`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
+- `flutter build apk --debug --split-per-abi --build-number 34`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
 
 ## 2026-06-14 Profile And Food Form Editing Follow-up
 

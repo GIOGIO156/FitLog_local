@@ -79,6 +79,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - Home 同时展示 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy` 上下文。
 - `carb_cycling` 展示碳水日类型和碳水调整上下文。
 - `carb_tapering` 在有数据时展示当前 taper 偏移和待处理 review 上下文。
+- 英文界面下，Home 已启用策略卡片将较长策略状态格式化为 `Strategy\n- status`，不把连字符后的状态继续挤在第一行。
 
 ## 饮食设置交互
 
@@ -137,6 +138,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 ## 代码引用
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
+- Android 启动器图标：`assets/icons/app/fitlog.png`, `android/app/src/main/res/mipmap-*/ic_launcher.png`
 - Home：`lib/features/home/home_page.dart`
 - Food：`lib/features/food/*`
 - Workout：`lib/features/workout/*`

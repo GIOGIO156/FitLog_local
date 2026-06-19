@@ -12,6 +12,7 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - External AI can help create food estimates before data enters the app, but FitLog stores and calculates locally.
 - `diet_goal_phase` controls cutting/bulking semantics.
 - `energy_ratio` and `gram_per_kg` stay separate.
+- Android launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
 
@@ -47,6 +48,7 @@ How it works:
 - In `gram_per_kg`, the first viewport still relies on a large dashboard container rather than measured spacer math: the macro dashboard owns the opening screen and the strategy card is placed after that container.
 - Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied.
 - When carb cycling or carb tapering is active, the Home strategy card opens a structured explainer sheet with methodology-oriented guidance for non-expert users.
+- In English, active Home strategy card titles place the `- ...` status suffix on a second line so long carb-cycle and carb-taper states stay readable on narrow screens.
 - In `gram_per_kg`, the strategy card stays below the initial macro viewport and only appears after scrolling, keeping the opening screen focused on execution rather than explanation.
 - Detailed BMR/TDEE/calibration numbers are intentionally left out of the Home surface and remain available in Profile-oriented views.
 

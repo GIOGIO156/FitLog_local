@@ -1375,6 +1375,9 @@ class _StrategyCard extends StatelessWidget {
         : summary.dietPlanStrategy == AppConstants.dietPlanStrategyCarbTapering
         ? '${strings.carbTaperingLabel} - ${strings.currentTaperLabel} ${summary.carbTaperCurrentDeltaG.toStringAsFixed(0)} g'
         : strings.strategyNoneLabel;
+    final displayStrategyText = strings.isChinese
+        ? strategyText
+        : strategyText.replaceFirst(' - ', '\n- ');
     final modeText =
         summary.dietCalculationMode == AppConstants.dietCalculationModeGramPerKg
         ? strings.gramPerKgModeLabel
@@ -1412,7 +1415,7 @@ class _StrategyCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      strategyText,
+                      displayStrategyText,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),

@@ -79,6 +79,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 - Home also shows `diet_goal_phase`, `diet_calculation_mode`, and `diet_plan_strategy` context.
 - `carb_cycling` displays carb day type and carb adjustment context.
 - `carb_tapering` displays current taper offset and pending review context when available.
+- In English, the active Home strategy card formats long strategy states as `Strategy\n- status` instead of keeping the hyphen suffix on the first line.
 
 ## Diet Setup UX
 
@@ -137,6 +138,7 @@ Not implemented:
 ## Code References
 
 - App bootstrap and providers: `lib/main.dart`, `lib/app.dart`
+- Android launcher icon: `assets/icons/app/fitlog.png`, `android/app/src/main/res/mipmap-*/ic_launcher.png`
 - Home: `lib/features/home/home_page.dart`
 - Food: `lib/features/food/*`
 - Workout: `lib/features/workout/*`
