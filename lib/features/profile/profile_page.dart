@@ -2481,6 +2481,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
                     label: strings.proteinLabel,
                     value: macros.proteinTargetG.toStringAsFixed(0),
                     assetName: FitLogIconAssets.macroProtein,
+                    color: const Color(0xFF6DBA57),
                   ),
                 ),
                 const _MacroDivider(),
@@ -2489,6 +2490,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
                     label: strings.carbsLabel,
                     value: macros.carbsTargetG.toStringAsFixed(0),
                     assetName: FitLogIconAssets.macroCarbs,
+                    color: const Color(0xFFF2B545),
                   ),
                 ),
                 const _MacroDivider(),
@@ -2497,6 +2499,7 @@ class _ProfilePlanHeroCard extends StatelessWidget {
                     label: strings.fatLabel,
                     value: macros.fatTargetG.toStringAsFixed(0),
                     assetName: FitLogIconAssets.macroFat,
+                    color: const Color(0xFFE89257),
                   ),
                 ),
               ],
@@ -3386,11 +3389,13 @@ class _MacroTargetColumn extends StatelessWidget {
     required this.label,
     required this.value,
     required this.assetName,
+    required this.color,
   });
 
   final String label;
   final String value;
   final String assetName;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -3403,7 +3408,7 @@ class _MacroTargetColumn extends StatelessWidget {
         _SmallAssetBadge(
           assetName: assetName,
           iconSize: iconSize,
-          backgroundColor: palette.primarySoft,
+          backgroundColor: color.withValues(alpha: 0.12),
         ),
         const SizedBox(height: 8),
         Text(

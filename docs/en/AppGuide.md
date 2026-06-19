@@ -220,7 +220,7 @@ Profile is a summary-first control surface for personal data, diet behavior, the
 What users can set:
 
 - nickname for local-only UI display, shown under the visible `User Settings` header as a compact one-line identity row with a trailing pen trigger and inline edit on demand
-- a current-plan summary and macro target strip below the top identity row
+- a current-plan summary and macro target strip below the top identity row, with protein, carbs, and fat icon badge backgrounds matching the same nutrient colors used on Home
 - body-profile summary grid
 - age, height, weight, and sex option inside a display-first 2x2 body-profile grid
 - local theme preference: Green, Blue, or Black
@@ -239,7 +239,7 @@ How it works:
 - Profile saves to singleton `user_profile`.
 - `nickname` is local-only profile data and is not an account identifier.
 - Theme is a local UI preference stored outside SQLite; it only remaps app color tokens and does not change food, workout, profile, or calculation behavior.
-- The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, pale aqua supports page, navigation, selected, input, and information surfaces, and deeper teal supports readable text, icons, and borders.
+- The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, white supports page, ordinary card, input, Profile inner-tile, information-area, and navigation-bar surfaces outside the selected pill, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo supports readable text, icons, and borders.
 - The Black theme keeps orange as the accent while separating dark background, card, selected-surface, input, outline, and text roles for clearer hierarchy.
 - Saving Profile also upserts the current day's weight log.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.

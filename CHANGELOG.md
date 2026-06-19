@@ -11,6 +11,10 @@
 
 - Remapped app brand color, selected states, buttons, navigation, shared card surfaces, input surfaces, and emphasized progress colors through theme tokens while preserving existing business flows and calculation behavior.
 - Reworked the Blue palette to follow the Green theme's role mapping: `#55DCE2` is the brighter soft solid button and strong-fill color, with separate pale aqua surface/background/navigation tokens and deeper teal text, icon, border, and contrast tokens.
+- Switched the Blue palette's page and record-background surfaces to pure white while preserving the pale aqua selected navigation pill, aqua accent, and deeper teal contrast tokens.
+- Reintroduced mist-blue local surfaces, deeper indigo contrast, a Blue-only radial glow behind the Home `g/kg` macro semicircle, and a subtle Blue-only glow inside the Profile current-plan card so the Blue theme feels fuller without changing app logic.
+- Removed the experimental Blue radial glow layers and returned Blue inner informational surfaces to white after visual review showed the glow read as a cold background artifact rather than depth.
+- Aligned the Profile current-plan macro icon badge backgrounds with Home's nutrient-specific protein, carbs, and fat colors instead of using the theme primary-soft color for all three.
 - Refined the Black Orange palette with separated selected-surface, outline, secondary-text, and brighter-orange emphasis tokens so orange stays an accent on the dark interface.
 - Shortened the English black-orange theme option label from `Black Orange` to `Black` to avoid narrow-screen wrapping.
 - Updated README and bilingual Product, AppGuide, and Database docs to record the local theme preference and storage boundary.
@@ -25,7 +29,7 @@
 - `dart format` on modified Dart files: success.
 - `flutter analyze`: success.
 - `flutter test`: success.
-- `flutter build apk --debug --split-per-abi --build-number 28`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
+- `flutter build apk --debug --split-per-abi --build-number 32`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
 
 ## 2026-06-14 Profile And Food Form Editing Follow-up
 
