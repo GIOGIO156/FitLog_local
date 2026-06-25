@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-25 Bottom Chrome Background Transparency
+
+### Added
+
+- Added `FitLogBottomNavLayout` as the single geometry helper for the root navigation footprint, bottom safe-area gap, fixed CTA offsets, Home first-viewport height, and Food/Workout list bottom padding.
+- Added bottom-chrome widget tests that measure the real root nav pill rect, overlay footprint, Home first viewport, Food CTA, Workout CTA, and CTA list padding at the reference phone size.
+
+### Changed
+
+- Moved the root bottom navigation out of `Scaffold.bottomNavigationBar` and into the root body `Stack` as a positioned overlay, removing the independent bottom slot that exposed a full-width footer band behind transparent nav padding.
+- Preserved the 72 px rounded navigation pill, 16 px horizontal inset, 12 px minimum bottom gap, selected-tab indicator, pill border, and pill-owned shadow while keeping the nav wrapper itself visually transparent.
+- Made the rounded navigation pill use opaque `navBackground` instead of a translucent color and added a width-matched `background` shield behind the lower half of the pill to cover scrolled content without filling the full screen width.
+- Reanchored Home, Food, Workout, and Profile bottom geometry to `FitLogBottomNavLayout` so the former Scaffold navigation occupancy is explicitly restored without a second SafeArea or padding source.
+- Kept Food and Workout fixed CTAs as overlay pills, with their 56 px height and 8 px visual gap above the nav pill controlled by the same helper.
+- Changed the Android APK launcher label from `fitlog_local` to `FitLog local` while keeping `applicationId` as `com.fitlog.local.fitlog_local`, preserving the existing Android local data sandbox.
+- Updated README plus bilingual Product and AppGuide docs to record the root bottom navigation overlay, pill background geometry, Android launcher label, and unchanged package-id data boundary.
+
+### Validation
+
+- Documentation tree, root design-doc, date-heading, stale path, and replacement-character checks: success.
+- `dart format` on modified Dart files and bottom chrome layout test: success.
+- `flutter test test\bottom_chrome_layout_test.dart`: success; covers overlay nav geometry, navigation pill rect, Home first viewport, Food/Workout CTA rects, and CTA list padding.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 41`: success; generated ABI-specific debug APKs in `build\app\outputs\flutter-apk\`.
+
 ## 2026-06-19 Profile Theme Palettes
 
 ### Added

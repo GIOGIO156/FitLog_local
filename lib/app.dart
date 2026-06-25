@@ -6,6 +6,7 @@ import 'core/localization/language_controller.dart';
 import 'core/localization/localization_extensions.dart';
 import 'core/theme_controller.dart';
 import 'core/utils/date_utils.dart';
+import 'core/widgets/fitlog_bottom_nav_layout.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/custom_exercise_repository.dart';
 import 'data/repositories/food_repository.dart';
@@ -202,7 +203,7 @@ class _FitLogAppState extends State<FitLogApp> {
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: palette.navBackground,
         titleTextStyle: _withFontFallback(
           TextStyle(
             fontSize: 20,
@@ -250,7 +251,7 @@ class _FitLogAppState extends State<FitLogApp> {
         unselectedLabelStyle: _withFontFallback(
           const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
         ),
-        backgroundColor: palette.navBackground,
+        backgroundColor: Colors.transparent,
       ),
       textTheme: textTheme,
     );
@@ -265,19 +266,34 @@ TextStyle? _withFontFallback(TextStyle? style) {
 }
 
 class _RootShell extends StatefulWidget {
-  const _RootShell();
+  const _RootShell({this.pages});
+
+  final List<Widget>? pages;
 
   @override
   State<_RootShell> createState() => _RootShellState();
 }
 
+@visibleForTesting
+Widget buildRootShellForTest({required List<Widget> pages}) {
+  return _RootShell(pages: pages);
+}
+
 class _RootShellState extends State<_RootShell> {
-  late final List<Widget> _pages = const <Widget>[
-    HomePage(),
-    FoodLogPage(),
-    WorkoutLogPage(),
-    ProfilePage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages =
+        widget.pages ??
+        const <Widget>[
+          HomePage(),
+          FoodLogPage(),
+          WorkoutLogPage(),
+          ProfilePage(),
+        ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -307,118 +323,178 @@ class _RootShellState extends State<_RootShell> {
       ),
     ];
 
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[
-              palette.pageGradientTop,
-              palette.pageGradientMiddle,
-              palette.pageGradientBottom,
-            ],
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            palette.pageGradientTop,
+            palette.pageGradientMiddle,
+            palette.pageGradientBottom,
+          ],
         ),
-        child: IndexedStack(index: navController.index, children: _pages),
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final trackWidth = constraints.maxWidth;
-            final segmentWidth = trackWidth / items.length;
-            const indicatorInset = 5.0;
-            const indicatorVerticalMargin = 7.0;
-            final indicatorWidth = segmentWidth - indicatorInset * 2;
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: IndexedStack(index: navController.index, children: _pages),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _ShellBottomNav(items: items),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            return Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: palette.navBackground.withValues(alpha: 0.97),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: palette.outline),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: palette.shadow.withValues(
-                      alpha: palette.isDarkLike ? 0.25 : 0.08,
-                    ),
-                    blurRadius: 30,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: <Widget>[
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
-                    left: navController.index * segmentWidth + indicatorInset,
-                    top: indicatorVerticalMargin,
-                    width: indicatorWidth,
-                    height: 72 - indicatorVerticalMargin * 2,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: palette.navIndicator,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: List<Widget>.generate(items.length, (index) {
-                      final item = items[index];
-                      final selected = navController.index == index;
+class _ShellBottomNav extends StatelessWidget {
+  const _ShellBottomNav({required this.items});
 
-                      return Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => navController.setIndex(index),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 7),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Icon(
-                                  selected ? item.activeIcon : item.icon,
-                                  color: selected
-                                      ? palette.primary
-                                      : palette.textMuted,
-                                  size: 22,
-                                ),
-                                const SizedBox(height: 3),
-                                AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 180),
-                                  curve: Curves.easeOutCubic,
-                                  style: _withFontFallback(
-                                    TextStyle(
-                                      fontSize: 11,
-                                      height: 1.0,
-                                      fontWeight: selected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                      color: selected
-                                          ? palette.primaryText
-                                          : palette.textMuted,
-                                    ),
-                                  )!,
-                                  child: Text(
-                                    item.label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+  final List<_ShellNavItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.fitLogColors;
+    final navController = context.watch<RootTabController>();
+    final bottomGap = FitLogBottomNavLayout.bottomGapFor(context);
+
+    return Padding(
+      key: const ValueKey('fitlog_bottom_nav_overlay'),
+      padding: EdgeInsets.fromLTRB(
+        FitLogBottomNavLayout.horizontalInset,
+        0,
+        FitLogBottomNavLayout.horizontalInset,
+        bottomGap,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final trackWidth = constraints.maxWidth;
+          final segmentWidth = trackWidth / items.length;
+          const indicatorInset = 5.0;
+          const indicatorVerticalMargin = 7.0;
+          final indicatorWidth = segmentWidth - indicatorInset * 2;
+          final shieldHeight =
+              FitLogBottomNavLayout.pillHeight / 2 + bottomGap + 1;
+
+          final navPill = Container(
+            key: const ValueKey('fitlog_bottom_nav_pill'),
+            height: FitLogBottomNavLayout.pillHeight,
+            decoration: BoxDecoration(
+              color: palette.navBackground,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: palette.outline),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: palette.shadow.withValues(
+                    alpha: palette.isDarkLike ? 0.25 : 0.08,
+                  ),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: <Widget>[
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  left: navController.index * segmentWidth + indicatorInset,
+                  top: indicatorVerticalMargin,
+                  width: indicatorWidth,
+                  height:
+                      FitLogBottomNavLayout.pillHeight -
+                      indicatorVerticalMargin * 2,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: palette.navIndicator,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: List<Widget>.generate(items.length, (index) {
+                    final item = items[index];
+                    final selected = navController.index == index;
+
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => navController.setIndex(index),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Icon(
+                                selected ? item.activeIcon : item.icon,
+                                color: selected
+                                    ? palette.primary
+                                    : palette.textMuted,
+                                size: 22,
+                              ),
+                              const SizedBox(height: 3),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
+                                style: _withFontFallback(
+                                  TextStyle(
+                                    fontSize: 11,
+                                    height: 1.0,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: selected
+                                        ? palette.primaryText
+                                        : palette.textMuted,
                                   ),
+                                )!,
+                                child: Text(
+                                  item.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    }),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          );
+
+          return SizedBox(
+            height: FitLogBottomNavLayout.pillHeight,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: FitLogBottomNavLayout.pillHeight / 2,
+                  height: shieldHeight,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      key: const ValueKey('fitlog_bottom_nav_shield'),
+                      decoration: BoxDecoration(color: palette.background),
+                    ),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+                navPill,
+              ],
+            ),
+          );
+        },
       ),
     );
   }

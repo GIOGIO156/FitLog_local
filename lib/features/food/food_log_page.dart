@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../core/fitlog_theme.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/fitlog_bottom_nav_layout.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/food_item.dart';
@@ -183,6 +184,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
     final palette = context.fitLogColors;
 
     return SafeArea(
+      bottom: false,
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
         builder: (context, refresh, selectedDateNotifier, _) {
           refresh.version;
@@ -204,171 +206,208 @@ class _FoodLogPageState extends State<FoodLogPage> {
                 ),
               ),
               Expanded(
-                child: FutureBuilder<List<FoodRecord>>(
-                  future: _loadRecords(context, selectedDate),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                child: Stack(
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: FutureBuilder<List<FoodRecord>>(
+                        future: _loadRecords(context, selectedDate),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState !=
+                              ConnectionState.done) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            strings.failedToLoadFood(snapshot.error!),
-                          ),
-                        ),
-                      );
-                    }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  strings.failedToLoadFood(snapshot.error!),
+                                ),
+                              ),
+                            );
+                          }
 
-                    final records = snapshot.data ?? <FoodRecord>[];
-                    if (records.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            strings.noFoodRecords,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
+                          final records = snapshot.data ?? <FoodRecord>[];
+                          if (records.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  strings.noFoodRecords,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 96),
-                      itemCount: records.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == records.length) {
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                            child: Text(
-                              strings.estimateNotice,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: palette.textSecondary,
-                                    height: 1.4,
+                          return ListView.builder(
+                            padding: EdgeInsets.only(
+                              bottom:
+                                  FitLogBottomNavLayout.ctaListBottomPaddingFor(
+                                    context,
                                   ),
                             ),
-                          );
-                        }
+                            itemCount: records.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == records.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    8,
+                                    20,
+                                    20,
+                                  ),
+                                  child: Text(
+                                    strings.estimateNotice,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: palette.textSecondary,
+                                          height: 1.4,
+                                        ),
+                                  ),
+                                );
+                              }
 
-                        final record = records[index];
-                        return GlassPanel(
-                          margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          padding: const EdgeInsets.all(16),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: () => _openFoodDetail(context, record.id!),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Text(
-                                        record.mealName,
+                              final record = records[index];
+                              return GlassPanel(
+                                margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                padding: const EdgeInsets.all(16),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(24),
+                                  onTap: () =>
+                                      _openFoodDetail(context, record.id!),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Text(
+                                              record.mealName,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: palette.primarySoft,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              strings.sourceLabel(
+                                                record.source,
+                                              ),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                color: palette.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _buildSubtitle(record),
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleLarge
+                                            .bodyMedium
                                             ?.copyWith(
-                                              fontWeight: FontWeight.w800,
+                                              color: palette.textMuted,
                                             ),
                                       ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: <Widget>[
+                                          _FoodMetaChip(
+                                            label:
+                                                '${record.caloriesKcal.toStringAsFixed(0)} kcal',
+                                          ),
+                                          const SizedBox(width: 8),
+                                          _FoodMetaChip(
+                                            label:
+                                                'P ${record.proteinG.toStringAsFixed(0)} · C ${record.carbsG.toStringAsFixed(0)} · F ${record.fatG.toStringAsFixed(0)}',
+                                          ),
+                                        ],
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: palette.primarySoft,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: <Widget>[
+                                          Text(
+                                            DateUtilsX.formatReadable(
+                                              record.date,
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: palette.textMuted,
+                                                ),
+                                          ),
+                                          const Spacer(),
+                                          FitLogActionIconButton(
+                                            icon: Icons.copy_all_outlined,
+                                            tooltip: strings.copy,
+                                            onPressed: () => _copyRecord(
+                                              context,
+                                              record,
+                                              selectedDate,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          FitLogActionIconButton(
+                                            icon: Icons.delete_outline_rounded,
+                                            tooltip: strings.delete,
+                                            onPressed: () =>
+                                                _deleteRecord(context, record),
+                                          ),
+                                        ],
                                       ),
-                                      child: Text(
-                                        strings.sourceLabel(record.source),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: palette.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _buildSubtitle(record),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: palette.textMuted),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: <Widget>[
-                                    _FoodMetaChip(
-                                      label:
-                                          '${record.caloriesKcal.toStringAsFixed(0)} kcal',
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _FoodMetaChip(
-                                      label:
-                                          'P ${record.proteinG.toStringAsFixed(0)} · C ${record.carbsG.toStringAsFixed(0)} · F ${record.fatG.toStringAsFixed(0)}',
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: <Widget>[
-                                    Text(
-                                      DateUtilsX.formatReadable(record.date),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: palette.textMuted),
-                                    ),
-                                    const Spacer(),
-                                    FitLogActionIconButton(
-                                      icon: Icons.copy_all_outlined,
-                                      tooltip: strings.copy,
-                                      onPressed: () => _copyRecord(
-                                        context,
-                                        record,
-                                        selectedDate,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    FitLogActionIconButton(
-                                      icon: Icons.delete_outline_rounded,
-                                      tooltip: strings.delete,
-                                      onPressed: () =>
-                                          _deleteRecord(context, record),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: FilledButton.icon(
-                  onPressed: () => _openAddFood(context, selectedDate),
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(strings.addFood),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    backgroundColor: palette.primaryBright,
-                    foregroundColor: palette.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      left: FitLogBottomNavLayout.horizontalInset,
+                      right: FitLogBottomNavLayout.horizontalInset,
+                      bottom: FitLogBottomNavLayout.ctaBottomFor(context),
+                      child: FilledButton.icon(
+                        key: const ValueKey('fitlog_food_add_cta'),
+                        onPressed: () => _openAddFood(context, selectedDate),
+                        icon: const Icon(Icons.add_rounded),
+                        label: Text(strings.addFood),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(
+                            FitLogBottomNavLayout.ctaHeight,
+                          ),
+                          backgroundColor: palette.primaryBright,
+                          foregroundColor: palette.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

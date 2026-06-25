@@ -12,7 +12,8 @@
 - 外部 AI 可以帮助生成餐食估算，但数据进入 App 之后的存储、计算和展示都在本地完成。
 - `diet_goal_phase` 控制 cutting/bulking 语义。
 - `energy_ratio` 和 `gram_per_kg` 保持分离。
-- Android 启动器图标由 `assets/icons/app/fitlog.png` 生成到 `android/app/src/main/res/mipmap-*/ic_launcher.png` 各密度资源。
+- 底部导航和固定 CTA 的 pill 只是视觉表面；根底部导航以 body overlay 绘制，而不是 `Scaffold.bottomNavigationBar` slot，pill 外区域不应再有 wrapper 填充或满宽 footer 色带。导航 pill 使用不透明的 `navBackground`，下半段背后放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出滚动内容。`FitLogBottomNavLayout` 是底部安全区间距、导航 footprint、Home 首屏盒子、固定 CTA 位置和滚动底部留白的唯一来源。
+- Android APK 安装后的启动器显示名是 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此覆盖更新会继续使用同一个本地数据沙盒。启动器图标由 `assets/icons/app/fitlog.png` 生成到 `android/app/src/main/res/mipmap-*/ic_launcher.png` 各密度资源。
 
 延伸阅读：
 
@@ -80,6 +81,7 @@ Food Log 是选中日期的饮食记录列表。
 - `source` 记录该餐来自手动录入还是外部 AI 粘贴。
 - 复制会创建新的本地记录和新的 id/timestamp。
 - 删除一条饮食记录会级联删除其 item 行。
+- `添加食物` CTA 以底部 overlay pill 绘制，而不是一条满宽 footer 行；`FitLogBottomNavLayout` 让它的底边锚定在导航 pill 上方，并给饮食列表保留足够的底部留白，保证记录能滚到按钮上方。
 
 延伸阅读：
 
@@ -136,6 +138,7 @@ Workout Log 是选中日期的训练记录列表。
 - 训练模块还可以单独保留一条未保存草稿；它不属于正式训练列表，也不算已保存训练记录，并且会以标题/副标题摘要条的形式显示，副标题使用短部位名，最多直接显示三个部位，超过后改为 `+n`，而不是单行警示文案。
 - 记录级摘要由已保存的 session 和 set 推导而来。
 - 动作缩略图现在会优先使用已匹配动作的透明 PNG 资产；未匹配到具体动作图标时，仍回退到按身体部位区分的共享 SVG 图标。
+- `添加训练` CTA 和可选草稿条以底部 overlay 绘制，而不是一条满宽 footer 行；`FitLogBottomNavLayout` 让它们的底边锚定在导航 pill 上方，并给训练列表保留足够的底部留白，保证记录能滚到控件上方。
 
 延伸阅读：
 
@@ -242,7 +245,7 @@ Profile 是一个“摘要优先”的控制台，用于配置本地身份、身
 - Profile 保存到单例 `user_profile`。
 - `nickname` 是本地 UI 数据，不是账号名。
 - 主题是保存在 SQLite 之外的本地 UI 偏好；它只重新映射 App 颜色 token，不改变饮食、训练、资料或计算行为。
-- 蓝色主题使用完整的青蓝衍生 palette，而不是单点替换颜色：`#55DCE2` 留给明亮柔和的实色按钮和强填充，纯白用于页面、普通卡片、输入框、Profile 内层 tile、信息型区域和选中 pill 以外的导航条，浅青色用于选中 pill 和小型强调徽章，深青蓝/靛蓝用于可读文字、图标和描边。
+- 蓝色主题使用完整的青蓝衍生 palette，而不是单点替换颜色：`#55DCE2` 留给明亮柔和的实色按钮和强填充，纯白用于页面、普通卡片、输入框、Profile 内层 tile 和信息型区域，底部导航 pill 仍是独立表面且 pill 外区域露出页面背景，浅青色用于选中 pill 和小型强调徽章，深青蓝/靛蓝用于可读文字、图标和描边。
 - 黑色主题让橙色保持强调用途，同时拆分深色背景、卡片、选中表面、输入、描边和文字角色，保证层级更清楚。
 - 保存 Profile 也会 upsert 当天体重日志。
 - 首屏故意不再是密集编辑表单；当前计划、身体资料、计划矩阵和训练频率设置会先出现，后面再接参考、导出等较低频区域。

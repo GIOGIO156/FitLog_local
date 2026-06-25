@@ -14,6 +14,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 - Additive compatibility: database migrations preserve existing local users.
 - Diet modes stay separate: `gram_per_kg` and `energy_ratio` are parallel methods and must not be merged.
 - Phase is explicit: `diet_goal_phase` is the source of truth for cutting/bulking behavior.
+- Bottom navigation and fixed CTA visual backgrounds do not define layout geometry: the root bottom navigation is a body overlay rather than a `Scaffold.bottomNavigationBar` slot, so the area outside each pill must not become a full-width footer band. The nav pill itself uses opaque `navBackground`, and a width-matched `background` shield may sit behind the lower half of the pill to stop scrolling content from showing through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for nav footprint, bottom safe-area gap, Home first-viewport height, fixed CTA placement, and scroll bottom padding.
 
 ## Current Modules
 
@@ -94,7 +95,7 @@ Profile presents diet setup as a summary-first control surface instead of a long
 7. In `energy_ratio` mode, the energy-ratio settings card appears immediately below the plan matrix and above the shared training-frequency/self-check card so the mode-specific numeric inputs stay adjacent to the mode selector.
 8. Input-heavy cards such as nickname, body fields, and `energy_ratio` details save locally from within the same card; nickname and body fields default to read-only display, while direct chips and switches save immediately.
 9. Theme and language preferences are low-frequency local UI settings near the lower Profile settings area; theme choices are Green, Blue, and Black, and they only remap app color tokens.
-   The Blue theme follows the same role mapping as Green while keeping page backgrounds, ordinary cards, inputs, Profile inner tiles, informational areas, and the navigation bar outside the selected pill white: `#55DCE2` is the brighter but soft solid button and strong-fill color, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo derivatives carry text, icons, borders, and contrast.
+   The Blue theme follows the same role mapping as Green while keeping page backgrounds, ordinary cards, inputs, Profile inner tiles, and informational areas white; the bottom navigation pill stays a distinct surface, and the area outside it reveals the page background instead of acting as a separate full-width navigation surface. `#55DCE2` is the brighter but soft solid button and strong-fill color, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo derivatives carry text, icons, borders, and contrast.
    The Black theme keeps the black-orange direction with dark background, card, input, selected-surface, and outline roles separated so orange remains an accent instead of becoming a general surface color.
 10. The full training-frequency self-check card stays below the setup cards instead of being mixed into the `g/kg` setup body, and the long g/kg explanatory note now lives in the help sheet rather than inside the setup card.
 
@@ -138,7 +139,7 @@ Not implemented:
 ## Code References
 
 - App bootstrap and providers: `lib/main.dart`, `lib/app.dart`
-- Android launcher icon: `assets/icons/app/fitlog.png`, `android/app/src/main/res/mipmap-*/ic_launcher.png`
+- Android launcher label and icon: APK installs display as `FitLog local` via `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so existing local data stays in the same Android app sandbox. Launcher icons come from `assets/icons/app/fitlog.png` and `android/app/src/main/res/mipmap-*/ic_launcher.png`.
 - Home: `lib/features/home/home_page.dart`
 - Food: `lib/features/food/*`
 - Workout: `lib/features/workout/*`

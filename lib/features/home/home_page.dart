@@ -10,6 +10,7 @@ import '../../core/fitlog_theme.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/fitlog_bottom_nav_layout.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/daily_summary.dart';
@@ -73,6 +74,7 @@ class _HomePageState extends State<HomePage> {
     final palette = context.fitLogColors;
 
     return SafeArea(
+      bottom: false,
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
         builder: (context, refresh, selectedDateNotifier, _) {
           refresh.version;
@@ -116,13 +118,23 @@ class _HomePageState extends State<HomePage> {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
+                  final firstViewportHeight =
+                      FitLogBottomNavLayout.firstViewportHeightFor(
+                        context,
+                        availableHeight: constraints.maxHeight,
+                      );
                   return ListView(
                     padding: EdgeInsets.only(
-                      bottom: MediaQuery.paddingOf(context).bottom + 132,
+                      bottom:
+                          FitLogBottomNavLayout.pageScrollBottomPaddingFor(
+                            context,
+                          ) +
+                          132,
                     ),
                     children: <Widget>[
                       SizedBox(
-                        height: constraints.maxHeight,
+                        key: const ValueKey('fitlog_home_first_viewport'),
+                        height: firstViewportHeight,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[

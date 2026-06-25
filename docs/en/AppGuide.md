@@ -12,7 +12,8 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - External AI can help create food estimates before data enters the app, but FitLog stores and calculates locally.
 - `diet_goal_phase` controls cutting/bulking semantics.
 - `energy_ratio` and `gram_per_kg` stay separate.
-- Android launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
+- Bottom navigation and fixed CTA pills are visual surfaces only; the root bottom navigation is drawn as a body overlay instead of a `Scaffold.bottomNavigationBar` slot, and their outer areas must not use wrapper fills or full-width footer bands. The nav pill uses an opaque `navBackground`, with a width-matched `background` shield behind its lower half so scrolled content does not show through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for bottom safe-area gap, nav footprint, Home first-viewport sizing, fixed CTA placement, and scroll bottom padding.
+- Android APK installs display the launcher label `FitLog local` from `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so app updates keep the same local data sandbox. Launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
 
@@ -79,6 +80,7 @@ How it works:
 - `source` records whether the meal came from manual entry or external AI paste.
 - Copying creates a new local record with new ids/timestamps.
 - Deleting a food record cascades to its item rows.
+- The `Add Food` CTA is drawn as a bottom overlay pill, not as a full-width footer row; `FitLogBottomNavLayout` keeps its bottom edge anchored above the nav pill and gives the food list enough bottom padding for records to scroll clear of the button.
 
 Read more:
 
@@ -135,6 +137,7 @@ How it works:
 - One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately, does not count as a saved workout record, and appears as a title/subtitle draft bar that uses short body-part labels and caps direct body-part display at three names before `+n`.
 - Record-level summaries are derived from persisted sessions and sets.
 - Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
+- The `Add Workout` CTA and optional draft bar are drawn as bottom overlays instead of a full-width footer row; `FitLogBottomNavLayout` keeps their bottom edge anchored above the nav pill and gives the workout list enough bottom padding for records to scroll clear of the controls.
 
 Read more:
 
@@ -241,7 +244,7 @@ How it works:
 - Profile saves to singleton `user_profile`.
 - `nickname` is local-only profile data and is not an account identifier.
 - Theme is a local UI preference stored outside SQLite; it only remaps app color tokens and does not change food, workout, profile, or calculation behavior.
-- The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, white supports page, ordinary card, input, Profile inner-tile, information-area, and navigation-bar surfaces outside the selected pill, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo supports readable text, icons, and borders.
+- The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, white supports page, ordinary card, input, Profile inner-tile, and information-area surfaces, the bottom navigation pill stays a distinct surface while the area outside it reveals the page background, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo supports readable text, icons, and borders.
 - The Black theme keeps orange as the accent while separating dark background, card, selected-surface, input, outline, and text roles for clearer hierarchy.
 - Saving Profile also upserts the current day's weight log.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.

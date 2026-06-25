@@ -14,6 +14,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 加法兼容：数据库迁移必须保留现有本地用户数据。
 - 饮食模式保持分离：`gram_per_kg` 和 `energy_ratio` 是并列方法，不得合并。
 - 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
+- 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置和滚动底部留白的唯一来源。
 
 ## 当前模块
 
@@ -94,7 +95,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 7. `energy_ratio` 模式下，热量比例设置卡紧跟在计划矩阵下面，再往下才是共享训练频率/自检卡，避免模式切换后还要跨卡片找对应输入项。
 8. 输入型卡片如昵称、身体资料和 `energy_ratio` 细项，都在当前卡片底部提供局部保存；昵称和身体资料默认是只读展示态，点按类 chips 和 switch 直接保存。
 9. 主题和语言偏好是低频本地 UI 设置，放在 Profile 较靠后的设置区域；主题选项为绿色、蓝色和黑橙，只重新映射 App 颜色 token。
-   蓝色主题沿用绿色主题的角色映射逻辑，同时保持页面背景、普通卡片、输入框、Profile 内层 tile、信息型区域和选中 pill 以外的导航条为纯白：`#55DCE2` 是更亮但柔和的实色按钮和强填充主色，浅青色承载选中 pill 和小型强调徽章，更深的青蓝/靛蓝衍生色承载文字、图标、描边和对比。
+   蓝色主题沿用绿色主题的角色映射逻辑，同时保持页面背景、普通卡片、输入框、Profile 内层 tile 和信息型区域为纯白；底部导航 pill 仍是独立表面，pill 外区域露出页面背景，而不是另一条满宽导航底色。`#55DCE2` 是更亮但柔和的实色按钮和强填充主色，浅青色承载选中 pill 和小型强调徽章，更深的青蓝/靛蓝衍生色承载文字、图标、描边和对比。
    黑色主题保持黑橙方向，同时拆分深色背景、卡片、输入、选中表面和描边角色，让橙色继续作为强调色，而不是变成通用表面色。
 10. 完整的训练频率自检卡保留在设置卡下方的滚动区域，而不是和 `g/kg` 设置混成一张卡；原先那段较长的 g/kg 解释文字也迁入信息弹窗，而不是继续占用设置卡高度。
 
@@ -138,7 +139,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 ## 代码引用
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
-- Android 启动器图标：`assets/icons/app/fitlog.png`, `android/app/src/main/res/mipmap-*/ic_launcher.png`
+- Android 启动器显示名与图标：APK 安装后显示为 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此已有本地数据仍留在同一个 Android app sandbox。启动器图标来自 `assets/icons/app/fitlog.png` 和 `android/app/src/main/res/mipmap-*/ic_launcher.png`。
 - Home：`lib/features/home/home_page.dart`
 - Food：`lib/features/food/*`
 - Workout：`lib/features/workout/*`

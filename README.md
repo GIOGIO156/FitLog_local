@@ -31,6 +31,7 @@ FitLog Local 当前提供：
 - Profile 设置，管理身体数据、主题、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
 - 本地确定性饮食策略：`carb_cycling` 和 `carb_tapering`
 - XLSX 导出和 CSV ZIP 导出
+- Android 安装后的启动器显示名是 `FitLog local`；包名 `com.fitlog.local.fitlog_local` 保持不变，以保留同一个本地数据沙盒
 
 FitLog Local 当前不提供：
 
@@ -201,6 +202,7 @@ FitLog Local currently provides:
 - Profile settings for body data, theme, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
 - local deterministic diet strategy support for `carb_cycling` and `carb_tapering`
 - XLSX export and CSV ZIP export
+- Android installs with launcher label `FitLog local`; package id `com.fitlog.local.fitlog_local` stays unchanged so the same local data sandbox is preserved
 
 FitLog Local currently does not provide:
 

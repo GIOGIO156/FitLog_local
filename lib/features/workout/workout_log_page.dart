@@ -8,6 +8,7 @@ import '../../core/constants/fitlog_icon_assets.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/fitlog_bottom_nav_layout.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/workout_record_draft.dart';
@@ -426,6 +427,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
     final palette = context.fitLogColors;
 
     return SafeArea(
+      bottom: false,
       child: Consumer2<RefreshNotifier, SelectedDateNotifier>(
         builder: (context, refresh, selectedDateNotifier, _) {
           refresh.version;
@@ -447,189 +449,231 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
                 ),
               ),
               Expanded(
-                child: FutureBuilder<_WorkoutLogData>(
-                  future: pageDataFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                child: Stack(
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: FutureBuilder<_WorkoutLogData>(
+                        future: pageDataFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState !=
+                              ConnectionState.done) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            strings.failedToLoadWorkout(snapshot.error!),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  strings.failedToLoadWorkout(snapshot.error!),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
 
-                    final pageData =
-                        snapshot.data ??
-                        const _WorkoutLogData(
-                          sessions: <WorkoutSession>[],
-                          activeDraft: null,
-                        );
-                    final sessions = pageData.sessions;
-                    final plans = _groupSessions(sessions);
-                    if (plans.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            strings.noWorkoutRecords,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
+                          final pageData =
+                              snapshot.data ??
+                              const _WorkoutLogData(
+                                sessions: <WorkoutSession>[],
+                                activeDraft: null,
+                              );
+                          final sessions = pageData.sessions;
+                          final plans = _groupSessions(sessions);
+                          if (plans.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  strings.noWorkoutRecords,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
 
-                    return ListView.builder(
-                      itemCount: plans.length,
-                      padding: const EdgeInsets.only(bottom: 96),
-                      itemBuilder: (context, index) {
-                        final plan = plans[index];
-                        return GlassPanel(
-                          margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          padding: const EdgeInsets.all(16),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: () => _openPlan(context, plan),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Row(
-                                  children: <Widget>[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: palette.primarySoft,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        _formatStartTime(plan.startedAt),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: palette.primary,
-                                        ),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    FitLogActionIconButton(
-                                      icon: Icons.delete_outline_rounded,
-                                      tooltip: strings.delete,
-                                      onPressed: () =>
-                                          _deletePlan(context, plan),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  plan.displayName(strings),
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  DateUtilsX.formatReadable(plan.date),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: palette.textMuted),
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: _WorkoutMetric(
-                                        label: strings.totalDurationLabel,
-                                        value:
-                                            '${plan.totalDurationMinutes} min',
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: _WorkoutMetric(
-                                        label: strings.totalVolumeLabel,
-                                        value:
-                                            '${plan.totalVolumeKg.toStringAsFixed(0)} kg',
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: _WorkoutMetric(
-                                        label: strings.totalSetsLabel,
-                                        value: '${plan.totalSets}',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: <Widget>[
-                                    const FitLogSvgIconCircle(
-                                      assetName: FitLogIconAssets.flame,
-                                      backgroundColor: Color(0xFFE8F1FC),
-                                      tintColor: Color(0xFF6EA4DF),
-                                      size: 38,
-                                      iconSize: 20,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      '${plan.totalCalories.toStringAsFixed(0)} kcal',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
+                          return ListView.builder(
+                            itemCount: plans.length,
+                            padding: EdgeInsets.only(
+                              bottom:
+                                  FitLogBottomNavLayout.ctaListBottomPaddingFor(
+                                    context,
+                                  ),
+                            ),
+                            itemBuilder: (context, index) {
+                              final plan = plans[index];
+                              return GlassPanel(
+                                margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                padding: const EdgeInsets.all(16),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(24),
+                                  onTap: () => _openPlan(context, plan),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Row(
+                                        children: <Widget>[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: palette.primarySoft,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: Text(
+                                              _formatStartTime(plan.startedAt),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                color: palette.primary,
+                                              ),
+                                            ),
                                           ),
-                                    ),
-                                  ],
+                                          const Spacer(),
+                                          FitLogActionIconButton(
+                                            icon: Icons.delete_outline_rounded,
+                                            tooltip: strings.delete,
+                                            onPressed: () =>
+                                                _deletePlan(context, plan),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        plan.displayName(strings),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        DateUtilsX.formatReadable(plan.date),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: palette.textMuted,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: _WorkoutMetric(
+                                              label: strings.totalDurationLabel,
+                                              value:
+                                                  '${plan.totalDurationMinutes} min',
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: _WorkoutMetric(
+                                              label: strings.totalVolumeLabel,
+                                              value:
+                                                  '${plan.totalVolumeKg.toStringAsFixed(0)} kg',
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: _WorkoutMetric(
+                                              label: strings.totalSetsLabel,
+                                              value: '${plan.totalSets}',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: <Widget>[
+                                          const FitLogSvgIconCircle(
+                                            assetName: FitLogIconAssets.flame,
+                                            backgroundColor: Color(0xFFE8F1FC),
+                                            tintColor: Color(0xFF6EA4DF),
+                                            size: 38,
+                                            iconSize: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            '${plan.totalCalories.toStringAsFixed(0)} kcal',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        plan.exerciseNames
+                                            .map(strings.exerciseDisplayName)
+                                            .join(' · '),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: palette.textSecondary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  plan.exerciseNames
-                                      .map(strings.exerciseDisplayName)
-                                      .join(' · '),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: palette.textSecondary),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: FitLogBottomNavLayout.ctaBottomFor(context),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          FutureBuilder<_WorkoutLogData>(
+                            future: pageDataFuture,
+                            builder: (context, snapshot) {
+                              final draft = snapshot.data?.activeDraft;
+                              if (draft == null) {
+                                return const SizedBox.shrink();
+                              }
+                              return _buildDraftBar(context, draft, strings);
+                            },
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: FitLogBottomNavLayout.horizontalInset,
+                            ),
+                            child: FilledButton.icon(
+                              key: const ValueKey('fitlog_workout_add_cta'),
+                              onPressed: () =>
+                                  _openAddWorkout(context, selectedDate),
+                              icon: const Icon(Icons.add_rounded),
+                              label: Text(strings.addWorkout),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(
+                                  FitLogBottomNavLayout.ctaHeight,
                                 ),
-                              ],
+                                backgroundColor: palette.primaryBright,
+                                foregroundColor: palette.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              FutureBuilder<_WorkoutLogData>(
-                future: pageDataFuture,
-                builder: (context, snapshot) {
-                  final draft = snapshot.data?.activeDraft;
-                  if (draft == null) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildDraftBar(context, draft, strings);
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: FilledButton.icon(
-                  onPressed: () => _openAddWorkout(context, selectedDate),
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(strings.addWorkout),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    backgroundColor: palette.primaryBright,
-                    foregroundColor: palette.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],

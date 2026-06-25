@@ -14,6 +14,7 @@ import '../../core/localization/localization_extensions.dart';
 import '../../core/theme_controller.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
+import '../../core/widgets/fitlog_bottom_nav_layout.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/profile_form_fields.dart';
@@ -1300,15 +1301,13 @@ class _ProfilePageState extends State<ProfilePage> {
         : _nicknameController.text.trim();
 
     return SafeArea(
+      bottom: false,
       child: Stack(
         children: <Widget>[
           ListView(
             controller: _scrollController,
             padding: EdgeInsets.only(
-              bottom:
-                  MediaQuery.paddingOf(context).bottom +
-                  kBottomNavigationBarHeight +
-                  28,
+              bottom: FitLogBottomNavLayout.pageScrollBottomPaddingFor(context),
             ),
             children: <Widget>[
               FitLogPageHeader(
