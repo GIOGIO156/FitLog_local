@@ -6,6 +6,44 @@ import '../constants/fitlog_icon_assets.dart';
 import '../fitlog_theme.dart';
 import '../localization/localization_extensions.dart';
 import '../utils/date_utils.dart';
+import 'fitlog_bottom_nav_layout.dart';
+
+Future<T?> showFitLogGuideSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return SafeArea(
+        top: false,
+        bottom: false,
+        child: Padding(
+          key: const ValueKey('fitlog_guide_sheet_positioner'),
+          padding: EdgeInsets.fromLTRB(
+            FitLogBottomNavLayout.modalSheetOuterGap,
+            FitLogBottomNavLayout.modalTopPaddingFor(context),
+            FitLogBottomNavLayout.modalSheetOuterGap,
+            FitLogBottomNavLayout.modalBottomPaddingFor(context),
+          ),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              width: double.infinity,
+              child: KeyedSubtree(
+                key: const ValueKey('fitlog_guide_sheet_panel'),
+                child: builder(context),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
 
 class FitLogPageHeader extends StatelessWidget {
   const FitLogPageHeader({

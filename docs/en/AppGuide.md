@@ -12,7 +12,8 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - External AI can help create food estimates before data enters the app, but FitLog stores and calculates locally.
 - `diet_goal_phase` controls cutting/bulking semantics.
 - `energy_ratio` and `gram_per_kg` stay separate.
-- Bottom navigation and fixed CTA pills are visual surfaces only; the root bottom navigation is drawn as a body overlay instead of a `Scaffold.bottomNavigationBar` slot, and their outer areas must not use wrapper fills or full-width footer bands. The nav pill uses an opaque `navBackground`, with a width-matched `background` shield behind its lower half so scrolled content does not show through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for bottom safe-area gap, nav footprint, Home first-viewport sizing, fixed CTA placement, and scroll bottom padding.
+- Bottom navigation and fixed CTA pills are visual surfaces only; the root bottom navigation is drawn as a body overlay instead of a `Scaffold.bottomNavigationBar` slot, and their outer areas must not use wrapper fills or full-width footer bands. The nav pill uses an opaque `navBackground`, with a width-matched `background` shield behind its lower half so scrolled content does not show through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for bottom safe-area gap, nav footprint, Home first-viewport sizing, fixed CTA placement, scroll bottom padding, and guide-sheet bottom avoidance.
+- Guide-style modal sheets dim and disable the bottom navigation through the route scrim, but their visible content is positioned above the nav footprint so the nav pill never covers the sheet body. They reserve a top focus gap and keep long copy scrollable inside the panel.
 - Android APK installs display the launcher label `FitLog local` from `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so app updates keep the same local data sandbox. Launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
@@ -48,7 +49,7 @@ How it works:
 - In `gram_per_kg`, the bottom detail list stays vertical and denser, without a visible divider line, so the arc, focus state, and macro rows still read as one surface.
 - In `gram_per_kg`, the first viewport still relies on a large dashboard container rather than measured spacer math: the macro dashboard owns the opening screen and the strategy card is placed after that container.
 - Strategy fields show final target context after `none`, `carb_cycling`, or `carb_tapering` is applied.
-- When carb cycling or carb tapering is active, the Home strategy card opens a structured explainer sheet with methodology-oriented guidance for non-expert users.
+- When carb cycling or carb tapering is active, the Home strategy card opens a structured nav-aware explainer sheet with methodology-oriented guidance for non-expert users.
 - In English, active Home strategy card titles place the `- ...` status suffix on a second line so long carb-cycle and carb-taper states stay readable on narrow screens.
 - In `gram_per_kg`, the strategy card stays below the initial macro viewport and only appears after scrolling, keeping the opening screen focused on execution rather than explanation.
 - Detailed BMR/TDEE/calibration numbers are intentionally left out of the Home surface and remain available in Profile-oriented views.
@@ -251,7 +252,7 @@ How it works:
 - Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.
 - Body Profile now enters one shared edit state: tapping any of the four tiles opens the whole 2x2 body-profile grid for cross-field editing, and one save action persists age, height, weight, and sex together.
 - The English compact profile copy keeps short strategy and self-check labels, including `N/A` for no diet strategy and concise current/suggested training-frequency actions.
-- The current-plan hero keeps an information trigger that opens a Home-style bottom sheet rather than a full-screen page; the sheet swaps between a `gram_per_kg` coefficient table and an `energy_ratio` default setup guide based on the selected diet mode.
+- The current-plan hero keeps an information trigger that opens the same Home-style nav-aware guide sheet rather than a full-screen page; the sheet swaps between a `gram_per_kg` coefficient table and an `energy_ratio` default setup guide based on the selected diet mode.
 - In `energy_ratio` mode, the energy-ratio settings card sits directly under the plan matrix and above the shared training-frequency/self-check card so the mode selector and numeric inputs stay adjacent.
 - The `g/kg` setup card no longer repeats the self-check summary row or the long explanatory note; the full training-frequency self-check card stays below it as a separate section, and the note moves into the information sheet.
 - Under-18 protection blocks adult-style cutting deficit behavior and cutting carb strategies.

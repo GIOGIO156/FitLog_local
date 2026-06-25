@@ -14,7 +14,8 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 加法兼容：数据库迁移必须保留现有本地用户数据。
 - 饮食模式保持分离：`gram_per_kg` 和 `energy_ratio` 是并列方法，不得合并。
 - 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
-- 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置和滚动底部留白的唯一来源。
+- 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
+- 说明类 modal sheet，包括 Home 策略说明和 Profile 当前计划说明，都使用 root modal route：遮罩层覆盖并禁用底部导航，sheet 内容停在导航 footprint 上方，而不是压住导航 pill。这类 sheet 需要保留顶部焦点留白，较长说明内容在面板内部滚动，而不是把面板拉到状态栏。
 
 ## 当前模块
 
@@ -90,7 +91,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 2. 当前计划 hero：当前阶段、饮食模式、训练频率/自检摘要、策略标签和静态宏量目标 strip，其中蛋白质、碳水和脂肪图标徽章沿用 Home 对应营养素的柔和底色。
 3. 身体资料摘要与单 tile 编辑：年龄、身高、体重和性别保持可读的 2x2 展示网格；用户点某一项时只有该 tile 进入编辑态，未改动时点别处可自然收起，有改动时在同卡片内完成保存/取消，而不是跳到单独长表单。
 4. 计划矩阵：直接点按 `diet_goal_phase`、`diet_calculation_mode` 和 `diet_plan_strategy` 的 chips，并保持稳定的横向换行排列，而不是切换成全宽竖排按钮。
-5. 当前计划 hero 右上角保留一个信息入口，打开后沿用首页策略说明那种非全屏 bottom sheet；`gram_per_kg` 下展示当前阶段/性别对应的频率系数表，`energy_ratio` 下展示默认宏量起步比例和默认生活活动系数表。
+5. 当前计划 hero 右上角保留一个信息入口，打开后沿用首页策略说明那种会避让底部导航的非全屏 guide sheet；`gram_per_kg` 下展示当前阶段/性别对应的频率系数表，`energy_ratio` 下展示默认宏量起步比例和默认生活活动系数表。
 6. 靠上的共享训练频率/自检卡，训练频率与自检周期使用直接保存的 chips，四个自检周期选项保持同一行，不在设置卡内重复塞入自检摘要，并且不同饮食模式下沿用同一个卡片标题。
 7. `energy_ratio` 模式下，热量比例设置卡紧跟在计划矩阵下面，再往下才是共享训练频率/自检卡，避免模式切换后还要跨卡片找对应输入项。
 8. 输入型卡片如昵称、身体资料和 `energy_ratio` 细项，都在当前卡片底部提供局部保存；昵称和身体资料默认是只读展示态，点按类 chips 和 switch 直接保存。

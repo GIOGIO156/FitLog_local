@@ -12,7 +12,8 @@
 - 外部 AI 可以帮助生成餐食估算，但数据进入 App 之后的存储、计算和展示都在本地完成。
 - `diet_goal_phase` 控制 cutting/bulking 语义。
 - `energy_ratio` 和 `gram_per_kg` 保持分离。
-- 底部导航和固定 CTA 的 pill 只是视觉表面；根底部导航以 body overlay 绘制，而不是 `Scaffold.bottomNavigationBar` slot，pill 外区域不应再有 wrapper 填充或满宽 footer 色带。导航 pill 使用不透明的 `navBackground`，下半段背后放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出滚动内容。`FitLogBottomNavLayout` 是底部安全区间距、导航 footprint、Home 首屏盒子、固定 CTA 位置和滚动底部留白的唯一来源。
+- 底部导航和固定 CTA 的 pill 只是视觉表面；根底部导航以 body overlay 绘制，而不是 `Scaffold.bottomNavigationBar` slot，pill 外区域不应再有 wrapper 填充或满宽 footer 色带。导航 pill 使用不透明的 `navBackground`，下半段背后放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出滚动内容。`FitLogBottomNavLayout` 是底部安全区间距、导航 footprint、Home 首屏盒子、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
+- 说明类 modal sheet 通过 route 遮罩压暗并禁用底部导航，但可见内容停在导航 footprint 上方，导航 pill 不应覆盖 sheet 正文。它们需要保留顶部焦点留白，较长文案在面板内部滚动。
 - Android APK 安装后的启动器显示名是 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此覆盖更新会继续使用同一个本地数据沙盒。启动器图标由 `assets/icons/app/fitlog.png` 生成到 `android/app/src/main/res/mipmap-*/ic_launcher.png` 各密度资源。
 
 延伸阅读：
@@ -47,7 +48,7 @@ Home 是选中日期的每日入口页。
 - 在 `gram_per_kg` 下，裁切大圆环会比标题更强势，首屏看起来更像一个完整的仪表盘，而不是多个小段落拼在一起。
 - 在 `gram_per_kg` 下，底部纵向明细列表会继续保留，但去掉明显分割线，用更连续的留白把圆环、焦点状态和三项宏量连成一个整体。
 - 策略字段展示 `none`、`carb_cycling` 或 `carb_tapering` 应用后的最终目标上下文。
-- 当碳循环或碳水渐降启用时，Home 的策略卡片可以点开，并展示面向非熟悉用户的结构化方法说明。
+- 当碳循环或碳水渐降启用时，Home 的策略卡片可以点开，并展示会避让底部导航、面向非熟悉用户的结构化方法说明。
 - 英文界面下，Home 已启用策略卡片会把 `- ...` 状态后缀固定放到第二行，避免碳循环或碳水渐降状态在窄屏上挤成过长一行。
 - 在 `gram_per_kg` 下，策略卡片位于首屏宏量区域之后，用户需要下滑后才会看到解释入口，首页打开时只聚焦宏量执行信息。
 - 在 `energy_ratio` 下，首屏会被当作一个只容纳热量卡片和宏量卡片的专用大盒子：盒子里只放这两张卡片，二者之间的距离保持受控，宏量卡片下方只保留较短的保护间距，避免策略卡片前出现大段空白。
@@ -252,7 +253,7 @@ Profile 是一个“摘要优先”的控制台，用于配置本地身份、身
 - 昵称、身体资料和 `energy_ratio` 这类输入型卡片默认是展示态，发生编辑后才在本卡片内显示保存动作；未改动的内联编辑态点别处可收起，chips 和 switch 这类离散项直接保存。
 - 身体资料现在进入统一编辑态：点开年龄、身高、体重或性别任意一个 tile 后，整个 2x2 身体资料网格都会进入可切换编辑状态，并通过一次保存同时持久化四项资料。
 - 英文版 Profile 继续使用紧凑文案，包括无饮食策略时显示 `N/A`，以及更短的训练频率自检当前值/建议值与操作按钮文案。
-- 当前计划 hero 带有一个信息入口，点击后会打开与首页策略说明相同尺寸和出场方式的 bottom sheet；内容会随当前饮食模式切换，在 `gram_per_kg` 与 `energy_ratio` 之间切换不同表格和说明。
+- 当前计划 hero 带有一个信息入口，点击后会打开与首页策略说明相同尺寸和出场方式、并避让底部导航的 guide sheet；内容会随当前饮食模式切换，在 `gram_per_kg` 与 `energy_ratio` 之间切换不同表格和说明。
 - `energy_ratio` 模式下，热量比例设置卡会直接出现在计划矩阵下面、共享训练频率/自检卡上面，保证模式切换与对应输入在同一视线区域。
 - `g/kg` 设置卡不再重复展示自检摘要行，也不再把长段解释文字塞在卡片底部；完整训练频率自检卡保留在其下方的独立区域，而方法说明迁入信息弹窗。
 - 未成年人保护会阻止成人式 cutting deficit 行为和 cutting carb 策略。

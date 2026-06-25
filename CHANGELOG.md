@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-06-26 Guide Sheets Above Bottom Navigation
+
+### Fixed
+
+- Moved Home strategy guidance and Profile current-plan guidance onto the shared root guide-sheet route so the modal scrim covers and disables the root bottom navigation.
+- Positioned guide-sheet content above the bottom navigation footprint with `FitLogBottomNavLayout`, preventing the navigation pill from covering modal text while keeping the nav visible only as dimmed background chrome.
+- Shortened guide-sheet maximum body height and added a top focus gap so Home/Profile guide panels no longer crowd the status bar or overflow by a few pixels on common phone heights.
+- Replaced Profile's page-local guide overlay path with the shared root guide-sheet path, and used read-only localization access for the delayed Profile info-button callback.
+
+### Changed
+
+- Added shared guide-sheet bottom-avoidance geometry to `FitLogBottomNavLayout` and a reusable `showFitLogGuideSheet` wrapper for nav-aware guide modals.
+- Extended bottom-chrome widget tests to verify Home and Profile guide sheets stop above the measured nav pill rect, keep a top focus gap, and show a modal barrier.
+- Updated bilingual Product and AppGuide docs to record that guide-style modal sheets dim/disable bottom navigation, reserve the nav footprint below the sheet, and keep long copy scrollable inside the panel.
+
+### Validation
+
+- `dart format` on modified Dart files and bottom chrome layout test: success.
+- `flutter test test\bottom_chrome_layout_test.dart`: success; covers Home/Profile guide-sheet bottom positioning against the real nav pill rect.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 42`: success; generated ABI-specific debug APKs in `build\app\outputs\flutter-apk\`.
+
 ## 2026-06-25 Bottom Chrome Background Transparency
 
 ### Added

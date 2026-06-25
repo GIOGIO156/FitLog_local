@@ -1,6 +1,8 @@
 import 'package:fitlog_local/app.dart';
+import 'package:fitlog_local/core/constants/app_constants.dart';
 import 'package:fitlog_local/core/fitlog_theme.dart';
 import 'package:fitlog_local/core/localization/language_controller.dart';
+import 'package:fitlog_local/core/theme_controller.dart';
 import 'package:fitlog_local/core/widgets/fitlog_bottom_nav_layout.dart';
 import 'package:fitlog_local/data/db/app_database.dart';
 import 'package:fitlog_local/data/repositories/custom_exercise_repository.dart';
@@ -23,6 +25,7 @@ import 'package:fitlog_local/export/csv_export_service.dart';
 import 'package:fitlog_local/export/xlsx_export_service.dart';
 import 'package:fitlog_local/features/food/food_log_page.dart';
 import 'package:fitlog_local/features/home/home_page.dart';
+import 'package:fitlog_local/features/profile/profile_page.dart';
 import 'package:fitlog_local/features/workout/workout_log_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -160,11 +163,68 @@ void main() {
     expect(listPadding.bottom, _expectedCtaListBottomPadding);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Home strategy guide sheet stays above dimmed bottom nav', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildRootShellChromeTestApp(
+        initialTab: 0,
+        profile: UserProfile.defaults.copyWith(
+          dietPlanStrategy: AppConstants.dietPlanStrategyCarbCycling,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Carb cycle').first);
+    await tester.pumpAndSettle();
+
+    final navPillRect = tester.getRect(find.byKey(_navPillKey));
+    final guideRect = tester.getRect(find.byKey(_guideSheetPanelKey));
+
+    expect(find.byType(ModalBarrier), findsWidgets);
+    expect(guideRect.bottom, lessThanOrEqualTo(navPillRect.top));
+    expect(navPillRect.top - guideRect.bottom, _guideSheetToNavGap);
+    expect(guideRect.top, greaterThanOrEqualTo(_expectedGuideTopGap));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Profile method guide sheet stays above dimmed bottom nav', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildRootShellChromeTestApp(initialTab: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.info_outline_rounded).first);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final navPillRect = tester.getRect(find.byKey(_navPillKey));
+    final guideRect = tester.getRect(find.byKey(_guideSheetPanelKey));
+
+    expect(find.byType(ModalBarrier), findsWidgets);
+    expect(guideRect.bottom, lessThanOrEqualTo(navPillRect.top));
+    expect(navPillRect.top - guideRect.bottom, _guideSheetToNavGap);
+    expect(guideRect.top, greaterThanOrEqualTo(_expectedGuideTopGap));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 const _navOverlayKey = ValueKey<String>('fitlog_bottom_nav_overlay');
 const _navPillKey = ValueKey<String>('fitlog_bottom_nav_pill');
 const _navShieldKey = ValueKey<String>('fitlog_bottom_nav_shield');
+const _guideSheetPanelKey = ValueKey<String>('fitlog_guide_sheet_panel');
 const _homeFirstViewportKey = ValueKey<String>('fitlog_home_first_viewport');
 const _foodCtaKey = ValueKey<String>('fitlog_food_add_cta');
 const _workoutCtaKey = ValueKey<String>('fitlog_workout_add_cta');
@@ -180,6 +240,8 @@ const _expectedCtaListBottomPadding =
     FitLogBottomNavLayout.ctaToNavGap +
     FitLogBottomNavLayout.ctaHeight +
     FitLogBottomNavLayout.listAfterCtaGap;
+const _guideSheetToNavGap = FitLogBottomNavLayout.modalSheetOuterGap;
+const _expectedGuideTopGap = FitLogBottomNavLayout.modalSheetTopGap;
 const _foodRecord = FoodRecord(
   date: _referenceDay,
   mealName: 'A',
@@ -216,6 +278,7 @@ Widget _buildRootShellChromeTestApp({
   required int initialTab,
   List<FoodRecord> foodRecords = const <FoodRecord>[],
   List<WorkoutSession> workoutSessions = const <WorkoutSession>[],
+  UserProfile? profile,
 }) {
   final database = AppDatabase.instance;
   final foodRepository = _FakeFoodRepository(database)
@@ -224,7 +287,8 @@ Widget _buildRootShellChromeTestApp({
   final workoutRepository = _FakeWorkoutRepository(database)
     ..sessionsByDate[_referenceDay] = workoutSessions;
   final workoutDraftRepository = _FakeWorkoutDraftRepository(database);
-  final profileRepository = _FakeProfileRepository(database);
+  final profileRepository = _FakeProfileRepository(database)
+    ..profile = profile ?? UserProfile.defaults;
   final trainingFrequencySelfCheckService = TrainingFrequencySelfCheckService(
     workoutRepository: workoutRepository,
   );
@@ -285,6 +349,7 @@ Widget _buildRootShellChromeTestApp({
       ChangeNotifierProvider<LanguageController>(
         create: (_) => LanguageController(),
       ),
+      ChangeNotifierProvider<ThemeController>(create: (_) => ThemeController()),
     ],
     child: MaterialApp(
       theme: ThemeData(
@@ -298,7 +363,7 @@ Widget _buildRootShellChromeTestApp({
           HomePage(),
           FoodLogPage(),
           WorkoutLogPage(),
-          SizedBox.expand(),
+          ProfilePage(),
         ],
       ),
     ),
@@ -402,8 +467,10 @@ class _FakeWorkoutDraftRepository extends WorkoutDraftRepository {
 class _FakeProfileRepository extends ProfileRepository {
   _FakeProfileRepository(super.database);
 
+  UserProfile profile = UserProfile.defaults;
+
   @override
-  Future<UserProfile?> getProfile() async => UserProfile.defaults;
+  Future<UserProfile?> getProfile() async => profile;
 
   @override
   Future<CalorieCalibrationState?> getCalorieCalibrationState() async => null;
