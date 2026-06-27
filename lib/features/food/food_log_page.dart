@@ -6,6 +6,7 @@ import '../../core/fitlog_theme.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/fitlog_bottom_nav_layout.dart';
+import '../../core/widgets/fitlog_notifications.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/food_item.dart';
@@ -52,7 +53,6 @@ class _FoodLogPageState extends State<FoodLogPage> {
   Future<void> _deleteRecord(BuildContext context, FoodRecord record) async {
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
-    final messenger = ScaffoldMessenger.of(context);
     final strings = context.stringsRead;
 
     final bool confirmed =
@@ -90,7 +90,7 @@ class _FoodLogPageState extends State<FoodLogPage> {
     }
 
     refreshNotifier.markDataChanged();
-    messenger.showSnackBar(SnackBar(content: Text(strings.foodDeleted)));
+    FitLogNotifications.success(context, strings.foodDeleted);
   }
 
   Future<void> _copyRecord(
@@ -112,7 +112,6 @@ class _FoodLogPageState extends State<FoodLogPage> {
     final targetDate = DateUtilsX.formatDate(pickedDate);
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
-    final messenger = ScaffoldMessenger.of(context);
     final strings = context.stringsRead;
 
     final copiedRecord = FoodRecord(
@@ -147,18 +146,15 @@ class _FoodLogPageState extends State<FoodLogPage> {
         return;
       }
       refreshNotifier.markDataChanged();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(strings.foodCopied(record.mealName, targetDate)),
-        ),
+      FitLogNotifications.success(
+        context,
+        strings.foodCopied(record.mealName, targetDate),
       );
     } catch (error) {
       if (!context.mounted) {
         return;
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(strings.failedToCopyFood(error))),
-      );
+      FitLogNotifications.error(context, strings.failedToCopyFood(error));
     }
   }
 

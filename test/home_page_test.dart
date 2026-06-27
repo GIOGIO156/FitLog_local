@@ -8,6 +8,7 @@ import 'package:fitlog_local/data/repositories/food_repository.dart';
 import 'package:fitlog_local/data/repositories/profile_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_draft_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_repository.dart';
+import 'package:fitlog_local/domain/models/body_metric_log.dart';
 import 'package:fitlog_local/domain/models/calorie_calibration_state.dart';
 import 'package:fitlog_local/domain/models/diet_adjustment_review.dart';
 import 'package:fitlog_local/domain/models/food_record.dart';
@@ -404,6 +405,14 @@ class _FakeProfileRepository extends ProfileRepository {
     required String endDate,
   }) async {
     return const <WeightLog>[];
+  }
+
+  @override
+  Future<List<BodyMetricLog>> getBodyMetricLogsBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    return const <BodyMetricLog>[];
   }
 
   @override

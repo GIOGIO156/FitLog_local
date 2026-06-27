@@ -336,6 +336,7 @@ class _RootShellState extends State<_RootShell> {
         ),
       ),
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
         body: Stack(
           children: <Widget>[
@@ -473,25 +474,32 @@ class _ShellBottomNav extends StatelessWidget {
             ),
           );
 
-          return SizedBox(
-            height: FitLogBottomNavLayout.pillHeight,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: FitLogBottomNavLayout.pillHeight / 2,
-                  height: shieldHeight,
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      key: const ValueKey('fitlog_bottom_nav_shield'),
-                      decoration: BoxDecoration(color: palette.background),
+          return IgnorePointer(
+            ignoring: navController.interactionLocked,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 180),
+              opacity: navController.interactionLocked ? 0.34 : 1,
+              child: SizedBox(
+                height: FitLogBottomNavLayout.pillHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: FitLogBottomNavLayout.pillHeight / 2,
+                      height: shieldHeight,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          key: const ValueKey('fitlog_bottom_nav_shield'),
+                          decoration: BoxDecoration(color: palette.background),
+                        ),
+                      ),
                     ),
-                  ),
+                    navPill,
+                  ],
                 ),
-                navPill,
-              ],
+              ),
             ),
           );
         },
@@ -525,14 +533,27 @@ class RefreshNotifier extends ChangeNotifier {
 
 class RootTabController extends ChangeNotifier {
   int _index = 0;
+  bool _interactionLocked = false;
 
   int get index => _index;
+  bool get interactionLocked => _interactionLocked;
 
   void setIndex(int index) {
+    if (_interactionLocked) {
+      return;
+    }
     if (_index == index) {
       return;
     }
     _index = index;
+    notifyListeners();
+  }
+
+  void setInteractionLocked(bool locked) {
+    if (_interactionLocked == locked) {
+      return;
+    }
+    _interactionLocked = locked;
     notifyListeners();
   }
 }

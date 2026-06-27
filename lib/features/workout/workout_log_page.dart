@@ -9,6 +9,7 @@ import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/fitlog_bottom_nav_layout.dart';
+import '../../core/widgets/fitlog_notifications.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/workout_record_draft.dart';
@@ -332,7 +333,6 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
   ) async {
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
-    final messenger = ScaffoldMessenger.of(context);
     final strings = context.stringsRead;
 
     final confirmText = group.planId == null
@@ -384,7 +384,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
     }
 
     refreshNotifier.markDataChanged();
-    messenger.showSnackBar(SnackBar(content: Text(strings.workoutDeleted)));
+    FitLogNotifications.success(context, strings.workoutDeleted);
   }
 
   List<_WorkoutPlanGroup> _groupSessions(List<WorkoutSession> sessions) {

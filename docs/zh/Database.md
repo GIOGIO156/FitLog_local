@@ -6,14 +6,14 @@ FitLog Local 将业务数据保存在本地。
 
 | 存储 | 用途 | 远程同步 |
 | --- | --- | --- |
-| SQLite / `sqflite` | Profile、food records、food items、workout sessions、workout sets、custom exercises、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
+| SQLite / `sqflite` | Profile、body metric logs、food records、food items、workout sessions、workout sets、custom exercises、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
 | SharedPreferences | UI 偏好：`language_code` 和 `theme_key`。 | No |
 | Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件。 | No |
 | In-memory providers | App services、refresh version、selected date、language state、theme state。 | No |
 
 数据库名：`fitlog_local.db`。
 
-当前 SQLite schema 版本：`11`。
+当前 SQLite schema 版本：`12`。
 
 通过 `PRAGMA foreign_keys = ON` 启用外键。
 
@@ -34,6 +34,7 @@ FitLog Local 将业务数据保存在本地。
 | 9 | 添加本地 UI 昵称字段 `user_profile.nickname`。 |
 | 10 | 添加 `workout_record_drafts`，用于保存一条活动中的未保存训练编辑状态。 |
 | 11 | 添加可复用 `custom_exercises`、训练 session 动作快照、有氧强度元数据，以及训练组的原始输入值/计算值字段。 |
+| 12 | 为 `user_profile` 添加当前体脂率和腰围字段，新增 `body_metric_logs`，并将已有 `user_weight_logs` 回填为身体指标历史。 |
 
 兼容规则：
 
@@ -55,6 +56,8 @@ FitLog Local 将业务数据保存在本地。
 | `age` | INTEGER NOT NULL | BMR 与未成年人保护。 |
 | `height_cm` | REAL NOT NULL | BMR。 |
 | `weight_kg` | REAL NOT NULL | BMR、g/kg 宏量、运动消耗。 |
+| `body_fat_percent` | REAL NOT NULL DEFAULT 20.0 | 当前 Profile 的体脂率快照，用于身体资料卡；不是按日期的历史记录。 |
+| `waist_cm` | REAL NOT NULL DEFAULT 80.0 | 当前 Profile 的腰围快照，用于身体资料卡；不是按日期的历史记录。 |
 | `sex_for_formula` | TEXT NOT NULL | `male`、`female`、`prefer_not_to_say`。 |
 | `activity_level` | TEXT NOT NULL | 保存 Profile 时根据 `training_frequency_per_week` 派生出的兼容/导出活动档位。 |
 | `daily_energy_goal_type` | TEXT NOT NULL | 兼容字段：`maintenance`、`deficit`、`surplus`。 |
@@ -224,16 +227,38 @@ FitLog Local 将业务数据保存在本地。
 - 草稿表不会参与 Home 的训练汇总，也不进入导出覆盖。
 - 用户显式保存时，会先校验当前编辑状态，再写入 `workout_sessions` 和 `workout_sets`，最后删除草稿行。
 
+### `body_metric_logs`
+
+用途：本地按日期保存的身体指标历史，用于 Profile 身体趋势卡和过往身体记录编辑。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | 身体指标记录 id。 |
+| `date` | TEXT NOT NULL UNIQUE | 每天最多一条身体指标记录，`yyyy-MM-dd`。 |
+| `weight_kg` | REAL | 该日期可选体重。 |
+| `body_fat_percent` | REAL | 该日期可选体脂率。 |
+| `waist_cm` | REAL | 该日期可选腰围。 |
+| `source` | TEXT NOT NULL | 本地来源，例如 `body_metric_manual` 或迁移来的体重日志来源。 |
+| `created_at` | TEXT NOT NULL | ISO datetime。 |
+| `updated_at` | TEXT NOT NULL | ISO datetime。 |
+
+行为：
+
+- 过往身体记录编辑只写入此表，不会静默修改当前 `user_profile` 快照。
+- 身体趋势卡读取此表，并按指标过滤点位；某天体脂或腰围为空不会阻止体重趋势显示。
+- v12 迁移会把已有 `user_weight_logs` 回填到 `body_metric_logs.weight_kg`，体脂和腰围为空。
+- 保存身体指标记录时，如果体重非空，会同步写入 `user_weight_logs`，以保持现有校准和 review 兼容。
+
 ### `user_weight_logs`
 
-用途：体重日志，用于趋势和校准。
+用途：体重日志，用于校准和 review 兼容。
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | log id。 |
 | `date` | TEXT NOT NULL UNIQUE | `yyyy-MM-dd`。 |
 | `weight_kg` | REAL NOT NULL | 体重。 |
-| `source` | TEXT NOT NULL | `manual` 或 `profile_save`。 |
+| `source` | TEXT NOT NULL | 来自 profile save，或包含体重的身体指标历史编辑。 |
 | `created_at` | TEXT NOT NULL | ISO datetime。 |
 | `updated_at` | TEXT NOT NULL | ISO datetime。 |
 
@@ -304,6 +329,16 @@ ProfilePage
 -> Home / Profile display
 ```
 
+过往身体指标记录：
+
+```text
+ProfilePage calendar entry
+-> BodyMetricLog
+-> ProfileRepository.upsertBodyMetricLog
+-> body_metric_logs（体重非空时同步 user_weight_logs）
+-> Profile body trend / ExportTableBuilder
+```
+
 Food：
 
 ```text
@@ -340,7 +375,7 @@ ProfilePage export action
 
 ## 导出覆盖
 
-导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、`record_name`、保存时的动作 metadata、有氧强度 metadata、自定义动作隐藏状态，以及 workout set 的原始输入值和标准化计算值。
+导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile、body metric logs 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、当前体脂率/腰围字段、按日期的身体指标历史、`record_name`、保存时的动作 metadata、有氧强度 metadata、自定义动作隐藏状态，以及 workout set 的原始输入值和标准化计算值。
 
 ## 未实现
 

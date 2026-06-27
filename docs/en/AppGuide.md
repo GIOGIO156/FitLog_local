@@ -14,6 +14,7 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - `energy_ratio` and `gram_per_kg` stay separate.
 - Bottom navigation and fixed CTA pills are visual surfaces only; the root bottom navigation is drawn as a body overlay instead of a `Scaffold.bottomNavigationBar` slot, and their outer areas must not use wrapper fills or full-width footer bands. The nav pill uses an opaque `navBackground`, with a width-matched `background` shield behind its lower half so scrolled content does not show through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for bottom safe-area gap, nav footprint, Home first-viewport sizing, fixed CTA placement, scroll bottom padding, and guide-sheet bottom avoidance.
 - Guide-style modal sheets dim and disable the bottom navigation through the route scrim, but their visible content is positioned above the nav footprint so the nav pill never covers the sheet body. They reserve a top focus gap and keep long copy scrollable inside the panel.
+- App-wide system notices go through `FitLogNotifications`: success/info notices are lightweight top overlays, while error/action notices float above the keyboard or bottom navigation footprint. Business pages keep their save/delete/export order and pass the original message text, including error details, into the shared layer.
 - Android APK installs display the launcher label `FitLog local` from `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so app updates keep the same local data sandbox. Launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
@@ -228,7 +229,8 @@ What users can set:
 - nickname for local-only UI display, shown under the visible `User Settings` header as a compact one-line identity row with a trailing pen trigger and inline edit on demand
 - a current-plan summary and macro target strip below the top identity row, with protein, carbs, and fat icon badge backgrounds matching the same nutrient colors used on Home
 - body-profile summary grid
-- age, height, weight, and sex option inside a display-first 2x2 body-profile grid
+- age, height, weight, sex, body fat, and waist inside a display-first body-profile grid
+- past body metric records for weight, body fat, and waist through the body-profile calendar date picker, then edited inline inside the body-profile card
 - local theme preference: Green, Blue, or Black
 - language
 - `diet_goal_phase`
@@ -250,7 +252,10 @@ How it works:
 - Saving Profile also upserts the current day's weight log.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.
 - Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.
-- Body Profile now enters one shared edit state: tapping any of the four tiles opens the whole 2x2 body-profile grid for cross-field editing, and one save action persists age, height, weight, and sex together.
+- Body Profile enters one shared current-profile edit state: tapping age, height, weight, sex, body fat, or waist opens the grid for cross-field editing, and one save action persists the current Profile snapshot.
+- The body-profile calendar entry is separate from current Profile editing: it opens the app date picker for past dates, then enters an inline card state and edits only that date's weight, body-fat, and waist body metric record. Other Profile areas and bottom navigation are softened and locked during this state.
+- Profile inline numeric editors use transparent in-card fields with stable tile geometry; when the keyboard opens, focused inputs can scroll above it while the bottom navigation stays anchored.
+- The Body Trend card is read-only, switches between weight, body fat, and waist, does not contain a full body-history list, and keeps the chart clean until the user taps a point for its date/value tooltip.
 - The English compact profile copy keeps short strategy and self-check labels, including `N/A` for no diet strategy and concise current/suggested training-frequency actions.
 - The current-plan hero keeps an information trigger that opens the same Home-style nav-aware guide sheet rather than a full-screen page; the sheet swaps between a `gram_per_kg` coefficient table and an `energy_ratio` default setup guide based on the selected diet mode.
 - In `energy_ratio` mode, the energy-ratio settings card sits directly under the plan matrix and above the shared training-frequency/self-check card so the mode selector and numeric inputs stay adjacent.
@@ -278,8 +283,9 @@ What exports include:
 - workout sets
 - daily summary
 - user profile
+- body metric history
 - diet adjustment review history
-- strategy, calibration, self-check, and local-only nickname fields where relevant
+- strategy, calibration, self-check, current body-profile, and local-only nickname fields where relevant
 
 How it works:
 

@@ -6,14 +6,14 @@ FitLog Local stores business data locally.
 
 | Storage | Purpose | Remote sync |
 | --- | --- | --- |
-| SQLite / `sqflite` | Profile, food records, food items, workout sessions, workout sets, custom exercises, workout record drafts, weight logs, calibration state, diet adjustment reviews. | No |
+| SQLite / `sqflite` | Profile, body metric logs, food records, food items, workout sessions, workout sets, custom exercises, workout record drafts, weight logs, calibration state, diet adjustment reviews. | No |
 | SharedPreferences | UI preferences: `language_code` and `theme_key`. | No |
 | Local files | XLSX and CSV ZIP exports in the app documents directory. | No |
 | In-memory providers | App services, refresh version, selected date, language state, theme state. | No |
 
 Database name: `fitlog_local.db`.
 
-Current SQLite schema version: `11`.
+Current SQLite schema version: `12`.
 
 Foreign keys are enabled with `PRAGMA foreign_keys = ON`.
 
@@ -34,6 +34,7 @@ Migrations are additive and must preserve existing local data.
 | 9 | Added local-only `user_profile.nickname`. |
 | 10 | Added `workout_record_drafts` for one active unsaved workout editor state. |
 | 11 | Added reusable `custom_exercises`, workout-session exercise snapshots, cardio-intensity metadata, and raw-vs-calculation workout-set fields. |
+| 12 | Added current body-fat and waist fields to `user_profile`, added `body_metric_logs`, and backfilled existing `user_weight_logs` into body metric history. |
 
 Compatibility rules:
 
@@ -55,6 +56,8 @@ Purpose: singleton user profile, diet settings, strategy settings, and self-chec
 | `age` | INTEGER NOT NULL | BMR and under-18 protection. |
 | `height_cm` | REAL NOT NULL | BMR. |
 | `weight_kg` | REAL NOT NULL | BMR, g/kg macros, workout calories. |
+| `body_fat_percent` | REAL NOT NULL DEFAULT 20.0 | Current Profile body-fat snapshot used by the body profile card; not a dated history row. |
+| `waist_cm` | REAL NOT NULL DEFAULT 80.0 | Current Profile waist snapshot used by the body profile card; not a dated history row. |
 | `sex_for_formula` | TEXT NOT NULL | `male`, `female`, `prefer_not_to_say`. |
 | `activity_level` | TEXT NOT NULL | Compatibility/export activity tier derived from `training_frequency_per_week` on profile save. |
 | `daily_energy_goal_type` | TEXT NOT NULL | Compatibility field: `maintenance`, `deficit`, `surplus`. |
@@ -231,16 +234,38 @@ Draft behavior:
 - The draft table does not feed Home workout totals or export coverage.
 - Explicit save validates current editor state first, then writes `workout_sessions` and `workout_sets`, then deletes the draft row.
 
+### `body_metric_logs`
+
+Purpose: dated local body metric history used by the Profile body trend card and past body-record editor.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | Body metric log id. |
+| `date` | TEXT NOT NULL UNIQUE | One body metric record per day, `yyyy-MM-dd`. |
+| `weight_kg` | REAL | Optional bodyweight for that date. |
+| `body_fat_percent` | REAL | Optional body-fat percentage for that date. |
+| `waist_cm` | REAL | Optional waist circumference for that date. |
+| `source` | TEXT NOT NULL | Local source such as `body_metric_manual` or a migrated weight-log source. |
+| `created_at` | TEXT NOT NULL | ISO datetime. |
+| `updated_at` | TEXT NOT NULL | ISO datetime. |
+
+Behavior:
+
+- Past body-record editing writes this table only; it does not silently mutate the current `user_profile` snapshot.
+- The body trend card reads this table and filters points per metric, so null body-fat or waist values do not block weight trend rendering.
+- v12 migration backfills existing `user_weight_logs` into `body_metric_logs.weight_kg` with null body-fat and waist values.
+- Saving a body metric log with a non-null weight mirrors that weight to `user_weight_logs` for existing calibration/review compatibility.
+
 ### `user_weight_logs`
 
-Purpose: daily bodyweight history for calibration and review.
+Purpose: daily bodyweight history for calibration and review compatibility.
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT | Weight log id. |
 | `date` | TEXT NOT NULL UNIQUE | One entry per day. |
 | `weight_kg` | REAL NOT NULL | Bodyweight. |
-| `source` | TEXT NOT NULL | Currently written from profile save. |
+| `source` | TEXT NOT NULL | Written from profile save or body metric history edits that include weight. |
 | `created_at` | TEXT NOT NULL | ISO datetime. |
 | `updated_at` | TEXT NOT NULL | ISO datetime. |
 
@@ -317,6 +342,16 @@ ProfilePage
 -> Home/Profile display
 ```
 
+Past body metric records:
+
+```text
+ProfilePage calendar entry
+-> BodyMetricLog
+-> ProfileRepository.upsertBodyMetricLog
+-> body_metric_logs (+ user_weight_logs when weight is present)
+-> Profile body trend / ExportTableBuilder
+```
+
 Food:
 
 ```text
@@ -355,7 +390,7 @@ ProfilePage export action
 
 ## Export Coverage
 
-Exports include food records, food items, workout records, workout sets, custom exercises, daily summary, user profile, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, training-frequency self-check fields, local-only `nickname`, `record_name`, saved exercise metadata, cardio-intensity metadata, custom-exercise hidden state, and workout-set raw/calculation values are included where relevant.
+Exports include food records, food items, workout records, workout sets, custom exercises, daily summary, user profile, body metric logs, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, training-frequency self-check fields, local-only `nickname`, current body-fat/waist fields, dated body metric history, `record_name`, saved exercise metadata, cardio-intensity metadata, custom-exercise hidden state, and workout-set raw/calculation values are included where relevant.
 
 ## Not Implemented
 

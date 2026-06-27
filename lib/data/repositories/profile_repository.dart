@@ -1,4 +1,5 @@
 import '../../core/utils/date_utils.dart';
+import '../../domain/models/body_metric_log.dart';
 import '../../domain/models/calorie_calibration_state.dart';
 import '../../domain/models/diet_adjustment_review.dart';
 import '../../domain/models/user_profile.dart';
@@ -215,6 +216,95 @@ class ProfileRepository {
       orderBy: 'date ASC',
     );
     return rows.map(WeightLog.fromMap).toList();
+  }
+
+  Future<BodyMetricLog?> getBodyMetricLogByDate(String date) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'body_metric_logs',
+      where: 'date = ?',
+      whereArgs: <Object?>[date],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return BodyMetricLog.fromMap(rows.first);
+  }
+
+  Future<List<BodyMetricLog>> getBodyMetricLogsBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'body_metric_logs',
+      where: 'date >= ? AND date <= ?',
+      whereArgs: <Object?>[startDate, endDate],
+      orderBy: 'date ASC',
+    );
+    return rows.map(BodyMetricLog.fromMap).toList();
+  }
+
+  Future<List<BodyMetricLog>> getAllBodyMetricLogs() async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'body_metric_logs',
+      orderBy: 'date DESC, id DESC',
+    );
+    return rows.map(BodyMetricLog.fromMap).toList();
+  }
+
+  Future<void> upsertBodyMetricLog({
+    required String date,
+    double? weightKg,
+    double? bodyFatPercent,
+    double? waistCm,
+    String source = 'manual',
+  }) async {
+    final db = await _database.database;
+    final now = DateTime.now().toIso8601String();
+
+    final rows = await db.query(
+      'body_metric_logs',
+      columns: <String>['id', 'created_at'],
+      where: 'date = ?',
+      whereArgs: <Object?>[date],
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      await db.insert('body_metric_logs', <String, dynamic>{
+        'date': date,
+        'weight_kg': weightKg,
+        'body_fat_percent': bodyFatPercent,
+        'waist_cm': waistCm,
+        'source': source,
+        'created_at': now,
+        'updated_at': now,
+      });
+    } else {
+      final existingId = rows.first['id'] as int;
+      final existingCreatedAt = rows.first['created_at']?.toString() ?? now;
+      await db.update(
+        'body_metric_logs',
+        <String, dynamic>{
+          'date': date,
+          'weight_kg': weightKg,
+          'body_fat_percent': bodyFatPercent,
+          'waist_cm': waistCm,
+          'source': source,
+          'created_at': existingCreatedAt,
+          'updated_at': now,
+        },
+        where: 'id = ?',
+        whereArgs: <Object?>[existingId],
+      );
+    }
+
+    if (weightKg != null) {
+      await upsertWeightLog(date: date, weightKg: weightKg, source: source);
+    }
   }
 
   Future<CalorieCalibrationState?> getCalorieCalibrationState() async {

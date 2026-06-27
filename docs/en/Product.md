@@ -16,6 +16,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 - Phase is explicit: `diet_goal_phase` is the source of truth for cutting/bulking behavior.
 - Bottom navigation and fixed CTA visual backgrounds do not define layout geometry: the root bottom navigation is a body overlay rather than a `Scaffold.bottomNavigationBar` slot, so the area outside each pill must not become a full-width footer band. The nav pill itself uses opaque `navBackground`, and a width-matched `background` shield may sit behind the lower half of the pill to stop scrolling content from showing through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for nav footprint, bottom safe-area gap, Home first-viewport height, fixed CTA placement, scroll bottom padding, and guide-sheet bottom avoidance.
 - Guide-style modal sheets, including Home strategy guidance and Profile current-plan guidance, use a root modal route: the scrim covers and disables the bottom navigation, while the sheet content is positioned above the navigation footprint instead of overlapping the nav pill. These sheets keep a top focus gap and scroll long explanatory content inside the panel instead of stretching to the status bar.
+- System notifications use one shared FitLog notification layer instead of page-local `SnackBar` construction. Success and neutral notices appear as lightweight top overlays; errors and action notices appear above the keyboard or bottom navigation footprint. Action notices preserve their button callback, and all variants derive color and type from the active FitLog theme.
 
 ## Current Modules
 
@@ -29,8 +30,8 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
-| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid with one shared edit state for age/height/weight/sex, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
-| Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, strategy fields, and review history. | `lib/export/*` |
+| Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid for age/height/weight/sex/body fat/waist with one shared current-profile save, a date-picker-backed inline body-card state for past body metric records, clean read-only weight/body-fat/waist trend switching with tap-only point tooltip, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
+| Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, body metric history, strategy fields, and review history. | `lib/export/*` |
 
 ## Food Workflow
 
@@ -141,6 +142,7 @@ Not implemented:
 
 - App bootstrap and providers: `lib/main.dart`, `lib/app.dart`
 - Android launcher label and icon: APK installs display as `FitLog local` via `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so existing local data stays in the same Android app sandbox. Launcher icons come from `assets/icons/app/fitlog.png` and `android/app/src/main/res/mipmap-*/ic_launcher.png`.
+- System notifications: `lib/core/widgets/fitlog_notifications.dart`
 - Home: `lib/features/home/home_page.dart`
 - Food: `lib/features/food/*`
 - Workout: `lib/features/workout/*`

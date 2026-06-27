@@ -4,12 +4,14 @@ import 'package:fitlog_local/core/fitlog_theme.dart';
 import 'package:fitlog_local/core/localization/language_controller.dart';
 import 'package:fitlog_local/core/theme_controller.dart';
 import 'package:fitlog_local/core/widgets/fitlog_bottom_nav_layout.dart';
+import 'package:fitlog_local/core/widgets/fitlog_notifications.dart';
 import 'package:fitlog_local/data/db/app_database.dart';
 import 'package:fitlog_local/data/repositories/custom_exercise_repository.dart';
 import 'package:fitlog_local/data/repositories/food_repository.dart';
 import 'package:fitlog_local/data/repositories/profile_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_draft_repository.dart';
 import 'package:fitlog_local/data/repositories/workout_repository.dart';
+import 'package:fitlog_local/domain/models/body_metric_log.dart';
 import 'package:fitlog_local/domain/models/calorie_calibration_state.dart';
 import 'package:fitlog_local/domain/models/diet_adjustment_review.dart';
 import 'package:fitlog_local/domain/models/food_record.dart';
@@ -219,6 +221,113 @@ void main() {
     expect(guideRect.top, greaterThanOrEqualTo(_expectedGuideTopGap));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Success notification is a lightweight top notice above nav', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildRootShellChromeTestApp(
+        initialTab: 0,
+        pages: const <Widget>[
+          _NotificationTestPage(kind: _NotificationKind.success),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(_notificationTriggerKey));
+    await tester.pump();
+
+    final navPillRect = tester.getRect(find.byKey(_navPillKey));
+    final noticeRect = tester.getRect(
+      find.byKey(const ValueKey<String>('fitlog_notification_success')),
+    );
+
+    expect(noticeRect.bottom, lessThan(navPillRect.top));
+    expect(noticeRect.top, greaterThanOrEqualTo(12));
+
+    await tester.tap(find.byKey(_notificationCloseKey));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Error notification floats above the bottom nav footprint', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildRootShellChromeTestApp(
+        initialTab: 0,
+        pages: const <Widget>[
+          _NotificationTestPage(kind: _NotificationKind.error),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(_notificationTriggerKey));
+    await tester.pump();
+
+    final navPillRect = tester.getRect(find.byKey(_navPillKey));
+    final noticeRect = tester.getRect(
+      find.byKey(const ValueKey<String>('fitlog_notification_error')),
+    );
+
+    expect(noticeRect.bottom, lessThanOrEqualTo(navPillRect.top));
+    expect(navPillRect.top - noticeRect.bottom, 12);
+
+    await tester.tap(find.byKey(_notificationCloseKey));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Action notification keeps its button callback', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildRootShellChromeTestApp(
+        initialTab: 0,
+        pages: const <Widget>[
+          _NotificationTestPage(kind: _NotificationKind.action),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+          SizedBox.shrink(),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(_notificationTriggerKey));
+    await tester.pump();
+    expect(find.text('Action count 0'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('fitlog_notification_action_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Action count 1'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('fitlog_notification_action')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 const _navOverlayKey = ValueKey<String>('fitlog_bottom_nav_overlay');
@@ -228,6 +337,10 @@ const _guideSheetPanelKey = ValueKey<String>('fitlog_guide_sheet_panel');
 const _homeFirstViewportKey = ValueKey<String>('fitlog_home_first_viewport');
 const _foodCtaKey = ValueKey<String>('fitlog_food_add_cta');
 const _workoutCtaKey = ValueKey<String>('fitlog_workout_add_cta');
+const _notificationTriggerKey = ValueKey<String>('fitlog_notification_trigger');
+const _notificationCloseKey = ValueKey<String>(
+  'fitlog_notification_close_button',
+);
 const _referenceDay = '2026-06-25';
 const _expectedNavFootprint =
     FitLogBottomNavLayout.pillHeight + FitLogBottomNavLayout.minBottomGap;
@@ -279,6 +392,7 @@ Widget _buildRootShellChromeTestApp({
   List<FoodRecord> foodRecords = const <FoodRecord>[],
   List<WorkoutSession> workoutSessions = const <WorkoutSession>[],
   UserProfile? profile,
+  List<Widget>? pages,
 }) {
   final database = AppDatabase.instance;
   final foodRepository = _FakeFoodRepository(database)
@@ -359,15 +473,70 @@ Widget _buildRootShellChromeTestApp({
         extensions: <ThemeExtension<dynamic>>[palette],
       ),
       home: buildRootShellForTest(
-        pages: const <Widget>[
-          HomePage(),
-          FoodLogPage(),
-          WorkoutLogPage(),
-          ProfilePage(),
-        ],
+        pages:
+            pages ??
+            const <Widget>[
+              HomePage(),
+              FoodLogPage(),
+              WorkoutLogPage(),
+              ProfilePage(),
+            ],
       ),
     ),
   );
+}
+
+enum _NotificationKind { success, error, action }
+
+class _NotificationTestPage extends StatefulWidget {
+  const _NotificationTestPage({required this.kind});
+
+  final _NotificationKind kind;
+
+  @override
+  State<_NotificationTestPage> createState() => _NotificationTestPageState();
+}
+
+class _NotificationTestPageState extends State<_NotificationTestPage> {
+  int _actionCount = 0;
+
+  void _showNotification() {
+    switch (widget.kind) {
+      case _NotificationKind.success:
+        FitLogNotifications.success(context, 'Saved');
+        break;
+      case _NotificationKind.error:
+        FitLogNotifications.error(context, 'Invalid input');
+        break;
+      case _NotificationKind.action:
+        FitLogNotifications.action(
+          context,
+          'Restore record',
+          actionLabel: 'Restore',
+          onPressed: () => setState(() => _actionCount++),
+        );
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text('Action count $_actionCount'),
+            FilledButton(
+              key: _notificationTriggerKey,
+              onPressed: _showNotification,
+              child: const Text('Show notification'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _FakeFoodRepository extends FoodRepository {
@@ -481,6 +650,14 @@ class _FakeProfileRepository extends ProfileRepository {
     required String endDate,
   }) async {
     return const <WeightLog>[];
+  }
+
+  @override
+  Future<List<BodyMetricLog>> getBodyMetricLogsBetween({
+    required String startDate,
+    required String endDate,
+  }) async {
+    return const <BodyMetricLog>[];
   }
 
   @override

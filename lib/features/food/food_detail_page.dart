@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
+import '../../core/widgets/fitlog_notifications.dart';
 import '../../domain/models/food_record.dart';
 import 'food_form_support.dart';
 
@@ -66,9 +67,7 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
     }
 
     if (record == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(strings.foodRecordNotFound)));
+      FitLogNotifications.error(context, strings.foodRecordNotFound);
       Navigator.of(context).pop(false);
       return;
     }
@@ -109,7 +108,6 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
     }
 
     setState(() => _saving = true);
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final updated = FoodRecord(
@@ -138,17 +136,13 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
       }
 
       context.read<RefreshNotifier>().markDataChanged();
-      messenger.showSnackBar(
-        SnackBar(content: Text(strings.foodRecordUpdated)),
-      );
+      FitLogNotifications.success(context, strings.foodRecordUpdated);
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) {
         return;
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(strings.failedToSaveFoodRecord(error))),
-      );
+      FitLogNotifications.error(context, strings.failedToSaveFoodRecord(error));
     } finally {
       if (mounted) {
         setState(() => _saving = false);

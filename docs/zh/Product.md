@@ -16,6 +16,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
 - 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
 - 说明类 modal sheet，包括 Home 策略说明和 Profile 当前计划说明，都使用 root modal route：遮罩层覆盖并禁用底部导航，sheet 内容停在导航 footprint 上方，而不是压住导航 pill。这类 sheet 需要保留顶部焦点留白，较长说明内容在面板内部滚动，而不是把面板拉到状态栏。
+- 系统通知统一通过 FitLog 通知层展示，不在业务页面直接构造 `SnackBar`。成功和中性提示使用轻量顶部 overlay；错误和带 action 的提示显示在键盘或底部导航占位上方。带 action 的提示必须保留按钮回调，所有通知颜色和文字样式都从当前 FitLog 主题派生。
 
 ## 当前模块
 
@@ -29,8 +30,8 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、临时或可复用自定义动作、有氧时长/强度、力量输入口径、已完成组持久化、备注和摘要计算。 | `add_workout_page.dart` |
 | Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
 | Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
-| Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、默认展示且支持年龄/身高/体重/性别统一编辑态的身体资料网格、可点按的阶段/模式/策略矩阵、本地主题和语言偏好、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
-| Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、自定义动作、保存时的训练输入 metadata、每日汇总、资料、策略字段和 review 历史。 | `lib/export/*` |
+| Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、包含年龄/身高/体重/性别/体脂率/腰围的默认展示身体资料网格、一次保存当前 Profile 的统一编辑态、用于过往身体指标记录的日期选择器加卡片内编辑态、只读且简洁的体重/体脂/腰围趋势切换与点按 tooltip、可点按的阶段/模式/策略矩阵、本地主题和语言偏好、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
+| Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、自定义动作、保存时的训练输入 metadata、每日汇总、资料、身体指标历史、策略字段和 review 历史。 | `lib/export/*` |
 
 ## 饮食流程
 
@@ -141,6 +142,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
 - Android 启动器显示名与图标：APK 安装后显示为 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此已有本地数据仍留在同一个 Android app sandbox。启动器图标来自 `assets/icons/app/fitlog.png` 和 `android/app/src/main/res/mipmap-*/ic_launcher.png`。
+- 系统通知：`lib/core/widgets/fitlog_notifications.dart`
 - Home：`lib/features/home/home_page.dart`
 - Food：`lib/features/food/*`
 - Workout：`lib/features/workout/*`

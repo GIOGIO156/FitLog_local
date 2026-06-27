@@ -8,7 +8,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int dbVersion = 11;
+  static const int dbVersion = 12;
 
   Database? _database;
 
@@ -124,6 +124,22 @@ class AppDatabase {
           await _addWorkoutSnapshotColumns(db);
           await _addWorkoutSetInputColumns(db);
         }
+        if (oldVersion < 12) {
+          await _addColumnIfMissing(
+            db,
+            table: 'user_profile',
+            column: 'body_fat_percent',
+            definition: 'body_fat_percent REAL NOT NULL DEFAULT 20.0',
+          );
+          await _addColumnIfMissing(
+            db,
+            table: 'user_profile',
+            column: 'waist_cm',
+            definition: 'waist_cm REAL NOT NULL DEFAULT 80.0',
+          );
+          await _createBodyMetricLogTable(db);
+          await _backfillBodyMetricLogsFromWeightLogs(db);
+        }
       },
     );
   }
@@ -136,6 +152,8 @@ class AppDatabase {
         age INTEGER NOT NULL,
         height_cm REAL NOT NULL,
         weight_kg REAL NOT NULL,
+        body_fat_percent REAL NOT NULL DEFAULT 20.0,
+        waist_cm REAL NOT NULL DEFAULT 80.0,
         sex_for_formula TEXT NOT NULL,
         activity_level TEXT NOT NULL,
         daily_energy_goal_type TEXT NOT NULL,
@@ -249,6 +267,7 @@ class AppDatabase {
     ''');
 
     await _createWeightAndCalibrationTables(db);
+    await _createBodyMetricLogTable(db);
     await _createDietAdjustmentReviewTable(db);
     await _createWorkoutDraftTable(db);
     await _createCustomExerciseTable(db);
@@ -342,6 +361,57 @@ class AppDatabase {
     ''');
   }
 
+  Future<void> _createBodyMetricLogTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS body_metric_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL UNIQUE,
+        weight_kg REAL,
+        body_fat_percent REAL,
+        waist_cm REAL,
+        source TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db, {
+    required String table,
+    required String column,
+    required String definition,
+  }) async {
+    final rows = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = rows.any((row) => row['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $definition');
+    }
+  }
+
+  Future<void> _backfillBodyMetricLogsFromWeightLogs(Database db) async {
+    await db.execute('''
+      INSERT OR IGNORE INTO body_metric_logs (
+        date,
+        weight_kg,
+        body_fat_percent,
+        waist_cm,
+        source,
+        created_at,
+        updated_at
+      )
+      SELECT
+        date,
+        weight_kg,
+        NULL,
+        NULL,
+        source,
+        created_at,
+        updated_at
+      FROM user_weight_logs
+    ''');
+  }
+
   Future<void> _createDietAdjustmentReviewTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS diet_adjustment_reviews (
@@ -418,6 +488,7 @@ class AppDatabase {
       await txn.delete('workout_sessions');
       await txn.delete('workout_record_drafts');
       await txn.delete('custom_exercises');
+      await txn.delete('body_metric_logs');
       await txn.delete('user_weight_logs');
       await txn.delete('calorie_calibration_state');
       await txn.delete('diet_adjustment_reviews');

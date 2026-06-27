@@ -252,6 +252,8 @@ UserProfile _profile({
     age: 30,
     heightCm: 175,
     weightKg: 80,
+    bodyFatPercent: 20,
+    waistCm: 80,
     sexForFormula: sexForFormula,
     activityLevel: activityLevel,
     dailyEnergyGoalType: 'deficit',

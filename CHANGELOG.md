@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-06-27 System Notifications
+
+### Added
+
+- Added a shared `FitLogNotifications` UI layer for success, info, error, and action notices, including action-button callback support and a `SnackBar` fallback inside the wrapper only.
+- Added widget coverage for top success notices, bottom error notices above the navigation footprint, and action notices that preserve their callback.
+
+### Changed
+
+- Replaced page-local `SnackBar` construction across Food, Workout, and Profile flows with the shared notification wrapper while preserving original business ordering and message details.
+- Moved success/info feedback to lightweight top overlays and kept error/action feedback above the keyboard or bottom navigation footprint using existing FitLog theme tokens and text styles.
+- Updated bilingual Product and AppGuide docs for the system notification UX boundary.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter test test\bottom_chrome_layout_test.dart`: success; covers success, error, and action notification placement/callback behavior against the real root nav pill.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 47`: success; generated ABI-specific debug APKs with version codes `1047`, `2047`, and `4047`.
+
+## 2026-06-27 Body Metrics History and Trend
+
+### Added
+
+- Added SQLite schema version `12` with current `user_profile.body_fat_percent`, current `user_profile.waist_cm`, and a dated `body_metric_logs` table for local body metric history.
+- Added idempotent v12 migration steps that create `body_metric_logs` and backfill existing `user_weight_logs` into body metric history without introducing any cloud or Agent backend dependency.
+- Added Profile body metric history editing for past dates, limited to weight, body-fat percentage, and waist circumference.
+- Added body metric export coverage for current Profile body-fat/waist fields and dated body metric logs.
+
+### Changed
+
+- Expanded the Profile body card from age/height/weight/sex to age/height/weight/sex/body fat/waist while keeping one shared current-profile save action.
+- Reworked Body Trend into a read-only weight/body-fat/waist chart with 7/14/21/28 day ranges, metric-specific units, empty/single-point states, and real date spacing.
+- Removed the weight-only history list from under the trend chart; past body record editing now starts from the body card calendar entry instead.
+- Moved past body record editing out of the bottom sheet and into the body profile card itself, with other Profile areas and bottom navigation softened and locked while editing a dated record.
+- Changed the body card calendar entry to open the app date picker for past dates before entering inline history editing, and removed one-day previous/next controls from the edit card.
+- Simplified the body trend chart by removing always-visible axis numbers, x-axis dates, grid labels, and default point bubbles; point date/value tooltip now appears only after the user taps the chart.
+- Kept Profile bottom navigation anchored during keyboard entry and made body-profile inline inputs transparent and stable-sized inside their tiles.
+- Kept current Profile edits separate from dated body metric records: saving current body data does not create a body metric history row, while saving a past body metric record does not silently mutate the current Profile snapshot.
+- Updated bilingual Product, AppGuide, and Database docs for the body metric model, Profile UX, export coverage, and schema version `12`.
+
+### Validation
+
+- `dart format lib\app.dart lib\features\profile\profile_page.dart test\profile_body_history_test.dart`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 46`: success; generated ABI-specific debug APKs with version codes `1046`, `2046`, and `4046`.
+
 ## 2026-06-26 Guide Sheets Above Bottom Navigation
 
 ### Fixed

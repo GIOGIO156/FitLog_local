@@ -31,6 +31,7 @@ class ExportTableBuilder {
     final customExercises = await _customExerciseRepository.getAllDefinitions();
     final profile =
         await _profileRepository.getProfile() ?? UserProfile.defaults;
+    final bodyMetricLogs = await _profileRepository.getAllBodyMetricLogs();
     final dietAdjustmentReviews = await _profileRepository
         .getAllDietAdjustmentReviews();
 
@@ -239,6 +240,8 @@ class ExportTableBuilder {
             'age',
             'height_cm',
             'weight_kg',
+            'body_fat_percent',
+            'waist_cm',
             'sex_for_formula',
             'activity_level',
             'daily_energy_goal_type',
@@ -268,6 +271,8 @@ class ExportTableBuilder {
             profile.age,
             profile.heightCm,
             profile.weightKg,
+            profile.bodyFatPercent,
+            profile.waistCm,
             profile.sexForFormula,
             profile.activityLevel,
             profile.dailyEnergyGoalType,
@@ -292,6 +297,28 @@ class ExportTableBuilder {
             profile.macroSelfCheckEnabled ? 1 : 0,
             profile.lastMacroSelfCheckAt ?? '',
           ],
+        ],
+      ),
+      ExportTable(
+        sheetName: 'Body Metric Logs',
+        fileName: 'body_metric_logs.csv',
+        rows: <List<dynamic>>[
+          <dynamic>[
+            'date',
+            'weight_kg',
+            'body_fat_percent',
+            'waist_cm',
+            'source',
+          ],
+          ...bodyMetricLogs.map(
+            (log) => <dynamic>[
+              log.date,
+              log.weightKg ?? '',
+              log.bodyFatPercent ?? '',
+              log.waistCm ?? '',
+              log.source,
+            ],
+          ),
         ],
       ),
       ExportTable(
