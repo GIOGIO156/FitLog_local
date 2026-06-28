@@ -40,6 +40,96 @@ enum _BodyProfileField { age, height, weight, sex, bodyFat, waist }
 
 enum _BodyTrendMetric { weight, bodyFat, waist }
 
+@visibleForTesting
+double bodyTrendChartXRatio({
+  required DateTime firstVisiblePointDay,
+  required DateTime pointDay,
+  required int rangeDays,
+}) {
+  if (rangeDays <= 1) {
+    return 0;
+  }
+  final dayOffset = pointDay.difference(firstVisiblePointDay).inDays;
+  final safeDayOffset = math.max(0, math.min(dayOffset, rangeDays - 1));
+  return safeDayOffset / (rangeDays - 1);
+}
+
+@visibleForTesting
+List<double> bodyTrendChartGridValues({
+  required Iterable<double> values,
+  required String unit,
+}) {
+  final sortedValues = values.toList()..sort();
+  if (sortedValues.isEmpty) {
+    return const <double>[0, 1, 2];
+  }
+
+  final baseStep = _bodyTrendBaseGridStep(unit);
+  final minValue = sortedValues.first;
+  final maxValue = sortedValues.last;
+  var step = _niceBodyTrendGridStep(
+    math.max(baseStep, (maxValue - minValue).abs() / 4),
+  );
+
+  List<double> buildTicks(double tickStep) {
+    var firstTick = (minValue / tickStep).floorToDouble() * tickStep;
+    var lastTick = (maxValue / tickStep).ceilToDouble() * tickStep;
+    if ((maxValue - minValue).abs() < tickStep) {
+      final centerTick = (minValue / tickStep).roundToDouble() * tickStep;
+      firstTick = centerTick - tickStep;
+      lastTick = centerTick + tickStep;
+    }
+    while (((lastTick - firstTick) / tickStep).round() < 2) {
+      firstTick -= tickStep;
+      lastTick += tickStep;
+    }
+    final count = ((lastTick - firstTick) / tickStep).round();
+    return List<double>.generate(
+      count + 1,
+      (index) => _normalizeBodyTrendTick(firstTick + tickStep * index),
+    );
+  }
+
+  var ticks = buildTicks(step);
+  while (ticks.length > 5) {
+    step = _nextNiceBodyTrendGridStep(step);
+    ticks = buildTicks(step);
+  }
+  return ticks;
+}
+
+double _bodyTrendBaseGridStep(String unit) {
+  switch (unit) {
+    case 'kg':
+    case 'cm':
+    case '%':
+      return 1;
+    default:
+      return 1;
+  }
+}
+
+double _niceBodyTrendGridStep(double minimumStep) {
+  final safeMinimum = math.max(1.0, minimumStep);
+  final magnitude = math.pow(10, (math.log(safeMinimum) / math.ln10).floor());
+  for (final factor in const <double>[1, 2, 5, 10]) {
+    final candidate = magnitude * factor;
+    if (candidate >= safeMinimum) {
+      return candidate.toDouble();
+    }
+  }
+  return (magnitude * 10).toDouble();
+}
+
+double _nextNiceBodyTrendGridStep(double currentStep) {
+  return _niceBodyTrendGridStep(currentStep + currentStep * 0.01);
+}
+
+double _normalizeBodyTrendTick(double value) {
+  final normalized = double.parse(value.toStringAsFixed(1));
+  return normalized == -0.0 ? 0.0 : normalized;
+}
+
 class _ProfilePageState extends State<ProfilePage> {
   static const List<int> _bodyTrendRangeOptions = <int>[7, 14, 21, 28];
   static const int _maxBodyTrendRangeDays = 28;
@@ -92,6 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _editingNickname = false;
   _BodyProfileField? _editingBodyField;
   String? _editingBodyMetricDate;
+  bool _editingBodyMetricRecordExists = false;
   String? _bodyMetricEditError;
   bool _exportingXlsx = false;
   bool _exportingCsv = false;
@@ -285,6 +376,19 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
 
+    final todayKey = DateUtilsX.todayKey();
+    if (todayKey.compareTo(startKey) >= 0 &&
+        todayKey.compareTo(endKey) <= 0 &&
+        !valuesByDate.containsKey(todayKey)) {
+      final currentValue = _metricValueForProfile(
+        _persistedProfile,
+        _selectedBodyTrendMetric,
+      );
+      if (currentValue != null) {
+        valuesByDate[todayKey] = currentValue;
+      }
+    }
+
     return valuesByDate.entries
         .map((entry) => _BodyTrendPoint(date: entry.key, value: entry.value))
         .toList()
@@ -299,6 +403,17 @@ class _ProfilePageState extends State<ProfilePage> {
         return log.bodyFatPercent;
       case _BodyTrendMetric.waist:
         return log.waistCm;
+    }
+  }
+
+  double? _metricValueForProfile(UserProfile profile, _BodyTrendMetric metric) {
+    switch (metric) {
+      case _BodyTrendMetric.weight:
+        return profile.weightKg > 0 ? profile.weightKg : null;
+      case _BodyTrendMetric.bodyFat:
+        return profile.bodyFatPercent > 0 ? profile.bodyFatPercent : null;
+      case _BodyTrendMetric.waist:
+        return profile.waistCm > 0 ? profile.waistCm : null;
     }
   }
 
@@ -888,12 +1003,24 @@ class _ProfilePageState extends State<ProfilePage> {
     return true;
   }
 
-  Future<void> _persistProfile(UserProfile profile) async {
+  Future<void> _persistProfile(
+    UserProfile profile, {
+    bool recordCurrentBodyMetrics = false,
+  }) async {
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
     final strings = context.stringsRead;
 
     await services.profileRepository.saveProfile(profile);
+    if (recordCurrentBodyMetrics) {
+      await services.profileRepository.upsertBodyMetricLog(
+        date: DateUtilsX.todayKey(),
+        weightKg: profile.weightKg,
+        bodyFatPercent: profile.bodyFatPercent,
+        waistCm: profile.waistCm,
+        source: 'profile_save',
+      );
+    }
     final bodyMetricLogs = await _loadBodyMetricLogsForTrend();
     var pendingDietAdjustmentReview = await services.profileRepository
         .getLatestDietAdjustmentReview(
@@ -996,6 +1123,7 @@ class _ProfilePageState extends State<ProfilePage> {
           sexForFormula: _sexForFormula,
           activityLevel: activityLevel,
         ),
+        recordCurrentBodyMetrics: true,
       );
       if (mounted) {
         setState(() => _editingBodyField = null);
@@ -1009,12 +1137,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _openPastBodyMetricEditor() async {
     final today = DateUtilsX.parseDay(DateUtilsX.todayKey());
-    final lastPastDay = today.subtract(const Duration(days: 1));
-    var initialDay = lastPastDay;
+    var initialDay = today;
     final editingDate = _editingBodyMetricDate;
     if (editingDate != null) {
       final parsedEditingDay = DateUtilsX.parseDay(editingDate);
-      if (!parsedEditingDay.isAfter(lastPastDay)) {
+      if (!parsedEditingDay.isAfter(today)) {
         initialDay = parsedEditingDay;
       }
     }
@@ -1023,10 +1150,17 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       initialDate: initialDay,
       firstDate: DateTime(2020),
-      lastDate: lastPastDay,
+      lastDate: today,
     );
 
     if (selectedDay == null || !mounted) {
+      return;
+    }
+
+    if (!selectedDay.isBefore(today)) {
+      if (_editingBodyMetricDate != null) {
+        _cancelBodyMetricEditor();
+      }
       return;
     }
 
@@ -1051,6 +1185,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _editingNickname = false;
       _editingBodyField = null;
       _editingBodyMetricDate = date;
+      _editingBodyMetricRecordExists = existing != null;
       _bodyMetricEditError = null;
       _historyWeightController.text = existing?.weightKg == null
           ? ''
@@ -1068,6 +1203,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _rootTabController?.setInteractionLocked(false);
     setState(() {
       _editingBodyMetricDate = null;
+      _editingBodyMetricRecordExists = false;
       _bodyMetricEditError = null;
       _savingBodyMetricLog = false;
       _historyWeightController.clear();
@@ -1135,12 +1271,88 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _bodyMetricLogs = bodyMetricLogs;
         _editingBodyMetricDate = null;
+        _editingBodyMetricRecordExists = false;
         _bodyMetricEditError = null;
         _savingBodyMetricLog = false;
       });
       FitLogNotifications.success(
         context,
         strings.isChinese ? '身体记录已更新' : 'Body record updated',
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _savingBodyMetricLog = false);
+      FitLogNotifications.error(context, strings.summaryError(error));
+    }
+  }
+
+  Future<void> _deleteBodyMetricLogEdit() async {
+    final date = _editingBodyMetricDate;
+    if (date == null || !_editingBodyMetricRecordExists) {
+      return;
+    }
+    final strings = context.stringsRead;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.isChinese ? '删除身体记录？' : 'Delete body record?'),
+        content: Text(
+          strings.isChinese
+              ? '会删除该日的体重、体脂和腰围记录。'
+              : 'This removes the weight, body fat, and waist record for this date.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.cancel),
+          ),
+          TextButton.icon(
+            key: const ValueKey<String>('profile_body_metric_confirm_delete'),
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            icon: const Icon(Icons.delete_outline_rounded, size: 20),
+            label: Text(
+              strings.isChinese ? '删除' : 'Delete',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final services = context.read<AppServices>();
+    final refreshNotifier = context.read<RefreshNotifier>();
+
+    setState(() => _savingBodyMetricLog = true);
+    try {
+      await services.profileRepository.deleteBodyMetricLogByDate(date);
+      final bodyMetricLogs = await _loadBodyMetricLogsForTrend();
+      if (!mounted) {
+        return;
+      }
+      refreshNotifier.markDataChanged();
+      _rootTabController?.setInteractionLocked(false);
+      setState(() {
+        _bodyMetricLogs = bodyMetricLogs;
+        _editingBodyMetricDate = null;
+        _editingBodyMetricRecordExists = false;
+        _bodyMetricEditError = null;
+        _savingBodyMetricLog = false;
+        _historyWeightController.clear();
+        _historyBodyFatController.clear();
+        _historyWaistController.clear();
+      });
+      FitLogNotifications.success(
+        context,
+        strings.isChinese ? '身体记录已删除' : 'Body record deleted',
       );
     } catch (error) {
       if (!mounted) {
@@ -1672,8 +1884,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         waistController: _historyWaistController,
                         errorText: _bodyMetricEditError,
                         saving: _savingBodyMetricLog,
+                        canDelete: _editingBodyMetricRecordExists,
                         formatRecordDate: _formatBodyRecordDate,
                         onCancel: _cancelBodyMetricEditor,
+                        onDelete: _deleteBodyMetricLogEdit,
                         onSave: _saveBodyMetricLogEdit,
                       )
                     : Column(
@@ -1731,6 +1945,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             children: <Widget>[
                               Expanded(
                                 child: _BodyProfileTile(
+                                  key: const ValueKey<String>(
+                                    'profile_body_profile_weight',
+                                  ),
                                   label: strings.weightKgLabel.split(' ').first,
                                   icon: Icons.monitor_weight_outlined,
                                   value: _weightKg.toStringAsFixed(1),
@@ -1805,6 +2022,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             children: <Widget>[
                               Expanded(
                                 child: _BodyProfileTile(
+                                  key: const ValueKey<String>(
+                                    'profile_body_profile_body_fat',
+                                  ),
                                   label: strings.isChinese ? '体脂' : 'Body Fat',
                                   icon: Icons.percent_rounded,
                                   value: _bodyFatPercent.toStringAsFixed(1),
@@ -1830,6 +2050,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _BodyProfileTile(
+                                  key: const ValueKey<String>(
+                                    'profile_body_profile_waist',
+                                  ),
                                   label: strings.isChinese ? '腰围' : 'Waist',
                                   icon: Icons.swap_vert_rounded,
                                   value: _waistCm.toStringAsFixed(1),
@@ -1857,6 +2080,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           if (_editingBodyField != null) ...<Widget>[
                             const SizedBox(height: 14),
                             _InlineSaveActions(
+                              saveKey: const ValueKey<String>(
+                                'profile_body_profile_save',
+                              ),
                               saving: _savingBodyProfile,
                               saveLabel: strings.saveProfile,
                               onCancel: () {
@@ -2839,8 +3065,10 @@ class _BodyMetricInlineEditor extends StatelessWidget {
     required this.waistController,
     required this.errorText,
     required this.saving,
+    required this.canDelete,
     required this.formatRecordDate,
     required this.onCancel,
+    required this.onDelete,
     required this.onSave,
   });
 
@@ -2851,36 +3079,64 @@ class _BodyMetricInlineEditor extends StatelessWidget {
   final TextEditingController waistController;
   final String? errorText;
   final bool saving;
+  final bool canDelete;
   final String Function(String date) formatRecordDate;
   final VoidCallback onCancel;
+  final VoidCallback onDelete;
   final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
     final palette = context.fitLogColors;
+    final errorColor = Theme.of(context).colorScheme.error;
     return Column(
       children: <Widget>[
-        Align(
-          alignment: Alignment.center,
-          child: Container(
-            key: const ValueKey<String>('profile_body_metric_edit_date'),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(
-              color: palette.primarySoftSelected,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: palette.primaryBright),
-            ),
-            child: Text(
-              formatRecordDate(date),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: palette.primaryStrong,
+        Row(
+          children: <Widget>[
+            if (canDelete)
+              Material(
+                color: errorColor.withAlpha(18),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  key: const ValueKey<String>('profile_body_metric_delete'),
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: saving ? null : onDelete,
+                  child: Container(
+                    height: 38,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: errorColor.withAlpha(80)),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 20,
+                      color: saving ? errorColor.withAlpha(92) : errorColor,
+                    ),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            Container(
+              key: const ValueKey<String>('profile_body_metric_edit_date'),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+              decoration: BoxDecoration(
+                color: palette.primarySoftSelected,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: palette.primaryBright),
+              ),
+              child: Text(
+                formatRecordDate(date),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: palette.primaryStrong,
+                ),
               ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 14),
         Row(
@@ -3313,16 +3569,11 @@ class _CleanBodyTrendChartState extends State<_CleanBodyTrendChart> {
     double minValue,
     double valueRange,
   ) {
-    final dayOffset = DateUtilsX.parseDay(
-      point.date,
-    ).difference(startDay).inDays;
-    final safeDayOffset = math.max(
-      0,
-      math.min(dayOffset, widget.rangeDays - 1),
+    final xRatio = bodyTrendChartXRatio(
+      firstVisiblePointDay: startDay,
+      pointDay: DateUtilsX.parseDay(point.date),
+      rangeDays: widget.rangeDays,
     );
-    final xRatio = widget.rangeDays <= 1
-        ? 1.0
-        : safeDayOffset / (widget.rangeDays - 1);
     final yRatio = (point.value - minValue) / valueRange;
     return Offset(
       chart.left + chart.width * xRatio,
@@ -3336,9 +3587,11 @@ class _CleanBodyTrendChartState extends State<_CleanBodyTrendChart> {
     }
     final sortedPoints = widget.points.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
-    final scale = _CleanBodyTrendScale.fromPoints(sortedPoints);
-    final endDay = DateUtilsX.parseDay(DateUtilsX.todayKey());
-    final startDay = endDay.subtract(Duration(days: widget.rangeDays - 1));
+    final scale = _CleanBodyTrendScale.fromPoints(
+      sortedPoints,
+      unit: widget.unit,
+    );
+    final startDay = DateUtilsX.parseDay(sortedPoints.first.date);
     final chart = _chartRect(size);
     var nearest = sortedPoints.first;
     var nearestDistance = double.infinity;
@@ -3395,10 +3648,12 @@ class _CleanBodyTrendChartState extends State<_CleanBodyTrendChart> {
                     painter: _CleanBodyTrendChartPainter(
                       points: widget.points,
                       rangeDays: widget.rangeDays,
+                      unit: widget.unit,
                       selectedPoint: _selectedPoint,
                       lineColor: palette.primary,
                       pointColor: palette.primaryBright,
                       selectedPointColor: palette.primaryDeep,
+                      gridLineColor: palette.outlineSubtle,
                     ),
                   ),
                 ),
@@ -3478,26 +3733,27 @@ class _CleanBodyTrendScale {
   const _CleanBodyTrendScale({
     required this.minValue,
     required this.valueRange,
+    required this.gridValues,
   });
 
   final double minValue;
   final double valueRange;
+  final List<double> gridValues;
 
-  factory _CleanBodyTrendScale.fromPoints(List<_BodyTrendPoint> points) {
-    final values = points.map((point) => point.value).toList();
-    var minValue = values.isEmpty ? 0.0 : values.reduce(math.min);
-    var maxValue = values.isEmpty ? 1.0 : values.reduce(math.max);
-    if ((maxValue - minValue).abs() < 0.1) {
-      minValue -= 1;
-      maxValue += 1;
-    } else {
-      final padding = (maxValue - minValue) * 0.16;
-      minValue -= padding;
-      maxValue += padding;
-    }
+  factory _CleanBodyTrendScale.fromPoints(
+    List<_BodyTrendPoint> points, {
+    required String unit,
+  }) {
+    final gridValues = bodyTrendChartGridValues(
+      values: points.map((point) => point.value),
+      unit: unit,
+    );
+    final minValue = gridValues.first;
+    final maxValue = gridValues.last;
     return _CleanBodyTrendScale(
       minValue: minValue,
       valueRange: maxValue - minValue,
+      gridValues: gridValues,
     );
   }
 }
@@ -3506,18 +3762,22 @@ class _CleanBodyTrendChartPainter extends CustomPainter {
   const _CleanBodyTrendChartPainter({
     required this.points,
     required this.rangeDays,
+    required this.unit,
     required this.selectedPoint,
     required this.lineColor,
     required this.pointColor,
     required this.selectedPointColor,
+    required this.gridLineColor,
   });
 
   final List<_BodyTrendPoint> points;
   final int rangeDays;
+  final String unit;
   final _BodyTrendPoint? selectedPoint;
   final Color lineColor;
   final Color pointColor;
   final Color selectedPointColor;
+  final Color gridLineColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3531,21 +3791,29 @@ class _CleanBodyTrendChartPainter extends CustomPainter {
     if (sortedPoints.isEmpty) {
       return;
     }
-    final scale = _CleanBodyTrendScale.fromPoints(sortedPoints);
-    final endDay = DateUtilsX.parseDay(DateUtilsX.todayKey());
-    final startDay = endDay.subtract(Duration(days: rangeDays - 1));
+    final scale = _CleanBodyTrendScale.fromPoints(sortedPoints, unit: unit);
+    final startDay = DateUtilsX.parseDay(sortedPoints.first.date);
 
     Offset pointFor(_BodyTrendPoint point) {
-      final dayOffset = DateUtilsX.parseDay(
-        point.date,
-      ).difference(startDay).inDays;
-      final safeDayOffset = math.max(0, math.min(dayOffset, rangeDays - 1));
-      final xRatio = rangeDays <= 1 ? 1.0 : safeDayOffset / (rangeDays - 1);
+      final xRatio = bodyTrendChartXRatio(
+        firstVisiblePointDay: startDay,
+        pointDay: DateUtilsX.parseDay(point.date),
+        rangeDays: rangeDays,
+      );
       final yRatio = (point.value - scale.minValue) / scale.valueRange;
       return Offset(
         chart.left + chart.width * xRatio,
         chart.bottom - chart.height * yRatio,
       );
+    }
+
+    final gridPaint = Paint()
+      ..color = gridLineColor
+      ..strokeWidth = 1;
+    for (final gridValue in scale.gridValues) {
+      final yRatio = (gridValue - scale.minValue) / scale.valueRange;
+      final y = chart.bottom - chart.height * yRatio;
+      canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), gridPaint);
     }
 
     if (sortedPoints.length >= 2) {
@@ -3593,10 +3861,12 @@ class _CleanBodyTrendChartPainter extends CustomPainter {
   bool shouldRepaint(covariant _CleanBodyTrendChartPainter oldDelegate) {
     return oldDelegate.points != points ||
         oldDelegate.rangeDays != rangeDays ||
+        oldDelegate.unit != unit ||
         oldDelegate.selectedPoint != selectedPoint ||
         oldDelegate.lineColor != lineColor ||
         oldDelegate.pointColor != pointColor ||
-        oldDelegate.selectedPointColor != selectedPointColor;
+        oldDelegate.selectedPointColor != selectedPointColor ||
+        oldDelegate.gridLineColor != gridLineColor;
   }
 }
 
@@ -3870,6 +4140,7 @@ EdgeInsets _profileEditorScrollPadding(BuildContext context) {
 
 class _BodyProfileTile extends StatelessWidget {
   const _BodyProfileTile({
+    super.key,
     required this.label,
     required this.icon,
     required this.value,

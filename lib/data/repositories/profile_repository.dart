@@ -307,6 +307,31 @@ class ProfileRepository {
     }
   }
 
+  Future<void> deleteBodyMetricLogByDate(String date) async {
+    final db = await _database.database;
+    await db.transaction((txn) async {
+      final rows = await txn.query(
+        'body_metric_logs',
+        columns: <String>['weight_kg'],
+        where: 'date = ?',
+        whereArgs: <Object?>[date],
+        limit: 1,
+      );
+      await txn.delete(
+        'body_metric_logs',
+        where: 'date = ?',
+        whereArgs: <Object?>[date],
+      );
+      if (rows.isNotEmpty && rows.first['weight_kg'] != null) {
+        await txn.delete(
+          'user_weight_logs',
+          where: 'date = ?',
+          whereArgs: <Object?>[date],
+        );
+      }
+    });
+  }
+
   Future<CalorieCalibrationState?> getCalorieCalibrationState() async {
     final db = await _database.database;
     final rows = await db.query(

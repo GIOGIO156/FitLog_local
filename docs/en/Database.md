@@ -252,9 +252,10 @@ Purpose: dated local body metric history used by the Profile body trend card and
 Behavior:
 
 - Past body-record editing writes this table only; it does not silently mutate the current `user_profile` snapshot.
-- The body trend card reads this table and filters points per metric, so null body-fat or waist values do not block weight trend rendering.
+- Saving the current Body Profile writes today's weight, body-fat, and waist values here with `profile_save`; other Profile saves keep their existing `user_profile` and `user_weight_logs` behavior.
+- The body trend card reads this table and filters points per metric, so null body-fat or waist values do not block weight trend rendering. When today has no stored row for the selected metric, the chart uses the current saved `user_profile` value as a display-only today point.
 - v12 migration backfills existing `user_weight_logs` into `body_metric_logs.weight_kg` with null body-fat and waist values.
-- Saving a body metric log with a non-null weight mirrors that weight to `user_weight_logs` for existing calibration/review compatibility.
+- Saving a body metric log with a non-null weight mirrors that weight to `user_weight_logs` for existing calibration/review compatibility. Deleting a dated body metric record removes that row and also removes the mirrored same-date weight log when the body metric record carried a weight value.
 
 ### `user_weight_logs`
 
@@ -338,6 +339,7 @@ ProfilePage
 -> UserProfile
 -> ProfileRepository.saveProfile
 -> user_profile + user_weight_logs
+-> body_metric_logs when saving the current Body Profile
 -> DailySummaryService
 -> Home/Profile display
 ```
@@ -349,6 +351,15 @@ ProfilePage calendar entry
 -> BodyMetricLog
 -> ProfileRepository.upsertBodyMetricLog
 -> body_metric_logs (+ user_weight_logs when weight is present)
+-> Profile body trend / ExportTableBuilder
+```
+
+Past body metric deletion:
+
+```text
+ProfilePage inline body editor
+-> ProfileRepository.deleteBodyMetricLogByDate
+-> delete body_metric_logs row (+ same-date user_weight_logs when that body metric carried weight)
 -> Profile body trend / ExportTableBuilder
 ```
 

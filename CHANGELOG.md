@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-06-28 Body Metric Today Snapshots and Deletion
+
+### Added
+
+- Added an inline past-record delete affordance in the Body Profile card with confirmation, removing the dated body metric row and its mirrored same-date weight log when applicable.
+- Added widget coverage for saving current Body Profile data into today's body metric log, returning from past-record editing by selecting today, and deleting past body metric records.
+- Added body trend x-position coverage so one-day gaps scale wider in 7-day range than in 28-day range.
+
+### Changed
+
+- Body Trend now uses the current saved Body Profile value as a display-only today point when no dated row exists for the selected metric, so today's weight/body-fat/waist can appear without requiring an extra history save.
+- Saving the current Body Profile now explicitly records today's weight, body-fat, and waist values in `body_metric_logs` while keeping non-body Profile saves on the existing profile/weight-log path.
+- The body-record date picker now allows selecting today to leave the past-record editor and return to the normal current Body Profile card.
+- The body-record date picker now opens with today selected by default when launched from the normal Body Profile card.
+- Body Trend now starts drawing from the first visible record while preserving day-based spacing against the selected 7/14/21/28 day range, preventing sparse recent data from being pinned to the right edge.
+- Body Trend horizontal reference lines now come from metric-aware readable tick intervals, such as 1 kg/cm/% for small ranges and wider 2/5/10-style intervals for larger ranges, without restoring axis numbers or fixed date labels.
+- The past body-record deletion confirmation now uses an unfilled red icon-text delete action instead of relying on green confirmation styling, while keeping the dialog surface neutral.
+- Moved the past-record date pill to a smaller top-right position in the Body Profile card and placed the delete control at the matching left-side height.
+- Updated bilingual Product, AppGuide, and Database docs for current Body Profile saves, today trend fallback, date-picker today behavior, body metric deletion, range-scaled trend spacing, metric-scaled reference lines, and destructive confirmation styling.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- `flutter build apk --debug --split-per-abi --build-number 52`: success; generated ABI-specific debug APKs with version codes `1052`, `2052`, and `4052`.
+
 ## 2026-06-27 System Notifications
 
 ### Added

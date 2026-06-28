@@ -31,6 +31,53 @@ import 'package:provider/provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('body trend x positions start at the first visible point slot', () {
+    final firstDay = DateTime(2026, 6, 25);
+    final nextDay = DateTime(2026, 6, 26);
+
+    expect(
+      bodyTrendChartXRatio(
+        firstVisiblePointDay: firstDay,
+        pointDay: firstDay,
+        rangeDays: 7,
+      ),
+      0,
+    );
+    final sevenDayGap = bodyTrendChartXRatio(
+      firstVisiblePointDay: firstDay,
+      pointDay: nextDay,
+      rangeDays: 7,
+    );
+    final twentyEightDayGap = bodyTrendChartXRatio(
+      firstVisiblePointDay: firstDay,
+      pointDay: nextDay,
+      rangeDays: 28,
+    );
+
+    expect(sevenDayGap, closeTo(1 / 6, 0.0001));
+    expect(twentyEightDayGap, closeTo(1 / 27, 0.0001));
+    expect(sevenDayGap, greaterThan(twentyEightDayGap));
+  });
+
+  test('body trend grid values use metric-aware readable intervals', () {
+    expect(
+      bodyTrendChartGridValues(values: const <double>[81, 82, 83], unit: 'kg'),
+      const <double>[81, 82, 83],
+    );
+    expect(
+      bodyTrendChartGridValues(values: const <double>[81.5], unit: 'kg'),
+      const <double>[81, 82, 83],
+    );
+    expect(
+      bodyTrendChartGridValues(values: const <double>[80.5, 83], unit: 'cm'),
+      const <double>[80, 81, 82, 83],
+    );
+    expect(
+      bodyTrendChartGridValues(values: const <double>[18, 28], unit: '%'),
+      const <double>[15, 20, 25, 30],
+    );
+  });
+
   testWidgets(
     'body profile shows full fields and trend has no weight history list',
     (tester) async {
@@ -47,10 +94,7 @@ void main() {
       );
 
       await tester.pumpWidget(_buildProfileTestApp(profileRepository));
-      await _pumpUntilFound(
-        tester,
-        find.byKey(const ValueKey<String>('profile_body_trend_empty')),
-      );
+      await _pumpUntilFound(tester, find.text('Records 1/14'));
 
       expect(find.text('Age'), findsOneWidget);
       expect(find.text('Height'), findsOneWidget);
@@ -58,7 +102,7 @@ void main() {
       expect(find.text('Sex'), findsOneWidget);
       expect(find.text('Body Fat'), findsWidgets);
       expect(find.text('Waist'), findsWidgets);
-      expect(find.text('Records 0/14'), findsOneWidget);
+      expect(find.text('Records 1/14'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('profile_weight_history_empty')),
         findsNothing,
@@ -73,6 +117,11 @@ void main() {
     final olderDay = _dateDaysAgo(5);
     final laterDay = _dateDaysAgo(2);
     final profileRepository = _FakeProfileRepository(
+      profile: UserProfile.defaults.copyWith(
+        weightKg: 83.2,
+        bodyFatPercent: 20.5,
+        waistCm: 82.0,
+      ),
       bodyMetricLogs: <BodyMetricLog>[
         _bodyMetricLog(date: olderDay, weightKg: 80.5, bodyFatPercent: 21.0),
         _bodyMetricLog(
@@ -86,7 +135,7 @@ void main() {
 
     await tester.pumpWidget(_buildProfileTestApp(profileRepository));
     await _pumpUntilFound(tester, find.text('14d change +2.7 kg'));
-    expect(find.text('Records 2/14'), findsOneWidget);
+    expect(find.text('Records 3/14'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('profile_body_trend_tooltip')),
       findsNothing,
@@ -107,18 +156,18 @@ void main() {
 
     await _tapVisible(tester, find.text('Body Fat').last);
     expect(find.text('14d change -0.5 %'), findsOneWidget);
-    expect(find.text('Records 2/14'), findsOneWidget);
+    expect(find.text('Records 3/14'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('profile_body_trend_tooltip')),
       findsNothing,
     );
 
     await _tapVisible(tester, find.text('Waist').last);
-    expect(find.text('14d change -- cm'), findsOneWidget);
-    expect(find.text('Records 1/14'), findsOneWidget);
+    expect(find.text('14d change 0.0 cm'), findsOneWidget);
+    expect(find.text('Records 2/14'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('profile_body_trend_single')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
@@ -145,10 +194,7 @@ void main() {
       );
 
       await tester.pumpWidget(_buildProfileTestApp(profileRepository));
-      await _pumpUntilFound(
-        tester,
-        find.byKey(const ValueKey<String>('profile_body_trend_single')),
-      );
+      await _pumpUntilFound(tester, find.text('Records 2/14'));
 
       await tester.tap(
         find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
@@ -157,11 +203,16 @@ void main() {
       expect(find.byType(BottomSheet), findsNothing);
       expect(find.byType(Dialog), findsOneWidget);
 
+      await _tapDatePickerDay(tester, editedDay);
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       expect(find.byType(Dialog), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('profile_body_metric_edit_date')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('profile_body_metric_delete')),
         findsOneWidget,
       );
 
@@ -217,8 +268,175 @@ void main() {
     },
   );
 
+  testWidgets('saving current body profile records today body metrics', (
+    tester,
+  ) async {
+    _setTallPhoneView(tester);
+    final today = DateUtilsX.todayKey();
+    final profileRepository = _FakeProfileRepository(
+      profile: UserProfile.defaults.copyWith(
+        weightKg: 82.0,
+        bodyFatPercent: 20.0,
+        waistCm: 83.0,
+      ),
+    );
+
+    await tester.pumpWidget(_buildProfileTestApp(profileRepository));
+    await _pumpUntilFound(tester, find.text('Records 1/14'));
+
+    await _tapVisible(
+      tester,
+      find.byKey(const ValueKey<String>('profile_body_profile_weight')),
+    );
+    final weightField = find.descendant(
+      of: find.byKey(const ValueKey<String>('profile_body_profile_weight')),
+      matching: find.byType(TextField),
+    );
+    final bodyFatField = find.descendant(
+      of: find.byKey(const ValueKey<String>('profile_body_profile_body_fat')),
+      matching: find.byType(TextField),
+    );
+    final waistField = find.descendant(
+      of: find.byKey(const ValueKey<String>('profile_body_profile_waist')),
+      matching: find.byType(TextField),
+    );
+
+    await tester.enterText(weightField, '84.4');
+    await tester.enterText(bodyFatField, '18.8');
+    await tester.enterText(waistField, '80.6');
+    final saveFinder = find.byKey(
+      const ValueKey<String>('profile_body_profile_save'),
+    );
+    await tester.ensureVisible(saveFinder);
+    await tester.tap(saveFinder);
+    await tester.pumpAndSettle();
+
+    final todayLog = profileRepository.bodyMetricForDate(today);
+    expect(todayLog, isNotNull);
+    expect(todayLog!.weightKg, 84.4);
+    expect(todayLog.bodyFatPercent, 18.8);
+    expect(todayLog.waistCm, 80.6);
+    expect(profileRepository.weightForDate(today), 84.4);
+  });
+
+  testWidgets(
+    'selecting today from the body record date picker exits edit mode',
+    (tester) async {
+      _setTallPhoneView(tester);
+      final editedDay = _dateDaysAgo(1);
+      final todayDay = DateUtilsX.parseDay(
+        DateUtilsX.todayKey(),
+      ).day.toString();
+      final profileRepository = _FakeProfileRepository(
+        bodyMetricLogs: <BodyMetricLog>[
+          _bodyMetricLog(date: editedDay, weightKg: 81.0),
+        ],
+      );
+
+      await tester.pumpWidget(_buildProfileTestApp(profileRepository));
+      await _pumpUntilFound(tester, find.text('Records 2/14'));
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('profile_body_metric_edit_date')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
+      );
+      await tester.pumpAndSettle();
+      await _tapDatePickerDay(tester, editedDay);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('profile_body_metric_edit_date')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(todayDay).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('profile_body_metric_edit_date')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('profile_body_metric_delete')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets('deleting a past body record removes the body metric log', (
+    tester,
+  ) async {
+    _setTallPhoneView(tester);
+    final editedDay = _dateDaysAgo(1);
+    final profileRepository = _FakeProfileRepository(
+      bodyMetricLogs: <BodyMetricLog>[
+        _bodyMetricLog(
+          date: editedDay,
+          weightKg: 81.0,
+          bodyFatPercent: 19.5,
+          waistCm: 82.0,
+        ),
+      ],
+      weightLogs: <WeightLog>[
+        WeightLog(
+          date: editedDay,
+          weightKg: 81.0,
+          source: 'body_metric_manual',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(_buildProfileTestApp(profileRepository));
+    await _pumpUntilFound(tester, find.text('Records 2/14'));
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
+    );
+    await tester.pumpAndSettle();
+    await _tapDatePickerDay(tester, editedDay);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('profile_body_metric_delete')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('profile_body_metric_confirm_delete')),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.delete_outline_rounded), findsWidgets);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('profile_body_metric_confirm_delete')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(profileRepository.bodyMetricForDate(editedDay), isNull);
+    expect(profileRepository.weightForDate(editedDay), isNull);
+    expect(
+      find.byKey(const ValueKey<String>('profile_body_metric_edit_date')),
+      findsNothing,
+    );
+  });
+
   test(
-    'saving current profile does not create a body metric history row',
+    'repository saveProfile alone does not create a body metric history row',
     () async {
       final today = DateUtilsX.todayKey();
       final profileRepository = _FakeProfileRepository();
@@ -367,6 +585,12 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapDatePickerDay(WidgetTester tester, String date) async {
+  final dayText = DateUtilsX.parseDay(date).day.toString();
+  await tester.tap(find.text(dayText).last);
   await tester.pumpAndSettle();
 }
 
@@ -531,6 +755,15 @@ class _FakeProfileRepository extends ProfileRepository {
     }
     if (weightKg != null) {
       await upsertWeightLog(date: date, weightKg: weightKg, source: source);
+    }
+  }
+
+  @override
+  Future<void> deleteBodyMetricLogByDate(String date) async {
+    final existing = bodyMetricForDate(date);
+    bodyMetricLogs.removeWhere((log) => log.date == date);
+    if (existing?.weightKg != null) {
+      weightLogs.removeWhere((log) => log.date == date);
     }
   }
 

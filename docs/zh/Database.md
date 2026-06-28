@@ -245,9 +245,10 @@ FitLog Local 将业务数据保存在本地。
 行为：
 
 - 过往身体记录编辑只写入此表，不会静默修改当前 `user_profile` 快照。
-- 身体趋势卡读取此表，并按指标过滤点位；某天体脂或腰围为空不会阻止体重趋势显示。
+- 保存当前身体资料会以 `profile_save` 来源把当天体重、体脂率和腰围写入此表；其它 Profile 保存继续保持原有 `user_profile` 和 `user_weight_logs` 行为。
+- 身体趋势卡读取此表，并按指标过滤点位；某天体脂或腰围为空不会阻止体重趋势显示。如果今天没有该指标的按日期记录，图表会使用当前已保存 `user_profile` 值作为只读展示点。
 - v12 迁移会把已有 `user_weight_logs` 回填到 `body_metric_logs.weight_kg`，体脂和腰围为空。
-- 保存身体指标记录时，如果体重非空，会同步写入 `user_weight_logs`，以保持现有校准和 review 兼容。
+- 保存身体指标记录时，如果体重非空，会同步写入 `user_weight_logs`，以保持现有校准和 review 兼容。删除某天身体指标记录时，会删除该行；如果这条身体指标记录包含体重，也会删除同日期的镜像体重日志。
 
 ### `user_weight_logs`
 
@@ -325,6 +326,7 @@ ProfilePage
 -> UserProfile
 -> ProfileRepository.saveProfile
 -> user_profile + user_weight_logs
+-> 保存当前身体资料时写入 body_metric_logs
 -> DailySummaryService / ExportTableBuilder
 -> Home / Profile display
 ```
@@ -336,6 +338,15 @@ ProfilePage calendar entry
 -> BodyMetricLog
 -> ProfileRepository.upsertBodyMetricLog
 -> body_metric_logs（体重非空时同步 user_weight_logs）
+-> Profile body trend / ExportTableBuilder
+```
+
+过往身体指标删除：
+
+```text
+ProfilePage card inline body editor
+-> ProfileRepository.deleteBodyMetricLogByDate
+-> 删除 body_metric_logs 记录（该身体记录带体重时同步删除同日期 user_weight_logs）
 -> Profile body trend / ExportTableBuilder
 ```
 
