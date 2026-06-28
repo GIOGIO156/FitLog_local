@@ -252,8 +252,12 @@ void main() {
 
     expect(noticeRect.bottom, lessThan(navPillRect.top));
     expect(noticeRect.top, greaterThanOrEqualTo(12));
+    expect(
+      find.byKey(const ValueKey<String>('fitlog_notification_close_button')),
+      findsNothing,
+    );
 
-    await tester.tap(find.byKey(_notificationCloseKey));
+    await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
@@ -288,8 +292,12 @@ void main() {
 
     expect(noticeRect.bottom, lessThanOrEqualTo(navPillRect.top));
     expect(navPillRect.top - noticeRect.bottom, 12);
+    expect(
+      find.byKey(const ValueKey<String>('fitlog_notification_close_button')),
+      findsNothing,
+    );
 
-    await tester.tap(find.byKey(_notificationCloseKey));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
@@ -338,9 +346,6 @@ const _homeFirstViewportKey = ValueKey<String>('fitlog_home_first_viewport');
 const _foodCtaKey = ValueKey<String>('fitlog_food_add_cta');
 const _workoutCtaKey = ValueKey<String>('fitlog_workout_add_cta');
 const _notificationTriggerKey = ValueKey<String>('fitlog_notification_trigger');
-const _notificationCloseKey = ValueKey<String>(
-  'fitlog_notification_close_button',
-);
 const _referenceDay = '2026-06-25';
 const _expectedNavFootprint =
     FitLogBottomNavLayout.pillHeight + FitLogBottomNavLayout.minBottomGap;

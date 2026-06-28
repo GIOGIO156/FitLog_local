@@ -208,7 +208,6 @@ class _FitLogNotificationOverlayState
           tone: widget.tone,
           actionLabel: widget.actionLabel,
           onActionPressed: widget.onActionPressed,
-          onClose: widget.onClose,
         ),
       ),
     );
@@ -219,14 +218,12 @@ class _FitLogNotificationCard extends StatelessWidget {
   const _FitLogNotificationCard({
     required this.message,
     required this.tone,
-    required this.onClose,
     this.actionLabel,
     this.onActionPressed,
   });
 
   final String message;
   final _FitLogNotificationTone tone;
-  final VoidCallback onClose;
   final String? actionLabel;
   final VoidCallback? onActionPressed;
 
@@ -275,27 +272,27 @@ class _FitLogNotificationCard extends StatelessWidget {
       key: spec.key,
       color: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 48),
-        padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
+        constraints: const BoxConstraints(minHeight: 40),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         decoration: BoxDecoration(
           color: spec.background,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: spec.border),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: palette.shadow.withValues(
                 alpha: palette.isDarkLike ? 0.28 : 0.1,
               ),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(spec.icon, color: spec.foreground, size: 20),
-            const SizedBox(width: 10),
+            Icon(spec.icon, color: spec.foreground, size: 18),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
@@ -313,20 +310,15 @@ class _FitLogNotificationCard extends StatelessWidget {
                 onPressed: onActionPressed,
                 style: TextButton.styleFrom(
                   foregroundColor: palette.primaryStrong,
+                  minimumSize: const Size(0, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
                   textStyle: Theme.of(
                     context,
                   ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 child: Text(actionLabel!),
-              ),
-            ] else ...<Widget>[
-              const SizedBox(width: 4),
-              IconButton(
-                key: const ValueKey<String>('fitlog_notification_close_button'),
-                visualDensity: VisualDensity.compact,
-                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                onPressed: onClose,
-                icon: Icon(Icons.close_rounded, color: spec.foreground),
               ),
             ],
           ],

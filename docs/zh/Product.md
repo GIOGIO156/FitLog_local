@@ -16,7 +16,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 阶段显式：`diet_goal_phase` 是 cutting/bulking 行为的来源。
 - 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
 - 说明类 modal sheet，包括 Home 策略说明和 Profile 当前计划说明，都使用 root modal route：遮罩层覆盖并禁用底部导航，sheet 内容停在导航 footprint 上方，而不是压住导航 pill。这类 sheet 需要保留顶部焦点留白，较长说明内容在面板内部滚动，而不是把面板拉到状态栏。
-- 系统通知统一通过 FitLog 通知层展示，不在业务页面直接构造 `SnackBar`。成功和中性提示使用轻量顶部 overlay；错误和带 action 的提示显示在键盘或底部导航占位上方。带 action 的提示必须保留按钮回调，所有通知颜色和文字样式都从当前 FitLog 主题派生。
+- 系统通知统一通过 FitLog 通知层展示，不在业务页面直接构造 `SnackBar`。成功和中性提示使用更紧凑的轻量顶部 overlay，不显示手动关闭控件；错误和带 action 的提示显示在键盘或底部导航占位上方。带 action 的提示必须保留按钮回调，所有通知颜色和文字样式都从当前 FitLog 主题派生。
 
 ## 当前模块
 

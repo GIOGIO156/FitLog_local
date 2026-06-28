@@ -14,7 +14,7 @@
 - `energy_ratio` 和 `gram_per_kg` 保持分离。
 - 底部导航和固定 CTA 的 pill 只是视觉表面；根底部导航以 body overlay 绘制，而不是 `Scaffold.bottomNavigationBar` slot，pill 外区域不应再有 wrapper 填充或满宽 footer 色带。导航 pill 使用不透明的 `navBackground`，下半段背后放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出滚动内容。`FitLogBottomNavLayout` 是底部安全区间距、导航 footprint、Home 首屏盒子、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
 - 说明类 modal sheet 通过 route 遮罩压暗并禁用底部导航，但可见内容停在导航 footprint 上方，导航 pill 不应覆盖 sheet 正文。它们需要保留顶部焦点留白，较长文案在面板内部滚动。
-- App 内系统通知统一走 `FitLogNotifications`：成功/中性提示是轻量顶部 overlay，错误/action 提示浮在键盘或底部导航 footprint 上方。业务页面保留原保存、删除、导出顺序，并把原始消息文本交给统一通知层，包括错误详情。
+- App 内系统通知统一走 `FitLogNotifications`：成功/中性提示是更紧凑的轻量顶部 overlay，不显示手动关闭控件；错误/action 提示浮在键盘或底部导航 footprint 上方。业务页面保留原保存、删除、导出顺序，并把原始消息文本交给统一通知层，包括错误详情。
 - Android APK 安装后的启动器显示名是 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此覆盖更新会继续使用同一个本地数据沙盒。启动器图标由 `assets/icons/app/fitlog.png` 生成到 `android/app/src/main/res/mipmap-*/ic_launcher.png` 各密度资源。
 
 延伸阅读：

@@ -11,6 +11,7 @@
 
 - Replaced page-local `SnackBar` construction across Food, Workout, and Profile flows with the shared notification wrapper while preserving original business ordering and message details.
 - Moved success/info feedback to lightweight top overlays and kept error/action feedback above the keyboard or bottom navigation footprint using existing FitLog theme tokens and text styles.
+- Removed manual close buttons from non-action notices and tightened notification vertical padding, icon size, and minimum height for a more compact bar.
 - Updated bilingual Product and AppGuide docs for the system notification UX boundary.
 
 ### Validation
@@ -19,7 +20,7 @@
 - `flutter test test\bottom_chrome_layout_test.dart`: success; covers success, error, and action notification placement/callback behavior against the real root nav pill.
 - `flutter analyze`: success.
 - `flutter test`: success.
-- `flutter build apk --debug --split-per-abi --build-number 47`: success; generated ABI-specific debug APKs with version codes `1047`, `2047`, and `4047`.
+- `flutter build apk --debug --split-per-abi --build-number 48`: success; generated ABI-specific debug APKs with version codes `1048`, `2048`, and `4048`.
 
 ## 2026-06-27 Body Metrics History and Trend
 
