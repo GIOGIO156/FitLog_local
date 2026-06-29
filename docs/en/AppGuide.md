@@ -280,8 +280,8 @@ What exports include:
 
 - food records
 - food items
-- workout records
-- workout sets
+- workout records, with one row per saved record group
+- workout exercise/set details, linked by workout record id
 - daily summary
 - user profile
 - body metric history
@@ -291,6 +291,9 @@ What exports include:
 How it works:
 
 - XLSX and CSV ZIP exports are written to the app documents directory.
+- Export table names, XLSX sheet names, CSV file names, headers, and known enum labels follow the current app language.
+- When at least one exported record exists, export file names use `fitlog_local_<first_record_date>_to_<export_date>` with dates formatted as `yyyy_MM_dd`.
+- After creating the file, Profile opens the system share sheet so the user can choose any installed target that accepts the file.
 - Daily summary export is generated at export time from repositories and `DailySummaryService`.
 - Export does not upload data.
 

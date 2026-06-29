@@ -19,7 +19,7 @@ FitLog Local 是一款 local-first 的 Flutter 个人饮食与训练记录 App�
 3. 把 JSON 粘贴进 FitLog Local，预览、修正，并保存到本地 SQLite。
 4. 在本地记录训练，包括有氧时长和力量训练组。
 5. 查看选中日期的摄入、运动、目标、剩余宏量和策略上下文。
-6. 需要时导出本地 XLSX 或 CSV ZIP 数据。
+6. 需要时导出本地 XLSX 或 CSV ZIP 数据，并通过系统分享面板发送。
 
 ### 当前范围
 
@@ -30,7 +30,7 @@ FitLog Local 当前提供：
 - 每日看板，展示摄入、运动消耗、BMR、非运动 TDEE 参考、目标、剩余 kcal/宏量和选中日期记录
 - Profile 设置，管理身体数据、主题、语言、饮食阶段、饮食计算模式、饮食策略、共享训练频率自检、导出和清空本地数据
 - 本地确定性饮食策略：`carb_cycling` 和 `carb_tapering`
-- XLSX 导出和 CSV ZIP 导出
+- XLSX 和 CSV ZIP 导出，并在生成文件后打开系统分享面板；中文界面导出会使用中文表名、CSV 文件名、表头和可识别枚举值
 - Android 安装后的启动器显示名是 `FitLog local`；包名 `com.fitlog.local.fitlog_local` 保持不变，以保留同一个本地数据沙盒
 
 FitLog Local 当前不提供：
@@ -127,6 +127,7 @@ FitLog 保持方法分离，是为了让用户清楚知道哪个数字才是来�
 - `shared_preferences` 保存语言和主题偏好
 - `excel` 用于 XLSX 导出
 - `csv` 和 `archive` 用于 CSV ZIP 导出
+- `share_plus` 用于调用系统分享面板发送导出文件
 
 ### 快速开始
 
@@ -166,7 +167,7 @@ flutter build apk --debug
 ### 隐私与安全
 
 - 业务数据默认存储在本地 SQLite。
-- 导出文件写入 App 文档目录下的本地文件。
+- 导出文件写入 App 文档目录下的本地文件，随后可通过系统分享面板发送。
 - 营养与运动数值都是个人记录用途的估算值。
 - 本 App 不提供医疗建议。
 - 用户可以在 FitLog Local 外部使用外部 AI，但 App 本身不调用 AI API。
@@ -190,7 +191,7 @@ The intended workflow is:
 3. Paste the JSON into FitLog Local, preview it, correct it, and save it to local SQLite.
 4. Log workouts locally, including cardio duration and strength sets.
 5. Review the selected day's intake, exercise, targets, remaining macros, and strategy context.
-6. Export local data as XLSX or CSV ZIP when needed.
+6. Export local data as XLSX or CSV ZIP and send it through the system share sheet when needed.
 
 ### Current Scope
 
@@ -201,7 +202,7 @@ FitLog Local currently provides:
 - a daily dashboard for intake, exercise calories, BMR, no-exercise TDEE reference, targets, remaining kcal/macros, and selected-day records
 - Profile settings for body data, theme, language, diet phase, diet calculation mode, diet plan strategy, shared training-frequency self-check, export, and local data clearing
 - local deterministic diet strategy support for `carb_cycling` and `carb_tapering`
-- XLSX export and CSV ZIP export
+- XLSX and CSV ZIP export, with the system share sheet opened after file creation; Chinese-language exports use Chinese sheet names, CSV file names, headers, and known enum labels
 - Android installs with launcher label `FitLog local`; package id `com.fitlog.local.fitlog_local` stays unchanged so the same local data sandbox is preserved
 
 FitLog Local currently does not provide:
@@ -298,6 +299,7 @@ For the user-facing explanation, see [Methodology](docs/en/Methodology.md). For 
 - `shared_preferences` for language and theme preference
 - XLSX export via `excel`
 - CSV ZIP export via `csv` and `archive`
+- system share sheet for export files via `share_plus`
 
 ### Quick Start
 
@@ -337,7 +339,7 @@ Chinese design documents mirror the same content under `docs/zh/`.
 ### Privacy And Safety
 
 - Business data is stored locally by default in SQLite.
-- Exports are written as local files in the app documents directory.
+- Exports are written as local files in the app documents directory and can then be sent through the system share sheet.
 - Nutrition and exercise values are estimates for personal tracking.
 - The app does not provide medical advice.
 - External AI may be used by the user outside FitLog Local, but the app itself does not call an AI API.

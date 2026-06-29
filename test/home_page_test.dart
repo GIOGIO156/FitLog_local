@@ -20,6 +20,7 @@ import 'package:fitlog_local/domain/services/daily_summary_service.dart';
 import 'package:fitlog_local/domain/services/diet_plan_strategy_service.dart';
 import 'package:fitlog_local/domain/services/training_frequency_self_check_service.dart';
 import 'package:fitlog_local/export/csv_export_service.dart';
+import 'package:fitlog_local/export/export_share_service.dart';
 import 'package:fitlog_local/export/xlsx_export_service.dart';
 import 'package:fitlog_local/features/home/home_page.dart';
 import 'package:flutter/material.dart';
@@ -288,6 +289,7 @@ Widget _buildHomeTestApp({
             profileRepository: profileRepository,
             dailySummaryService: dailySummaryService,
           ),
+          exportShareService: const NoopExportShareService(),
           carbTaperReviewService: carbTaperReviewService,
           dietPlanStrategyService: dietPlanStrategyService,
           trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,

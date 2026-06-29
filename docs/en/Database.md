@@ -8,7 +8,7 @@ FitLog Local stores business data locally.
 | --- | --- | --- |
 | SQLite / `sqflite` | Profile, body metric logs, food records, food items, workout sessions, workout sets, custom exercises, workout record drafts, weight logs, calibration state, diet adjustment reviews. | No |
 | SharedPreferences | UI preferences: `language_code` and `theme_key`. | No |
-| Local files | XLSX and CSV ZIP exports in the app documents directory. | No |
+| Local files | XLSX and CSV ZIP exports in the app documents directory, named with the first exported record date and export date when records exist. | No |
 | In-memory providers | App services, refresh version, selected date, language state, theme state. | No |
 
 Database name: `fitlog_local.db`.
@@ -396,12 +396,17 @@ Export:
 ProfilePage export action
 -> XlsxExportService or CsvExportService
 -> repositories + CustomExerciseRepository + DailySummaryService
+-> ExportTableBuilder + ExportLocalization
+-> ExportFileNaming
 -> local .xlsx or .zip file
+-> system share sheet through ExportShareService
 ```
 
 ## Export Coverage
 
-Exports include food records, food items, workout records, workout sets, custom exercises, daily summary, user profile, body metric logs, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, training-frequency self-check fields, local-only `nickname`, current body-fat/waist fields, dated body metric history, `record_name`, saved exercise metadata, cardio-intensity metadata, custom-exercise hidden state, and workout-set raw/calculation values are included where relevant.
+Exports include food records, food items, parent workout records, workout exercise/set details linked by workout record id, custom exercises, daily summary, user profile, body metric logs, and diet adjustment review history. Strategy fields, base/final target fields, calibration metadata, training-frequency self-check fields, local-only `nickname`, current body-fat/waist fields, dated body metric history, `record_name`, saved exercise metadata, cardio-intensity metadata, custom-exercise hidden state, and workout-set raw/calculation values are included where relevant.
+
+Export table names, XLSX sheet names, CSV file names, headers, and known enum labels follow the current app language. When exported records exist, the outer XLSX or CSV ZIP file name uses `fitlog_local_<first_record_date>_to_<export_date>` with `yyyy_MM_dd` dates. Sharing uses the platform system share sheet after the local file is created and does not upload data by itself.
 
 ## Not Implemented
 
@@ -421,5 +426,5 @@ Exports include food records, food items, workout records, workout sets, custom 
 - Repositories: `lib/data/repositories/food_repository.dart`, `workout_repository.dart`, `profile_repository.dart`, `custom_exercise_repository.dart`
 - Models: `lib/domain/models/*`
 - Services: `lib/domain/services/*`
-- Export: `lib/export/xlsx_export_service.dart`, `lib/export/csv_export_service.dart`
+- Export: `lib/export/xlsx_export_service.dart`, `lib/export/csv_export_service.dart`, `lib/export/export_table_builder.dart`, `lib/export/export_localization.dart`, `lib/export/export_file_naming.dart`, `lib/export/export_share_service.dart`
 - App state: `lib/app.dart`, `lib/core/localization/language_controller.dart`

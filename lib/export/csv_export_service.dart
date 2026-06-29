@@ -6,12 +6,13 @@ import 'package:csv/csv.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-import '../core/utils/date_utils.dart';
+import '../core/localization/app_language.dart';
 import '../data/repositories/custom_exercise_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/workout_repository.dart';
 import '../domain/services/daily_summary_service.dart';
+import 'export_file_naming.dart';
 import 'export_table_builder.dart';
 
 class CsvExportService {
@@ -33,14 +34,16 @@ class CsvExportService {
   final ProfileRepository _profileRepository;
   final DailySummaryService _dailySummaryService;
 
-  Future<String> exportZip() async {
-    final tables = await ExportTableBuilder(
+  Future<String> exportZip({AppLanguage language = AppLanguage.english}) async {
+    final exportData = await ExportTableBuilder(
       foodRepository: _foodRepository,
       customExerciseRepository: _customExerciseRepository,
       workoutRepository: _workoutRepository,
       profileRepository: _profileRepository,
       dailySummaryService: _dailySummaryService,
+      language: language,
     ).build();
+    final tables = exportData.tables;
 
     final archive = Archive();
     for (final table in tables) {
@@ -54,7 +57,7 @@ class CsvExportService {
 
     final dir = await getApplicationDocumentsDirectory();
     final fileName =
-        'fitlog_local_${DateUtilsX.formatForExport(DateTime.now())}.zip';
+        '${ExportFileNaming.buildBaseName(firstRecordDate: exportData.firstRecordDate, exportedAt: DateTime.now())}.zip';
     final filePath = path.join(dir.path, fileName);
     final file = File(filePath);
     await file.writeAsBytes(bytes, flush: true);

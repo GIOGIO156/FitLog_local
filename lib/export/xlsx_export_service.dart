@@ -4,12 +4,13 @@ import 'package:excel/excel.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-import '../core/utils/date_utils.dart';
+import '../core/localization/app_language.dart';
 import '../data/repositories/custom_exercise_repository.dart';
 import '../data/repositories/food_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../data/repositories/workout_repository.dart';
 import '../domain/services/daily_summary_service.dart';
+import 'export_file_naming.dart';
 import 'export_table_builder.dart';
 
 class XlsxExportService {
@@ -31,14 +32,16 @@ class XlsxExportService {
   final ProfileRepository _profileRepository;
   final DailySummaryService _dailySummaryService;
 
-  Future<String> export() async {
-    final tables = await ExportTableBuilder(
+  Future<String> export({AppLanguage language = AppLanguage.english}) async {
+    final exportData = await ExportTableBuilder(
       foodRepository: _foodRepository,
       customExerciseRepository: _customExerciseRepository,
       workoutRepository: _workoutRepository,
       profileRepository: _profileRepository,
       dailySummaryService: _dailySummaryService,
+      language: language,
     ).build();
+    final tables = exportData.tables;
 
     final excel = Excel.createExcel();
     final defaultSheetName = excel.getDefaultSheet() ?? 'Sheet1';
@@ -59,7 +62,7 @@ class XlsxExportService {
 
     final dir = await getApplicationDocumentsDirectory();
     final fileName =
-        'fitlog_local_${DateUtilsX.formatForExport(DateTime.now())}.xlsx';
+        '${ExportFileNaming.buildBaseName(firstRecordDate: exportData.firstRecordDate, exportedAt: DateTime.now())}.xlsx';
     final filePath = path.join(dir.path, fileName);
     final file = File(filePath);
     await file.writeAsBytes(bytes, flush: true);

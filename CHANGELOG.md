@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-29 Export Share Sheet, Range File Names, and Localized Tables
+
+### Added
+
+- Added a system share-sheet handoff for XLSX and CSV ZIP exports after the local file is created, using `share_plus` so users can choose any installed app that accepts the file.
+- Added an export share service boundary with a no-op test implementation to keep widget tests away from platform share calls.
+- Added export file-name coverage for record-range naming.
+- Added export localization coverage for table names, XLSX sheet names, CSV file names, headers, and known enum labels.
+- Added export table coverage for localized workout parent rows and workout exercise/set detail rows linked by workout record id.
+
+### Changed
+
+- Changed Profile export buttons to "Export & Share XLSX" and "Export & Share CSV".
+- Changed exported XLSX and CSV ZIP file names to `fitlog_local_<first_record_date>_to_<export_date>.xlsx` and `.zip` when exported records exist, while keeping the single-date name for empty exports.
+- Changed workout export from one exercise row per workout session plus a separate raw set table to a parent workout-record table and a child workout exercise/set detail table.
+- Updated README and bilingual Product, AppGuide, and Database docs for export sharing, range file names, localized export labels, workout parent/detail tables, and the local-first sharing boundary.
+
+### Validation
+
+- `flutter pub get`: success.
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- Documentation tree, stable-heading, stale-root-path, and replacement-character checks: success.
+- `flutter build apk --debug --split-per-abi --build-number 54`: success; generated ABI-specific debug APKs with version codes `1054`, `2054`, and `4054`.
+
 ## 2026-06-28 Body Metric Today Snapshots and Deletion
 
 ### Added

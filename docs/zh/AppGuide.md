@@ -281,8 +281,8 @@ Export 为用户记录生成本地文件。
 
 - food records
 - food items
-- workout records
-- workout sets
+- 训练记录父表，每条已保存训练记录分组一行
+- 训练动作/组明细表，通过训练记录 ID 关联父表
 - daily summary
 - user profile
 - body metric history
@@ -292,6 +292,9 @@ Export 为用户记录生成本地文件。
 工作方式：
 
 - XLSX 和 CSV ZIP 写入 app documents directory。
+- 导出的表名、XLSX sheet 名、CSV 文件名、表头和可识别枚举值会跟随当前 App 语言。
+- 当导出内容至少有一条记录时，导出文件名使用 `fitlog_local_<first_record_date>_to_<export_date>`，日期格式为 `yyyy_MM_dd`。
+- 文件生成后，Profile 会打开系统分享面板，让用户选择任意已安装且支持该文件的发送目标。
 - Daily summary export 在导出时由 repositories 和 `DailySummaryService` 生成。
 - Export 不会上传任何数据。
 

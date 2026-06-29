@@ -8,7 +8,7 @@ FitLog Local 将业务数据保存在本地。
 | --- | --- | --- |
 | SQLite / `sqflite` | Profile、body metric logs、food records、food items、workout sessions、workout sets、custom exercises、workout record drafts、weight logs、calibration state、diet adjustment reviews。 | No |
 | SharedPreferences | UI 偏好：`language_code` 和 `theme_key`。 | No |
-| Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件。 | No |
+| Local files | App documents directory 中的 XLSX 和 CSV ZIP 导出文件；有记录时文件名包含最早导出记录日期和导出日期。 | No |
 | In-memory providers | App services、refresh version、selected date、language state、theme state。 | No |
 
 数据库名：`fitlog_local.db`。
@@ -380,13 +380,18 @@ Export：
 ProfilePage export action
 -> XlsxExportService or CsvExportService
 -> ExportTableBuilder
+-> ExportLocalization
 -> CustomExerciseRepository
+-> ExportFileNaming
 -> local .xlsx or .zip file
+-> system share sheet through ExportShareService
 ```
 
 ## 导出覆盖
 
-导出包含 food records、food items、workout records、workout sets、custom exercises、daily summary、user profile、body metric logs 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、当前体脂率/腰围字段、按日期的身体指标历史、`record_name`、保存时的动作 metadata、有氧强度 metadata、自定义动作隐藏状态，以及 workout set 的原始输入值和标准化计算值。
+导出包含 food records、food items、训练记录父表、通过训练记录 ID 关联的训练动作/组明细、custom exercises、daily summary、user profile、body metric logs 和 diet adjustment review history。相关位置会包含策略字段、base/final target 字段、校准元数据、训练频率自检字段、本地 `nickname`、当前体脂率/腰围字段、按日期的身体指标历史、`record_name`、保存时的动作 metadata、有氧强度 metadata、自定义动作隐藏状态，以及 workout set 的原始输入值和标准化计算值。
+
+导出的表名、XLSX sheet 名、CSV 文件名、表头和可识别枚举值会跟随当前 App 语言。当导出内容至少有一条记录时，外层 XLSX 或 CSV ZIP 文件名使用 `fitlog_local_<first_record_date>_to_<export_date>`，日期格式为 `yyyy_MM_dd`。分享在本地文件生成后通过平台系统分享面板完成，本身不会上传数据。
 
 ## 未实现
 
@@ -406,6 +411,6 @@ ProfilePage export action
 - Repositories：`lib/data/repositories/food_repository.dart`、`workout_repository.dart`、`profile_repository.dart`、`custom_exercise_repository.dart`
 - Models：`lib/domain/models/*`
 - Services：`lib/domain/services/*`
-- Export：`lib/export/xlsx_export_service.dart`、`lib/export/csv_export_service.dart`
+- Export：`lib/export/xlsx_export_service.dart`、`lib/export/csv_export_service.dart`、`lib/export/export_table_builder.dart`、`lib/export/export_localization.dart`、`lib/export/export_file_naming.dart`、`lib/export/export_share_service.dart`
 - App state：`lib/app.dart`、`lib/core/localization/language_controller.dart`
 

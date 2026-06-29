@@ -1478,20 +1478,36 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _exportXlsx() async {
-    final service = context.read<AppServices>().xlsxExportService;
+    final services = context.read<AppServices>();
+    final strings = context.stringsRead;
+    String? filePath;
 
     setState(() => _exportingXlsx = true);
     try {
-      final filePath = await service.export();
+      filePath = await services.xlsxExportService.export(
+        language: context.languageController.language,
+      );
       if (!mounted) {
         return;
       }
-      FitLogNotifications.success(context, 'XLSX: $filePath');
+      await services.exportShareService.shareExportFile(
+        filePath: filePath,
+        title: strings.exportXlsx,
+        text: strings.exportShareText,
+        sharePositionOrigin: _sharePositionOrigin(),
+      );
+      if (!mounted) {
+        return;
+      }
+      FitLogNotifications.success(context, strings.exportFileReady);
     } catch (e) {
       if (!mounted) {
         return;
       }
-      FitLogNotifications.error(context, 'XLSX error: $e');
+      final message = filePath == null
+          ? 'XLSX error: $e'
+          : '${strings.exportShareFailed}: $e';
+      FitLogNotifications.error(context, message);
     } finally {
       if (mounted) {
         setState(() => _exportingXlsx = false);
@@ -1500,25 +1516,49 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _exportCsvZip() async {
-    final service = context.read<AppServices>().csvExportService;
+    final services = context.read<AppServices>();
+    final strings = context.stringsRead;
+    String? filePath;
 
     setState(() => _exportingCsv = true);
     try {
-      final filePath = await service.exportZip();
+      filePath = await services.csvExportService.exportZip(
+        language: context.languageController.language,
+      );
       if (!mounted) {
         return;
       }
-      FitLogNotifications.success(context, 'CSV: $filePath');
+      await services.exportShareService.shareExportFile(
+        filePath: filePath,
+        title: strings.exportCsv,
+        text: strings.exportShareText,
+        sharePositionOrigin: _sharePositionOrigin(),
+      );
+      if (!mounted) {
+        return;
+      }
+      FitLogNotifications.success(context, strings.exportFileReady);
     } catch (e) {
       if (!mounted) {
         return;
       }
-      FitLogNotifications.error(context, 'CSV error: $e');
+      final message = filePath == null
+          ? 'CSV error: $e'
+          : '${strings.exportShareFailed}: $e';
+      FitLogNotifications.error(context, message);
     } finally {
       if (mounted) {
         setState(() => _exportingCsv = false);
       }
     }
+  }
+
+  Rect? _sharePositionOrigin() {
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) {
+      return null;
+    }
+    return renderObject.localToGlobal(Offset.zero) & renderObject.size;
   }
 
   Future<void> _clearAllData() async {

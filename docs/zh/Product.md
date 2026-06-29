@@ -31,7 +31,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
 | Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
 | Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、包含年龄/身高/体重/性别/体脂率/腰围的默认展示身体资料网格、一次保存当前 Profile 的统一编辑态、用于过往身体指标记录的日期选择器加卡片内编辑态、只读且简洁的体重/体脂/腰围趋势切换、按范围缩放的点位间距、按指标刻度生成的参考线与点按 tooltip、可点按的阶段/模式/策略矩阵、本地主题和语言偏好、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
-| Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、自定义动作、保存时的训练输入 metadata、每日汇总、资料、身体指标历史、策略字段和 review 历史。 | `lib/export/*` |
+| Export | 导出 XLSX 和 CSV ZIP，覆盖原始记录、训练记录父表与训练动作/组明细、自定义动作、每日汇总、资料、身体指标历史、策略字段和 review 历史。导出内容会跟随当前 App 语言设置表名、CSV 文件名、表头和可识别枚举值；有记录时导出文件名包含最早导出记录日期和导出日期，文件生成后 Profile 会打开系统分享面板。 | `lib/export/*` |
 
 ## 饮食流程
 
@@ -124,7 +124,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 - cutting/bulking 阶段拆分
 - `energy_ratio` 和 `gram_per_kg` 饮食计算模式
 - 本地确定性的 `carb_cycling` 和 `carb_tapering`
-- XLSX 和 CSV ZIP 导出
+- XLSX 和 CSV ZIP 导出，包含语言化表格标签、训练父/子表结构，并在文件生成后打开系统分享面板
 - 语言切换
 - 本地主题切换
 - 二次确认后清空本地数据

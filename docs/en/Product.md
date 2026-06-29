@@ -31,7 +31,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
 | Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid for age/height/weight/sex/body fat/waist with one shared current-profile save, a date-picker-backed inline body-card state for past body metric records, clean read-only weight/body-fat/waist trend switching with range-scaled point spacing, metric-scaled reference lines, and tap-only point tooltip, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
-| Export | XLSX and CSV ZIP exports for raw records, custom exercises, saved workout input metadata, daily summary, profile, body metric history, strategy fields, and review history. | `lib/export/*` |
+| Export | XLSX and CSV ZIP exports for raw records, parent workout records plus workout exercise/set details, custom exercises, daily summary, profile, body metric history, strategy fields, and review history. Export output follows the current app language for sheet names, CSV file names, headers, and known enum labels; export file names include the first exported record date and export date when records exist, and Profile opens the system share sheet after file creation. | `lib/export/*` |
 
 ## Food Workflow
 
@@ -124,7 +124,7 @@ Implemented:
 - cutting/bulking phase split
 - `energy_ratio` and `gram_per_kg` diet calculation modes
 - local deterministic `carb_cycling` and `carb_tapering`
-- XLSX and CSV ZIP export
+- XLSX and CSV ZIP export with localized table labels, workout parent/detail tables, and the system share sheet opened after file creation
 - language switching
 - local theme switching
 - local data clearing with confirmation

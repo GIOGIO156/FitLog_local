@@ -452,8 +452,13 @@ class AppStrings {
       _t('Estimated Total Calories', '计划总估算消耗');
   String get calculatedReference => _t('Calculated Reference', '计算参考');
   String get exportData => _t('Export & Data', '导出与数据');
-  String get exportXlsx => _t('Export XLSX', '导出 XLSX');
-  String get exportCsv => _t('Export CSV', '导出 CSV');
+  String get exportXlsx => _t('Export & Share XLSX', '导出并分享 XLSX');
+  String get exportCsv => _t('Export & Share CSV', '导出并分享 CSV');
+  String get exportShareText =>
+      _t('FitLog Local exported data', 'FitLog Local 导出数据');
+  String get exportFileReady => _t('Export file created', '导出文件已生成');
+  String get exportShareFailed =>
+      _t('Export file created, but sharing failed', '导出文件已生成，但分享失败');
   String get clearAllData => _t('Clear All Local Data', '清空本地数据');
 
   String get languageSettings => _t('Language', '语言设置');

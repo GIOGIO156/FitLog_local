@@ -1,4 +1,4 @@
-﻿name: fitlog_local
+name: fitlog_local
 description: "FitLog Local - offline personal fitness tracker"
 publish_to: 'none'
 version: 1.0.0+1
@@ -20,6 +20,7 @@ dependencies:
   archive: ^3.6.1
   shared_preferences: ^2.5.3
   flutter_svg: ^2.2.1
+  share_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:

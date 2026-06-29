@@ -18,6 +18,7 @@ import 'domain/services/diet_plan_strategy_service.dart';
 import 'domain/services/carb_taper_review_service.dart';
 import 'domain/services/training_frequency_self_check_service.dart';
 import 'export/csv_export_service.dart';
+import 'export/export_share_service.dart';
 import 'export/xlsx_export_service.dart';
 import 'features/food/food_log_page.dart';
 import 'features/home/home_page.dart';
@@ -98,6 +99,7 @@ class _FitLogAppState extends State<FitLogApp> {
         profileRepository: profileRepository,
         dailySummaryService: dailySummaryService,
       ),
+      exportShareService: const SystemExportShareService(),
       carbTaperReviewService: carbTaperReviewService,
       dietPlanStrategyService: dietPlanStrategyService,
       trainingFrequencySelfCheckService: trainingFrequencySelfCheckService,
@@ -582,6 +584,7 @@ class AppServices {
     required this.dailySummaryService,
     required this.xlsxExportService,
     required this.csvExportService,
+    required this.exportShareService,
     required this.carbTaperReviewService,
     required this.dietPlanStrategyService,
     required this.trainingFrequencySelfCheckService,
@@ -596,6 +599,7 @@ class AppServices {
   final DailySummaryService dailySummaryService;
   final XlsxExportService xlsxExportService;
   final CsvExportService csvExportService;
+  final ExportShareService exportShareService;
   final CarbTaperReviewService carbTaperReviewService;
   final DietPlanStrategyService dietPlanStrategyService;
   final TrainingFrequencySelfCheckService trainingFrequencySelfCheckService;
