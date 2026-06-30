@@ -17,6 +17,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - 底部导航和固定 CTA 的视觉背景不参与布局几何：根底部导航使用 body overlay，而不是 `Scaffold.bottomNavigationBar` slot，因此 pill 外区域不得形成满宽底部色带。导航 pill 本体使用不透明的 `navBackground`，pill 下半段背后可以放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出向上滚动的内容。`FitLogBottomNavLayout` 是导航 footprint、底部安全区间距、Home 首屏高度、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
 - 说明类 modal sheet，包括 Home 策略说明和 Profile 当前计划说明，都使用 root modal route：遮罩层覆盖并禁用底部导航，sheet 内容停在导航 footprint 上方，而不是压住导航 pill。这类 sheet 需要保留顶部焦点留白，较长说明内容在面板内部滚动，而不是把面板拉到状态栏。
 - 系统通知统一通过 FitLog 通知层展示，不在业务页面直接构造 `SnackBar`。成功和中性提示使用更紧凑的轻量顶部 overlay，不显示手动关闭控件；错误和带 action 的提示显示在键盘或底部导航占位上方。带 action 的提示必须保留按钮回调，所有通知颜色和文字样式都从当前 FitLog 主题派生。
+- Android 训练进行中通知是另一类平台通知，只服务于活动中的本地训练草稿。它不创建后端任务，也不执行后台计算，只把当前草稿状态映射到系统通知，并在用户点击通知主体时回到编辑页。
 
 ## 当前模块
 
@@ -27,7 +28,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | Add Food | 手动录入、外部 AI JSON 粘贴、Prompt 复制和占位的 `Photo AI Analysis`；手动录入复用与已保存饮食详情一致的紧凑表单网格。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | 编辑已保存的饮食记录和 item 行；显示使用本地化字段标签与后缀单位，底层存储/JSON key 不变。 | `food_detail_page.dart` |
 | Workout Log | 按日期展示已保存的训练记录，内部通过 `plan_id` 分组。 | `workout_log_page.dart`, `WorkoutRepository` |
-| Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、临时或可复用自定义动作、有氧时长/强度、力量输入口径、已完成组持久化、备注和摘要计算。 | `add_workout_page.dart` |
+| Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、临时或可复用自定义动作、有氧时长/强度、力量输入口径、已完成组持久化、Android 训练进行中通知同步、备注和摘要计算。 | `add_workout_page.dart` |
 | Workout Record Detail | 保存后的记录详情、摘要指标、动作卡片和编辑入口。 | `workout_plan_page.dart` |
 | Workout Session Detail | 单动作详情视图；当前记录流中，保存后的力量详情不再用于切换完成状态。 | `workout_session_page.dart` |
 | Profile | 本地昵称、`用户设置` 摘要页头、当前计划摘要 hero、包含年龄/身高/体重/性别/体脂率/腰围的默认展示身体资料网格、一次保存当前 Profile 的统一编辑态、用于过往身体指标记录的日期选择器加卡片内编辑态、只读且简洁的体重/体脂/腰围趋势切换、按范围缩放的点位间距、按指标刻度生成的参考线与点按 tooltip、可点按的阶段/模式/策略矩阵、本地主题和语言偏好、命名稳定的训练频率与自检设置卡、输入卡片内局部保存、导出和清空本地数据。 | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
@@ -62,12 +63,15 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 14. 用户编辑时，FitLog 会先把当前状态持久化为一条本地训练草稿，而不是立刻创建或覆盖正式训练记录。
 15. 用户通过应用返回键或系统返回手势离开编辑页时，会保留草稿，而不是强制弹出保存/舍弃弹窗。
 16. Workout Log 会在 `添加训练` 上方显示一条紧凑的双行草稿恢复条；标题优先显示训练记录名，否则回退为 `训练草稿`，副标题使用短部位名，最多直接显示三个部位，超过后改为 `+n`，然后再拼接动作数量摘要，或在还没有动作时显示 `点击继续编辑`。
-17. 只有用户显式点击保存且校验通过后，才会写入正式训练记录。
-18. 力量训练保存时只持久化已完成组；未勾选组会被移除，保存后的组号按 `1..n` 重排。
-19. 一条多动作记录存储为多条共享同一 `plan_id` 的 `workout_sessions`；每条 session 也保存相同的 `record_name`。
-20. 保存后的记录保留动作快照，所以之后修改可复用自定义动作不会重新解释历史记录。
-21. 保存后的记录展示总时长、计算口径训练量、总组数、估算消耗和动作卡片。
-22. 编辑已保存记录时，正式保存仍会以事务替换整个 `plan_id` 分组；未保存改动在用户保存或舍弃前只停留在草稿层。
+17. 在 Android 上，活动中的力量草稿可以显示一条常驻训练通知。通知标题只显示当前动作名，正文显示下一组，例如 `第 2 组，共 9 组 - 50 kg x 8 次`，通知 large icon 使用当前动作图片，状态栏小图标来自保存的透明 FitLog SVG 源文件并转换为 Android drawable。
+18. 训练通知按最近一次勾选完成的组决定焦点：如果该动作还有未完成组，就继续提示该动作的下一组；如果该动作已经全部完成，就按训练记录顺序找第一项还有未完成组的动作。所有力量组都完成后，通知进入“返回保存训练”的完成提示。
+19. 点击 Android 通知主体会通过与 Workout Log 草稿条一致的恢复路径打开 Add/Edit Workout Record。系统展开箭头仍由 Android 控制，不是 App 自定义 action。
+20. 只有用户显式点击保存且校验通过后，才会写入正式训练记录。
+21. 力量训练保存时只持久化已完成组；未勾选组会被移除，保存后的组号按 `1..n` 重排。
+22. 一条多动作记录存储为多条共享同一 `plan_id` 的 `workout_sessions`；每条 session 也保存相同的 `record_name`。
+23. 保存后的记录保留动作快照，所以之后修改可复用自定义动作不会重新解释历史记录。
+24. 保存后的记录展示总时长、计算口径训练量、总组数、估算消耗和动作卡片。
+25. 编辑已保存记录时，正式保存仍会以事务替换整个 `plan_id` 分组；未保存改动在用户保存或舍弃前只停留在草稿层。
 
 ## 每日看板行为
 
@@ -128,6 +132,7 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 - 语言切换
 - 本地主题切换
 - 二次确认后清空本地数据
+- 活动中的本地力量草稿可显示 Android 训练进行中通知
 
 未实现：
 
@@ -142,7 +147,8 @@ Profile 改成“摘要优先”的控制台，而不是首屏长表单，顺序
 
 - App 启动与 providers：`lib/main.dart`, `lib/app.dart`
 - Android 启动器显示名与图标：APK 安装后显示为 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此已有本地数据仍留在同一个 Android app sandbox。启动器图标来自 `assets/icons/app/fitlog.png` 和 `android/app/src/main/res/mipmap-*/ic_launcher.png`。
-- 系统通知：`lib/core/widgets/fitlog_notifications.dart`
+- App 内系统提示：`lib/core/widgets/fitlog_notifications.dart`
+- Android 训练通知：`lib/core/utils/workout_notification_bridge.dart`, `lib/domain/services/workout_notification_snapshot_builder.dart`, `android/app/src/main/kotlin/com/fitlog/local/fitlog_local/MainActivity.kt`, `assets/icons/app/fitlog_notification_small.svg`, `android/app/src/main/res/drawable/ic_stat_fitlog.xml`
 - Home：`lib/features/home/home_page.dart`
 - Food：`lib/features/food/*`
 - Workout：`lib/features/workout/*`

@@ -17,6 +17,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 - Bottom navigation and fixed CTA visual backgrounds do not define layout geometry: the root bottom navigation is a body overlay rather than a `Scaffold.bottomNavigationBar` slot, so the area outside each pill must not become a full-width footer band. The nav pill itself uses opaque `navBackground`, and a width-matched `background` shield may sit behind the lower half of the pill to stop scrolling content from showing through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for nav footprint, bottom safe-area gap, Home first-viewport height, fixed CTA placement, scroll bottom padding, and guide-sheet bottom avoidance.
 - Guide-style modal sheets, including Home strategy guidance and Profile current-plan guidance, use a root modal route: the scrim covers and disables the bottom navigation, while the sheet content is positioned above the navigation footprint instead of overlapping the nav pill. These sheets keep a top focus gap and scroll long explanatory content inside the panel instead of stretching to the status bar.
 - System notifications use one shared FitLog notification layer instead of page-local `SnackBar` construction. Success and neutral notices appear as compact lightweight top overlays without manual close controls; errors and action notices appear above the keyboard or bottom navigation footprint. Action notices preserve their button callback, and all variants derive color and type from the active FitLog theme.
+- Android workout-in-progress notifications are a separate platform notification surface for active local workout drafts. They do not create backend work or background calculation; they mirror the current draft state and return the user to the editor when the notification body is tapped.
 
 ## Current Modules
 
@@ -27,7 +28,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`; manual entry uses the same compact food-form grid as saved-record editing. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | Editable saved food record and item rows with localized field labels and suffix units while storage/JSON keys stay unchanged. | `food_detail_page.dart` |
 | Workout Log | Date-filtered saved workout records grouped by internal `plan_id`. | `workout_log_page.dart`, `WorkoutRepository` |
-| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, notes, and summary calculation. | `add_workout_page.dart` |
+| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, Android workout-in-progress notification mirroring, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
 | Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid for age/height/weight/sex/body fat/waist with one shared current-profile save, a date-picker-backed inline body-card state for past body metric records, clean read-only weight/body-fat/waist trend switching with range-scaled point spacing, metric-scaled reference lines, and tap-only point tooltip, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
@@ -62,12 +63,15 @@ The app is designed for users who may use external multimodal AI to estimate com
 14. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
 15. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
 16. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
-17. Save validation completes before any saved-record persistence happens.
-18. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
-19. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
-20. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
-21. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
-22. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
+17. On Android, an active strength draft can also show a persistent workout notification. The notification title is only the current exercise name, the body shows the next set such as `Set 2 of 9 - 50 kg x 8 reps`, the notification large icon uses the current exercise image, and the status-bar small icon comes from the saved transparent FitLog SVG source converted into an Android drawable.
+18. The workout notification follows the most recently checked completed set: it stays on that exercise for the next unfinished set, then falls back to the first unfinished exercise in workout order when that exercise is complete. If every strength set is checked, the notification moves to a completion prompt that returns to the editor for review/save.
+19. Tapping the Android notification body opens the active draft in Add/Edit Workout Record through the same resume path as the Workout Log draft bar. The platform expand arrow remains controlled by Android and is not an app-defined action.
+20. Save validation completes before any saved-record persistence happens.
+21. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
+22. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
+23. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
+24. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
+25. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
 
 ## Daily Dashboard Behavior
 
@@ -128,6 +132,7 @@ Implemented:
 - language switching
 - local theme switching
 - local data clearing with confirmation
+- Android workout-in-progress notification for active local strength drafts
 
 Not implemented:
 
@@ -142,7 +147,8 @@ Not implemented:
 
 - App bootstrap and providers: `lib/main.dart`, `lib/app.dart`
 - Android launcher label and icon: APK installs display as `FitLog local` via `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so existing local data stays in the same Android app sandbox. Launcher icons come from `assets/icons/app/fitlog.png` and `android/app/src/main/res/mipmap-*/ic_launcher.png`.
-- System notifications: `lib/core/widgets/fitlog_notifications.dart`
+- In-app system notices: `lib/core/widgets/fitlog_notifications.dart`
+- Android workout notification: `lib/core/utils/workout_notification_bridge.dart`, `lib/domain/services/workout_notification_snapshot_builder.dart`, `android/app/src/main/kotlin/com/fitlog/local/fitlog_local/MainActivity.kt`, `assets/icons/app/fitlog_notification_small.svg`, `android/app/src/main/res/drawable/ic_stat_fitlog.xml`
 - Home: `lib/features/home/home_page.dart`
 - Food: `lib/features/food/*`
 - Workout: `lib/features/workout/*`

@@ -30,6 +30,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/icons/app/
     - assets/fonts/
     - assets/icons/common/
     - assets/icons/exercises/

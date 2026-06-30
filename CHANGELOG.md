@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-06-30 Android Workout In-progress Notification
+
+### Added
+
+- Added an Android workout-in-progress notification for active local strength drafts, showing the current exercise name, next set text, and current-exercise artwork where the platform notification template allows a large icon.
+- Added a workout notification snapshot builder with unit coverage for first-set fallback, latest-completed-set focus, completed-exercise fallback, unchecked-set recalculation, and all-sets-complete state.
+- Added a Flutter-to-Android MethodChannel boundary for showing, updating, cancelling, and tapping the workout notification back into the active draft editor.
+
+### Changed
+
+- Extended workout draft set payloads with draft-only `completed_at` timestamps so the notification can follow the most recently checked completed set before the workout record is saved.
+- Kept the notification title to the current exercise name only, with the set detail in the body text.
+- Changed the Android notification status-bar small icon from the dumbbell outline to a FitLog notification drawable converted from the saved transparent FitLog SVG source. Android can still render this slot as a system-controlled monochrome icon.
+- Updated bilingual Product, AppGuide, and Database docs for the Android workout notification behavior, click-through boundary, and draft JSON timestamp field.
+
+### Fixed
+
+- Stabilized body-history date-picker widget tests so month-boundary runs select the intended target date instead of a disabled same-number date in an adjacent month.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success.
+- Documentation tree, stable-heading, stale-root-path, and replacement-character checks: success.
+- `flutter build apk --debug --split-per-abi --build-number 58`: success; generated ABI-specific debug APKs with version codes `1058`, `2058`, and `4058`.
+
 ## 2026-06-29 Export Share Sheet, Range File Names, and Localized Tables
 
 ### Added

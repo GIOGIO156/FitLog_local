@@ -15,6 +15,7 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - Bottom navigation and fixed CTA pills are visual surfaces only; the root bottom navigation is drawn as a body overlay instead of a `Scaffold.bottomNavigationBar` slot, and their outer areas must not use wrapper fills or full-width footer bands. The nav pill uses an opaque `navBackground`, with a width-matched `background` shield behind its lower half so scrolled content does not show through the bottom rounded corners. `FitLogBottomNavLayout` is the single source for bottom safe-area gap, nav footprint, Home first-viewport sizing, fixed CTA placement, scroll bottom padding, and guide-sheet bottom avoidance.
 - Guide-style modal sheets dim and disable the bottom navigation through the route scrim, but their visible content is positioned above the nav footprint so the nav pill never covers the sheet body. They reserve a top focus gap and keep long copy scrollable inside the panel.
 - App-wide system notices go through `FitLogNotifications`: success/info notices are compact lightweight top overlays without a manual close control, while error/action notices float above the keyboard or bottom navigation footprint. Business pages keep their save/delete/export order and pass the original message text, including error details, into the shared layer.
+- Android workout-in-progress notifications are platform notifications for active local workout drafts. They mirror draft state only, do not run cloud/background calculation, and return to the editor when the notification body is tapped.
 - Android APK installs display the launcher label `FitLog local` from `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so app updates keep the same local data sandbox. Launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
@@ -129,6 +130,7 @@ What users can do:
 - delete a saved record
 - start Add/Edit Workout Record
 - resume one unsaved workout draft from the two-line floating draft bar above `Add Workout`
+- resume the active workout draft from the Android workout notification body
 - discard that draft from the floating bar after confirmation
 
 How it works:
@@ -137,6 +139,7 @@ How it works:
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
 - One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately, does not count as a saved workout record, and appears as a title/subtitle draft bar that uses short body-part labels and caps direct body-part display at three names before `+n`.
+- The Android workout notification uses the same active draft. Tapping the notification body opens the draft editor; the system expand arrow stays an Android-controlled expand/collapse affordance.
 - Record-level summaries are derived from persisted sessions and sets.
 - Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
 - The `Add Workout` CTA and optional draft bar are drawn as bottom overlays instead of a full-width footer row; `FitLogBottomNavLayout` keeps their bottom edge anchored above the nav pill and gives the workout list enough bottom padding for records to scroll clear of the controls.
@@ -162,6 +165,7 @@ What users can do:
 - enter strength sets with weight, reps or single-set duration, and completed state
 - add notes
 - leave the editor and come back later through the Workout Log draft bar
+- leave the editor and come back later through the Android workout notification when a strength draft is active
 - discard a new draft or discard edits from inside the editor with the red danger action
 - save completed strength sets
 
@@ -180,6 +184,9 @@ How it works:
 - Assisted bodyweight exercises store assistance load in the weight field, and calorie estimation treats actual load as `bodyweight - assistance`.
 - Draft persistence happens while editing; saved-record persistence only happens after explicit save and successful validation.
 - Back/gesture exit keeps the draft instead of opening a save/discard modal.
+- Active Android strength-draft notifications show only the current exercise name as the title and the next set as the body, for example `Set 2 of 9 - 50 kg x 8 reps`.
+- Notification focus follows the most recently checked completed set. If that exercise has another unfinished set, the notification stays on that exercise; if it is fully complete, the notification falls back to the first unfinished exercise in the record order.
+- The notification large icon uses the current exercise image. The status-bar small icon uses an Android drawable converted from the saved transparent FitLog SVG source at `assets/icons/app/fitlog_notification_small.svg`, but Android can render that slot as a system-controlled monochrome icon.
 - Only completed strength sets are saved; unchecked sets are discarded.
 - Editing a saved record replaces the full `plan_id` group transactionally.
 

@@ -8,14 +8,42 @@ import '../../core/constants/fitlog_icon_assets.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/utils/workout_notification_bridge.dart';
 import '../../core/widgets/fitlog_bottom_nav_layout.dart';
 import '../../core/widgets/fitlog_notifications.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
+import 'active_workout_draft_route_state.dart';
 import 'add_workout_page.dart';
 import 'workout_plan_page.dart';
+
+Future<void> openActiveWorkoutDraftFromNotification(
+  BuildContext context,
+) async {
+  if (ActiveWorkoutDraftRouteState.isEditorVisible) {
+    return;
+  }
+  final services = context.read<AppServices>();
+  final draft = await services.workoutDraftRepository.getActiveDraft();
+  if (!context.mounted) {
+    return;
+  }
+  context.read<RootTabController>().setIndex(2);
+  if (draft == null) {
+    context.read<RefreshNotifier>().markDataChanged();
+    return;
+  }
+  await Navigator.of(context).push<bool>(
+    MaterialPageRoute<bool>(
+      builder: (_) => AddWorkoutPage(initialDate: draft.date),
+    ),
+  );
+  if (context.mounted) {
+    context.read<RefreshNotifier>().markDataChanged();
+  }
+}
 
 class WorkoutLogPage extends StatefulWidget {
   const WorkoutLogPage({super.key});
@@ -137,6 +165,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
       return;
     }
     await services.workoutDraftRepository.deleteActiveDraft();
+    await WorkoutNotificationBridge.cancel();
     if (!context.mounted) {
       return;
     }
@@ -299,6 +328,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
           .read<AppServices>()
           .workoutDraftRepository
           .deleteActiveDraft();
+      await WorkoutNotificationBridge.cancel();
       if (!context.mounted) {
         return;
       }

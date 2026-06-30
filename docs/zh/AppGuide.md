@@ -15,6 +15,7 @@
 - 底部导航和固定 CTA 的 pill 只是视觉表面；根底部导航以 body overlay 绘制，而不是 `Scaffold.bottomNavigationBar` slot，pill 外区域不应再有 wrapper 填充或满宽 footer 色带。导航 pill 使用不透明的 `navBackground`，下半段背后放一块与 pill 等宽的 `background` 遮挡矩形，避免底部圆角外侧透出滚动内容。`FitLogBottomNavLayout` 是底部安全区间距、导航 footprint、Home 首屏盒子、固定 CTA 位置、滚动底部留白和说明弹窗底部避让的唯一来源。
 - 说明类 modal sheet 通过 route 遮罩压暗并禁用底部导航，但可见内容停在导航 footprint 上方，导航 pill 不应覆盖 sheet 正文。它们需要保留顶部焦点留白，较长文案在面板内部滚动。
 - App 内系统通知统一走 `FitLogNotifications`：成功/中性提示是更紧凑的轻量顶部 overlay，不显示手动关闭控件；错误/action 提示浮在键盘或底部导航 footprint 上方。业务页面保留原保存、删除、导出顺序，并把原始消息文本交给统一通知层，包括错误详情。
+- Android 训练进行中通知是面向活动训练草稿的平台通知。它只同步草稿状态，不执行云端或后台计算；用户点击通知主体时会返回训练编辑页。
 - Android APK 安装后的启动器显示名是 `FitLog local`，来源是 `android/app/src/main/AndroidManifest.xml`；包名仍保持 `com.fitlog.local.fitlog_local`，因此覆盖更新会继续使用同一个本地数据沙盒。启动器图标由 `assets/icons/app/fitlog.png` 生成到 `android/app/src/main/res/mipmap-*/ic_launcher.png` 各密度资源。
 
 延伸阅读：
@@ -130,6 +131,7 @@ Workout Log 是选中日期的训练记录列表。
 - 删除已保存记录
 - 进入 Add/Edit Workout Record
 - 从 `添加训练` 上方的双行浮动草稿条恢复一条未保存训练
+- 从 Android 训练通知主体恢复当前训练草稿
 - 在确认后从浮动草稿条直接舍弃这条草稿
 
 工作方式：
@@ -138,6 +140,7 @@ Workout Log 是选中日期的训练记录列表。
 - 在存储层，一个多动作记录是多条共享 `plan_id` 的 `workout_sessions`。
 - 同一记录内每条 session 也保存相同的 `record_name`。
 - 训练模块还可以单独保留一条未保存草稿；它不属于正式训练列表，也不算已保存训练记录，并且会以标题/副标题摘要条的形式显示，副标题使用短部位名，最多直接显示三个部位，超过后改为 `+n`，而不是单行警示文案。
+- Android 训练通知使用同一条活动草稿。点击通知主体会打开草稿编辑页；系统展开箭头仍是 Android 控制的展开/折叠入口。
 - 记录级摘要由已保存的 session 和 set 推导而来。
 - 动作缩略图现在会优先使用已匹配动作的透明 PNG 资产；未匹配到具体动作图标时，仍回退到按身体部位区分的共享 SVG 图标。
 - `添加训练` CTA 和可选草稿条以底部 overlay 绘制，而不是一条满宽 footer 行；`FitLogBottomNavLayout` 让它们的底边锚定在导航 pill 上方，并给训练列表保留足够的底部留白，保证记录能滚到控件上方。
@@ -163,6 +166,7 @@ Add/Edit Workout Record 是创建或修改训练记录的页面。
 - 输入力量组的重量、次数或单组时长，以及完成状态
 - 添加备注
 - 暂时离开编辑页，稍后通过训练页浮动草稿条继续回来编辑
+- 当活动力量草稿存在时，也可以稍后通过 Android 训练通知回到编辑页
 - 通过编辑页内的红色危险操作舍弃新建草稿，或放弃对已保存记录的未保存修改
 - 保存已完成的力量组
 
@@ -181,6 +185,9 @@ Add/Edit Workout Record 是创建或修改训练记录的页面。
 - 辅助类自重动作在重量字段里记录的是辅助重量；估算消耗时按 `体重 - 辅助重量` 计算实际负重。
 - 编辑过程中会自动保存草稿；只有用户显式保存且校验通过后，才会写入正式记录。
 - 返回或手势退出时保留草稿，不再弹出保存/舍弃模态框。
+- 活动中的 Android 力量草稿通知标题只显示当前动作名，正文显示下一组，例如 `第 2 组，共 9 组 - 50 kg x 8 次`。
+- 通知焦点跟随最近一次勾选完成的组。如果该动作还有未完成组，通知继续显示该动作；如果该动作已经全部完成，通知回到训练记录顺序中第一项仍有未完成组的动作。
+- 通知 large icon 使用当前动作图片。状态栏小图标使用由 `assets/icons/app/fitlog_notification_small.svg` 这个透明 FitLog SVG 源文件转换出的 Android drawable，但 Android 仍可能把这个位置渲染成系统控制的单色图标。
 - 只有已完成的力量组会被保存；未勾选组会被丢弃。
 - 编辑已保存记录时，会事务性替换整个 `plan_id` 分组。
 

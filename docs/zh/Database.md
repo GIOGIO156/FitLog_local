@@ -217,7 +217,7 @@ FitLog Local 将业务数据保存在本地。
 | `date` | TEXT NOT NULL | 编辑页里显示的草稿日期。 |
 | `record_name` | TEXT NOT NULL | 草稿训练记录名。 |
 | `notes` | TEXT NOT NULL | 草稿备注。 |
-| `payload_json` | TEXT NOT NULL | 序列化后的编辑器快照，包含草稿元数据、动作顺序、时长、组行、默认提示状态和完成标记。 |
+| `payload_json` | TEXT NOT NULL | 序列化后的编辑器快照，包含草稿元数据、动作顺序、时长、组行、默认提示状态、完成标记和草稿内 set `completed_at` 时间。 |
 | `created_at` | TEXT NOT NULL | 草稿创建时间。 |
 | `updated_at` | TEXT NOT NULL | 最近一次自动保存时间。 |
 
@@ -226,6 +226,7 @@ FitLog Local 将业务数据保存在本地。
 - 草稿表不属于正式训练历史，也不会出现在已保存训练列表里。
 - 草稿表不会参与 Home 的训练汇总，也不进入导出覆盖。
 - 用户显式保存时，会先校验当前编辑状态，再写入 `workout_sessions` 和 `workout_sets`，最后删除草稿行。
+- 草稿 set 的 `completed_at` 只存在于 `payload_json` 中，用于 Android 训练通知在保存前判断最近一次勾选完成的组。这是加法 JSON payload 数据，不需要 SQLite migration。
 
 ### `body_metric_logs`
 
@@ -367,6 +368,7 @@ AddWorkoutPage
 -> built-in/custom/ad-hoc exercise definition
 -> workout draft snapshot
 -> workout_record_drafts
+-> Android workout notification snapshot for active strength drafts
 -> explicit save validation
 -> WorkoutCalorieCalculator
 -> WorkoutRepository

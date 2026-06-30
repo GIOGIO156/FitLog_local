@@ -224,7 +224,7 @@ Purpose: one active unsaved workout editor state, stored separately from saved w
 | `date` | TEXT NOT NULL | Draft date shown in the editor. |
 | `record_name` | TEXT NOT NULL | Draft workout-record name. |
 | `notes` | TEXT NOT NULL | Draft notes. |
-| `payload_json` | TEXT NOT NULL | Serialized editor snapshot with draft metadata, exercise order, duration values, set rows, default-hint state, and completed flags. |
+| `payload_json` | TEXT NOT NULL | Serialized editor snapshot with draft metadata, exercise order, duration values, set rows, default-hint state, completed flags, and draft-only set `completed_at` timestamps. |
 | `created_at` | TEXT NOT NULL | Draft creation timestamp. |
 | `updated_at` | TEXT NOT NULL | Last draft autosave timestamp. |
 
@@ -233,6 +233,7 @@ Draft behavior:
 - The draft table is not part of workout history and does not appear in saved workout lists.
 - The draft table does not feed Home workout totals or export coverage.
 - Explicit save validates current editor state first, then writes `workout_sessions` and `workout_sets`, then deletes the draft row.
+- Draft set `completed_at` values live inside `payload_json` only, so the Android workout notification can identify the most recently checked set before the record is saved. This is additive JSON payload data and does not require a SQLite migration.
 
 ### `body_metric_logs`
 
@@ -381,6 +382,7 @@ AddWorkoutPage
 -> built-in/custom/ad-hoc exercise definition
 -> workout draft snapshot
 -> workout_record_drafts
+-> Android workout notification snapshot for active strength drafts
 -> explicit save validation
 -> WorkoutCalorieCalculator
 -> WorkoutSession + WorkoutSet

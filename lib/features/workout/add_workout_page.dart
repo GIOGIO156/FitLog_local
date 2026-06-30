@@ -14,6 +14,7 @@ import '../../core/localization/app_strings.dart';
 import '../../core/localization/localization_extensions.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
+import '../../core/utils/workout_notification_bridge.dart';
 import '../../core/widgets/exercise_thumbnail.dart';
 import '../../core/widgets/fitlog_notifications.dart';
 import '../../core/widgets/fitlog_ui.dart';
@@ -22,6 +23,8 @@ import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
+import '../../domain/services/workout_notification_snapshot_builder.dart';
+import 'active_workout_draft_route_state.dart';
 
 const String _customExerciseGroupKey = 'Custom';
 
@@ -105,6 +108,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   @override
   void initState() {
     super.initState();
+    ActiveWorkoutDraftRouteState.isEditorVisible = true;
     WidgetsBinding.instance.addObserver(this);
     _entryDate = widget.initialDate ?? DateUtilsX.todayKey();
     _date = _entryDate;
@@ -118,6 +122,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
 
   @override
   void dispose() {
+    ActiveWorkoutDraftRouteState.isEditorVisible = false;
     WidgetsBinding.instance.removeObserver(this);
     _draftSaveDebounce?.cancel();
     _recordNameController.dispose();
@@ -198,6 +203,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     }
 
     setState(() => _loadingPage = false);
+    unawaited(_syncWorkoutNotification());
   }
 
   DateTime _createdAtRaw(WorkoutSession session) {
@@ -381,6 +387,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     if (!_shouldPersistDraft) {
       await services.workoutDraftRepository.deleteActiveDraft();
       _draftCreatedAt = null;
+      await WorkoutNotificationBridge.cancel();
       if (notifyRefresh && mounted) {
         context.read<RefreshNotifier>().markDataChanged();
       }
@@ -405,9 +412,56 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       updatedAt: now,
     );
     await services.workoutDraftRepository.saveActiveDraft(draft);
+    await _syncWorkoutNotification();
     if (notifyRefresh && mounted) {
       context.read<RefreshNotifier>().markDataChanged();
     }
+  }
+
+  Future<void> _syncWorkoutNotification() async {
+    if (!mounted || _loadingPage) {
+      return;
+    }
+    final hasActiveDraft = _draftCreatedAt != null || _shouldPersistDraft;
+    final snapshot = hasActiveDraft
+        ? _buildWorkoutNotificationSnapshot()
+        : null;
+    if (snapshot == null) {
+      await WorkoutNotificationBridge.cancel();
+      return;
+    }
+    await WorkoutNotificationBridge.showOrUpdate(snapshot);
+  }
+
+  WorkoutNotificationSnapshot? _buildWorkoutNotificationSnapshot() {
+    final strings = context.stringsRead;
+    final exercises = _selectedDrafts.where((draft) => !draft.isCardio).map((
+      draft,
+    ) {
+      final exerciseAsset =
+          fitLogWorkoutAssetForExercise(draft.exerciseName) ??
+          fitLogWorkoutAssetForBodyPart(draft.bodyPart);
+      return WorkoutNotificationExerciseInput(
+        displayName: strings.exerciseDisplayName(draft.exerciseName),
+        exerciseAssetPath: exerciseAsset,
+        sets: draft.sets.asMap().entries.map((entry) {
+          final index = entry.key;
+          final setDraft = entry.value;
+          return WorkoutNotificationSetInput(
+            setNumber: index + 1,
+            loadText: setDraft.effectiveWeightText,
+            metricText: setDraft.effectiveRepsText,
+            usesDurationMetric: draft.usesDurationSets,
+            isCompleted: setDraft.isCompleted,
+            completedAt: setDraft.completedAt,
+          );
+        }).toList(),
+      );
+    }).toList();
+    return WorkoutNotificationSnapshotBuilder.build(
+      exercises: exercises,
+      isChinese: strings.isChinese,
+    );
   }
 
   Future<void> _exitPage() async {
@@ -464,6 +518,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       return;
     }
     await services.workoutDraftRepository.deleteActiveDraft();
+    await WorkoutNotificationBridge.cancel();
     if (!mounted) {
       return;
     }
@@ -602,9 +657,16 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
 
   void _toggleSetCompleted(_SetDraft draft) {
     setState(() {
-      draft.isCompleted = !draft.isCompleted;
+      if (draft.isCompleted) {
+        draft.isCompleted = false;
+        draft.completedAt = null;
+      } else {
+        draft.isCompleted = true;
+        draft.completedAt = DateTime.now().toIso8601String();
+      }
     });
     _scheduleDraftSave();
+    unawaited(_syncWorkoutNotification());
   }
 
   int _durationForDraft(_ExercisePlanDraft draft) {
@@ -865,7 +927,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
             draft: draft,
             setDraft: setDraft,
             setNumber: i + 1,
-            completedAt: setDraft.isCompleted ? now : null,
+            completedAt: setDraft.isCompleted
+                ? setDraft.completedAt ?? now
+                : null,
           );
           if (set.effectiveCalculationReps > 0) {
             sets.add(set);
@@ -1033,6 +1097,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
 
       await services.workoutDraftRepository.deleteActiveDraft();
       _draftCreatedAt = null;
+      await WorkoutNotificationBridge.cancel();
 
       if (!mounted) {
         return;
@@ -1762,6 +1827,7 @@ class _SetDraft {
     required String weight,
     required String reps,
     required this.isCompleted,
+    this.completedAt,
   }) : _defaultWeight = '',
        _defaultReps = '',
        weightController = TextEditingController(text: weight.trim()),
@@ -1777,6 +1843,7 @@ class _SetDraft {
     draft.weightController.text = (map['weight_text'] ?? '').toString();
     draft.repsController.text = (map['reps_text'] ?? '').toString();
     draft.isCompleted = map['is_completed'] == true || map['is_completed'] == 1;
+    draft.completedAt = map['completed_at']?.toString();
     draft._showWeightAsDefault =
         map['show_weight_as_default'] == true ||
         map['show_weight_as_default'] == 1;
@@ -1791,6 +1858,7 @@ class _SetDraft {
   final TextEditingController weightController;
   final TextEditingController repsController;
   bool isCompleted = false;
+  String? completedAt;
   bool _showWeightAsDefault;
   bool _showRepsAsDefault;
 
@@ -1840,6 +1908,7 @@ class _SetDraft {
       'weight_text': weightController.text.trim(),
       'reps_text': repsController.text.trim(),
       'is_completed': isCompleted,
+      'completed_at': completedAt,
       'show_weight_as_default': _showWeightAsDefault,
       'show_reps_as_default': _showRepsAsDefault,
     };
@@ -1976,6 +2045,7 @@ class _ExercisePlanDraft {
                         ? _formatDurationSeconds(set.inputDurationSeconds)
                         : set.displayReps.toString(),
                     isCompleted: set.isCompleted,
+                    completedAt: set.completedAt,
                   ),
                 )
                 .toList(),

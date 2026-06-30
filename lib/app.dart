@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,6 +8,7 @@ import 'core/localization/language_controller.dart';
 import 'core/localization/localization_extensions.dart';
 import 'core/theme_controller.dart';
 import 'core/utils/date_utils.dart';
+import 'core/utils/workout_notification_bridge.dart';
 import 'core/widgets/fitlog_bottom_nav_layout.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/custom_exercise_repository.dart';
@@ -295,6 +298,21 @@ class _RootShellState extends State<_RootShell> {
           WorkoutLogPage(),
           ProfilePage(),
         ];
+    WorkoutNotificationBridge.setOpenActiveDraftHandler(
+      () => openActiveWorkoutDraftFromNotification(context),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(WorkoutNotificationBridge.consumeInitialOpenRequest());
+    });
+  }
+
+  @override
+  void dispose() {
+    WorkoutNotificationBridge.setOpenActiveDraftHandler(null);
+    super.dispose();
   }
 
   @override

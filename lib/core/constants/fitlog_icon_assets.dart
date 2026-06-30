@@ -1,6 +1,8 @@
 class FitLogIconAssets {
   FitLogIconAssets._();
 
+  static const String app = 'assets/icons/app/fitlog.png';
+
   static const String macroProtein = 'assets/icons/macros/protein.png';
   static const String macroCarbs = 'assets/icons/macros/carbs.png';
   static const String macroFat = 'assets/icons/macros/fat.png';

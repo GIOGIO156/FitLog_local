@@ -325,9 +325,6 @@ void main() {
     (tester) async {
       _setTallPhoneView(tester);
       final editedDay = _dateDaysAgo(1);
-      final todayDay = DateUtilsX.parseDay(
-        DateUtilsX.todayKey(),
-      ).day.toString();
       final profileRepository = _FakeProfileRepository(
         bodyMetricLogs: <BodyMetricLog>[
           _bodyMetricLog(date: editedDay, weightKg: 81.0),
@@ -365,8 +362,11 @@ void main() {
         find.byKey(const ValueKey<String>('profile_body_metric_calendar')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text(todayDay).last);
-      await tester.pumpAndSettle();
+      await _tapDatePickerDay(
+        tester,
+        DateUtilsX.todayKey(),
+        visibleDate: editedDay,
+      );
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
@@ -590,9 +590,36 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _tapDatePickerDay(WidgetTester tester, String date) async {
-  final dayText = DateUtilsX.parseDay(date).day.toString();
-  await tester.tap(find.text(dayText).last);
+Future<void> _tapDatePickerDay(
+  WidgetTester tester,
+  String date, {
+  String? visibleDate,
+}) async {
+  final target = DateUtilsX.parseDay(date);
+  final visibleBase = DateUtilsX.parseDay(visibleDate ?? DateUtilsX.todayKey());
+  var visibleMonth = DateTime(visibleBase.year, visibleBase.month);
+  final targetMonth = DateTime(target.year, target.month);
+  while (visibleMonth.isAfter(targetMonth)) {
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
+    visibleMonth = DateTime(visibleMonth.year, visibleMonth.month - 1);
+  }
+  while (visibleMonth.isBefore(targetMonth)) {
+    await tester.tap(find.byTooltip('Next month'));
+    await tester.pumpAndSettle();
+    visibleMonth = DateTime(visibleMonth.year, visibleMonth.month + 1);
+  }
+
+  final localizations = MaterialLocalizations.of(
+    tester.element(find.byType(DatePickerDialog)),
+  );
+  final labeledDay = find.bySemanticsLabel(
+    localizations.formatFullDate(target),
+  );
+  final dayFinder = labeledDay.evaluate().isNotEmpty
+      ? labeledDay
+      : find.text(target.day.toString()).last;
+  await tester.tap(dayFinder);
   await tester.pumpAndSettle();
 }
 
