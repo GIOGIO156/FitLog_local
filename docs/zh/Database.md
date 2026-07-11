@@ -225,7 +225,9 @@ FitLog Local 将业务数据保存在本地。
 
 - 草稿表不属于正式训练历史，也不会出现在已保存训练列表里。
 - 草稿表不会参与 Home 的训练汇总，也不进入导出覆盖。
-- 用户显式保存时，会先校验当前编辑状态，再写入 `workout_sessions` 和 `workout_sets`，最后删除草稿行。
+- 编辑器活动期间，草稿写入与 Android 训练通知更新按顺序执行。显式保存进入提交状态后，生命周期变化不能再加入新的草稿写入。
+- 显式保存会先等待较早的草稿操作完成并保存最新编辑快照，再在同一个 SQLite 事务中写入 `workout_sessions`、`workout_sets` 并删除活动草稿；最后的顺序化清理保证草稿删除和 Android 通知取消晚于所有旧草稿更新。
+- 如果正式记录事务失败，恢复正常编辑前会把最新编辑快照重新写回草稿行。
 - 草稿 set 的 `completed_at` 只存在于 `payload_json` 中，用于 Android 训练通知在保存前判断最近一次勾选完成的组。这是加法 JSON payload 数据，不需要 SQLite migration。
 
 ### `body_metric_logs`

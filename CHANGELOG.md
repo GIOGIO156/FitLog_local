@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-11 Workout Draft Commit Ordering
+
+### Added
+
+- Added widget regression coverage that blocks an older draft write, switches the app lifecycle during formal save, and verifies that the final draft deletion and Android notification cancellation remain last.
+- Added failure-path coverage confirming that an unsuccessful formal save restores the latest editor snapshot as an editable draft.
+
+### Changed
+
+- Added explicit workout editor commit states so formal save blocks duplicate submission, draft debounce callbacks, and lifecycle autosaves before the first asynchronous save step.
+- Serialized workout draft persistence and Android workout-notification updates, while moving active-draft deletion into the same SQLite transaction as new, grouped-replacement, and legacy single-record workout commits.
+- Updated bilingual Database design docs for the commit-state, operation-ordering, transactional cleanup, and failure-recovery boundaries.
+
+### Fixed
+
+- Prevented a delayed lifecycle or debounce draft write from recreating a workout draft after the matching formal record was saved.
+- Prevented the stale duplicate draft from appearing only after deletion of the newly saved workout triggered a later Workout Log refresh.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success, including 2 workout commit/draft race regression tests.
+- Documentation tree, stable-heading, stale-root-path, and replacement-character checks: success.
+- `flutter build apk --debug --split-per-abi --build-number 59`: success; generated ABI-specific debug APKs with version codes `1059`, `2059`, and `4059`.
+
 ## 2026-06-30 Android Workout In-progress Notification
 
 ### Added

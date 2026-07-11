@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/utils/date_utils.dart';
+import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import '../../domain/models/workout_set.dart';
 import '../db/app_database.dart';
@@ -22,7 +23,10 @@ class WorkoutRepository {
     });
   }
 
-  Future<void> insertWorkoutPlan(List<WorkoutSession> sessions) async {
+  Future<void> insertWorkoutPlan(
+    List<WorkoutSession> sessions, {
+    bool clearActiveDraft = false,
+  }) async {
     if (sessions.isEmpty) {
       return;
     }
@@ -37,12 +41,16 @@ class WorkoutRepository {
           session.copyWith(createdAt: now, updatedAt: now),
         );
       }
+      if (clearActiveDraft) {
+        await _deleteActiveDraft(txn);
+      }
     });
   }
 
   Future<void> replaceWorkoutPlan({
     required String planId,
     required List<WorkoutSession> sessions,
+    bool clearActiveDraft = false,
   }) async {
     final db = await _database.database;
     final now = DateTime.now().toIso8601String();
@@ -64,12 +72,16 @@ class WorkoutRepository {
           ),
         );
       }
+      if (clearActiveDraft) {
+        await _deleteActiveDraft(txn);
+      }
     });
   }
 
   Future<void> replaceSingleWorkoutRecord({
     required int sessionId,
     required List<WorkoutSession> sessions,
+    bool clearActiveDraft = false,
   }) async {
     final db = await _database.database;
     final now = DateTime.now().toIso8601String();
@@ -87,7 +99,18 @@ class WorkoutRepository {
           session.copyWith(createdAt: now, updatedAt: now),
         );
       }
+      if (clearActiveDraft) {
+        await _deleteActiveDraft(txn);
+      }
     });
+  }
+
+  Future<void> _deleteActiveDraft(DatabaseExecutor executor) async {
+    await executor.delete(
+      'workout_record_drafts',
+      where: 'id = ?',
+      whereArgs: <Object?>[WorkoutRecordDraft.activeDraftId],
+    );
   }
 
   Future<void> updateWorkoutSession(WorkoutSession session) async {

@@ -76,6 +76,8 @@ class AddWorkoutPage extends StatefulWidget {
   State<AddWorkoutPage> createState() => _AddWorkoutPageState();
 }
 
+enum _WorkoutEditorCommitState { editing, committing, completed, failed }
+
 class _AddWorkoutPageState extends State<AddWorkoutPage>
     with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
@@ -93,7 +95,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   late final String _entryDate;
   double _profileWeightKg = 65;
   bool _loadingPage = true;
-  bool _saving = false;
+  _WorkoutEditorCommitState _commitState = _WorkoutEditorCommitState.editing;
   bool _updatingExerciseSelection = false;
   bool _allowPop = false;
   String _baselineSnapshotJson = '{}';
@@ -101,6 +103,9 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   int? _editingSeedSessionId;
   String? _draftCreatedAt;
   Timer? _draftSaveDebounce;
+  Future<void> _draftOperationTail = Future<void>.value();
+
+  bool get _saving => _commitState != _WorkoutEditorCommitState.editing;
 
   bool get _isEditing =>
       (_editingPlanId ?? '').trim().isNotEmpty || _editingSeedSessionId != null;
@@ -154,9 +159,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
+    if (_commitState == _WorkoutEditorCommitState.editing &&
+        (state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused ||
+            state == AppLifecycleState.hidden)) {
       unawaited(_persistDraftNow());
     }
   }
@@ -364,8 +370,16 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   bool get _shouldPersistDraft =>
       _hasMeaningfulDraftContent && _hasDraftChanges;
 
+  Future<void> _enqueueDraftOperation(Future<void> Function() operation) {
+    final queued = _draftOperationTail.then((_) => operation());
+    _draftOperationTail = queued.catchError(
+      (Object error, StackTrace stackTrace) {},
+    );
+    return queued;
+  }
+
   void _scheduleDraftSave() {
-    if (_loadingPage) {
+    if (_loadingPage || _commitState != _WorkoutEditorCommitState.editing) {
       return;
     }
     _draftSaveDebounce?.cancel();
@@ -374,20 +388,27 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     });
   }
 
-  Future<void> _persistDraftNow() async {
+  Future<void> _persistDraftNow({bool force = false}) async {
     _draftSaveDebounce?.cancel();
-    await _saveOrClearDraft();
+    await _saveOrClearDraft(force: force);
   }
 
-  Future<void> _saveOrClearDraft({bool notifyRefresh = false}) async {
-    if (!mounted || _loadingPage) {
+  Future<void> _saveOrClearDraft({
+    bool notifyRefresh = false,
+    bool force = false,
+  }) async {
+    if (!mounted ||
+        _loadingPage ||
+        (!force && _commitState != _WorkoutEditorCommitState.editing)) {
       return;
     }
     final services = context.read<AppServices>();
     if (!_shouldPersistDraft) {
-      await services.workoutDraftRepository.deleteActiveDraft();
       _draftCreatedAt = null;
-      await WorkoutNotificationBridge.cancel();
+      await _enqueueDraftOperation(() async {
+        await services.workoutDraftRepository.deleteActiveDraft();
+        await WorkoutNotificationBridge.cancel();
+      });
       if (notifyRefresh && mounted) {
         context.read<RefreshNotifier>().markDataChanged();
       }
@@ -411,26 +432,48 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       createdAt: createdAt,
       updatedAt: now,
     );
-    await services.workoutDraftRepository.saveActiveDraft(draft);
-    await _syncWorkoutNotification();
+    final notificationSnapshot = _buildWorkoutNotificationSnapshot();
+    await _enqueueDraftOperation(() async {
+      await services.workoutDraftRepository.saveActiveDraft(draft);
+      await _applyWorkoutNotificationSnapshot(notificationSnapshot);
+    });
     if (notifyRefresh && mounted) {
       context.read<RefreshNotifier>().markDataChanged();
     }
   }
 
   Future<void> _syncWorkoutNotification() async {
-    if (!mounted || _loadingPage) {
+    if (!mounted ||
+        _loadingPage ||
+        _commitState != _WorkoutEditorCommitState.editing) {
       return;
     }
     final hasActiveDraft = _draftCreatedAt != null || _shouldPersistDraft;
     final snapshot = hasActiveDraft
         ? _buildWorkoutNotificationSnapshot()
         : null;
+    await _enqueueDraftOperation(
+      () => _applyWorkoutNotificationSnapshot(snapshot),
+    );
+  }
+
+  Future<void> _applyWorkoutNotificationSnapshot(
+    WorkoutNotificationSnapshot? snapshot,
+  ) async {
     if (snapshot == null) {
       await WorkoutNotificationBridge.cancel();
       return;
     }
     await WorkoutNotificationBridge.showOrUpdate(snapshot);
+  }
+
+  Future<void> _deleteDraftAndCancelNotification() async {
+    final services = context.read<AppServices>();
+    _draftCreatedAt = null;
+    await _enqueueDraftOperation(() async {
+      await services.workoutDraftRepository.deleteActiveDraft();
+      await WorkoutNotificationBridge.cancel();
+    });
   }
 
   WorkoutNotificationSnapshot? _buildWorkoutNotificationSnapshot() {
@@ -480,7 +523,6 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
   Future<void> _discardCurrentDraft() async {
     final strings = context.stringsRead;
     final refreshNotifier = context.read<RefreshNotifier>();
-    final services = context.read<AppServices>();
     final confirmed =
         await showDialog<bool>(
           context: context,
@@ -517,8 +559,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     if (!confirmed) {
       return;
     }
-    await services.workoutDraftRepository.deleteActiveDraft();
-    await WorkoutNotificationBridge.cancel();
+    await _deleteDraftAndCancelNotification();
     if (!mounted) {
       return;
     }
@@ -1055,66 +1096,93 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       return;
     }
 
+    setState(() {
+      _commitState = _WorkoutEditorCommitState.committing;
+    });
+    _draftSaveDebounce?.cancel();
+
     final now = DateTime.now().toIso8601String();
     final planId = (_editingPlanId ?? '').isNotEmpty
         ? _editingPlanId!
         : _createPlanId();
     final recordName = _recordNameController.text.trim();
     final notes = _notesController.text.trim();
-    await _maybeSaveAdHocExercises(strings);
-    if (!mounted) {
-      return;
-    }
-    final sessions = _buildSessionsForCommit(
-      planId: planId,
-      now: now,
-      recordName: recordName,
-      notes: notes,
-    );
-    if (sessions.isEmpty) {
-      FitLogNotifications.error(context, strings.noCompletedSetsToSave);
-      return;
-    }
-
     final services = context.read<AppServices>();
     final refreshNotifier = context.read<RefreshNotifier>();
 
-    setState(() => _saving = true);
     try {
+      await _maybeSaveAdHocExercises(strings);
+      if (!mounted) {
+        return;
+      }
+
+      await _persistDraftNow(force: true);
+      if (!mounted) {
+        return;
+      }
+      final sessions = _buildSessionsForCommit(
+        planId: planId,
+        now: now,
+        recordName: recordName,
+        notes: notes,
+      );
+      if (sessions.isEmpty) {
+        setState(() {
+          _commitState = _WorkoutEditorCommitState.editing;
+        });
+        FitLogNotifications.error(context, strings.noCompletedSetsToSave);
+        return;
+      }
+
       if ((_editingPlanId ?? '').isNotEmpty) {
         await services.workoutRepository.replaceWorkoutPlan(
           planId: _editingPlanId!,
           sessions: sessions,
+          clearActiveDraft: true,
         );
       } else if (_editingSeedSessionId != null) {
         await services.workoutRepository.replaceSingleWorkoutRecord(
           sessionId: _editingSeedSessionId!,
           sessions: sessions,
+          clearActiveDraft: true,
         );
       } else {
-        await services.workoutRepository.insertWorkoutPlan(sessions);
+        await services.workoutRepository.insertWorkoutPlan(
+          sessions,
+          clearActiveDraft: true,
+        );
       }
 
-      await services.workoutDraftRepository.deleteActiveDraft();
-      _draftCreatedAt = null;
-      await WorkoutNotificationBridge.cancel();
+      await _deleteDraftAndCancelNotification();
 
       if (!mounted) {
         return;
       }
+      setState(() {
+        _commitState = _WorkoutEditorCommitState.completed;
+      });
       FitLogNotifications.success(
         context,
         strings.workoutRecordSavedCount(sessions.length),
       );
     } catch (error) {
       if (mounted) {
+        setState(() {
+          _commitState = _WorkoutEditorCommitState.failed;
+        });
+        try {
+          await _persistDraftNow(force: true);
+        } catch (_) {
+          // Keep the original commit error as the user-facing failure.
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _commitState = _WorkoutEditorCommitState.editing;
+        });
         FitLogNotifications.error(context, strings.failedToLoadWorkout(error));
       }
       return;
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
     }
 
     if (!mounted) {
@@ -1709,6 +1777,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
+                      key: const ValueKey('workout_record_name_field'),
                       controller: _recordNameController,
                       decoration: InputDecoration(
                         labelText: strings.workoutRecordNameLabel,

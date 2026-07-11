@@ -232,7 +232,9 @@ Draft behavior:
 
 - The draft table is not part of workout history and does not appear in saved workout lists.
 - The draft table does not feed Home workout totals or export coverage.
-- Explicit save validates current editor state first, then writes `workout_sessions` and `workout_sets`, then deletes the draft row.
+- Draft writes and Android workout-notification updates are serialized while the editor is active. Once explicit save enters its committing state, lifecycle changes cannot enqueue another draft write.
+- Explicit save waits for earlier draft work, snapshots the latest editor state, then writes `workout_sessions` and `workout_sets` and deletes the active draft in the same SQLite transaction. A final serialized cleanup keeps draft deletion and Android notification cancellation after every earlier draft update.
+- If the saved-record transaction fails, the latest editor snapshot is persisted back to the draft row before normal editing resumes.
 - Draft set `completed_at` values live inside `payload_json` only, so the Android workout notification can identify the most recently checked set before the record is saved. This is additive JSON payload data and does not require a SQLite migration.
 
 ### `body_metric_logs`
