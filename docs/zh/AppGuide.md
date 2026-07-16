@@ -101,11 +101,12 @@ Add Food 是饮食录入入口页。
 - `Paste AI Result`：粘贴 App 外部生成的 JSON。
 - `Manual Entry`：手动输入食物数据。
 - `Photo AI Analysis`：可见占位入口，尚未实现 App 内图片识别。
-- Prompt copy：复制中英文静态 prompt 给外部模型使用。
+- Prompt copy：按当前 App 语言复制 Prompt，并在外部模型的新对话中只发送一次以完成初始化。
 
 工作方式：
 
-- Prompt copy 是静态文本复制，不是 AI 调用。
+- Prompt copy 是静态文本复制，不是 AI 调用。它通过长期对话规则让新的食物图片通常开始一份新餐食，并让增加/删除/替换/重新计算等追问更新最近一餐，无需重复复制 Prompt。
+- 外部模型每次回复都必须是单个完整严格 JSON 对象；顶层重量、热量、蛋白质、碳水和脂肪由最终 item 数值重新加总。现有 schema 和最后一个 `estimation_notes` 字段保持不变，不包含也不要求 `comment` 字段。
 - 粘贴的 JSON 由 `NutritionCalculator` 在本地解析。
 - 预览页允许用户修正解析结果后再保存。
 - Food Detail、AI 预览页和 Manual Entry 都使用面向用户的字段标签，不再直接显示 snake_case；数字单位放在输入框后缀，底层 JSON key 和存储字段保持不变。

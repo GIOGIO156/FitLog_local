@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-16 Persistent External Food Estimation Prompt
+
+### Added
+
+- Added widget coverage that captures the clipboard payload and verifies Chinese UI copies the Chinese prompt while English UI copies the English prompt.
+- Added prompt-contract coverage for the unchanged `estimation_notes` schema, absence of a `comment` field, persistent-conversation instructions, complete JSON responses, item-to-total reconciliation, and continued parsing through the existing food JSON parser.
+
+### Changed
+
+- Reworked both built-in food-estimation prompts into one-time external-conversation initializers so later food images, descriptions, and add/remove/replace/recalculate requests create or update meal nutrition JSON rather than request image edits.
+- Required every external-model response to remain one complete strict JSON object and to calculate top-level weight, calories, protein, carbs, and fat from the final rounded item values, while keeping the existing JSON schema and `estimation_notes` field unchanged.
+- Documented the persistent external-conversation workflow and clarified that its conversational continuity remains outside FitLog Local in the bilingual README, Product, AppGuide, and AgentDesign docs.
+
+### Validation
+
+- `dart format lib/core/constants/prompt_templates.dart test/food_prompt_test.dart`: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 85 tests passed.
+- Documentation tree, legacy-root-doc, stable-heading, replacement-character, and diff-whitespace checks: success.
+- `flutter build apk --debug --split-per-abi --build-number 60`: success; generated ABI-specific debug APKs with version codes `1060`, `2060`, and `4060`.
+
 ## 2026-07-11 Workout Draft Commit Ordering
 
 ### Added

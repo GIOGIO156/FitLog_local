@@ -38,7 +38,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 
 1. 用户打开 Food Log 并选择日期。
 2. 用户选择 Add Food。
-3. 如果使用外部 AI 辅助录入，用户复制 FitLog 的 Prompt，使用任意外部模型，并把返回 JSON 粘贴进 App。
+3. 如果使用外部 AI 辅助录入，用户只需在外部模型的新对话中发送一次与当前 App 语言一致的 Prompt；后续新的食物图片通常开始一份新餐食，增加/删除/替换/重新计算等追问则更新最近一餐，每次回复仍是使用现有 schema 的单个完整严格 JSON 对象。
 4. FitLog 用 `NutritionCalculator.parseAiFoodJson` 在本地解析 JSON。
 5. 用户预览、修正并保存 `FoodRecord` 和可选 `FoodItem` 行。
 6. 手动录入会跳过 JSON 解析，并以 `source = manual` 保存记录。

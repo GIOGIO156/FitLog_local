@@ -15,7 +15,7 @@ FitLog Local 是一款 local-first 的 Flutter 个人饮食与训练记录 App�
 推荐使用流程是：
 
 1. 用任意外部多模态模型，或项目提供的 GPT 链接，根据照片或描述估算一餐。
-2. 需要时复制 FitLog 内置 Prompt，让外部模型输出结构化 JSON。
+2. 新建外部 AI 对话时复制一次 FitLog 内置 Prompt；之后可持续发送食物图片、描述或增删替换要求，并让外部模型每次返回更新后的完整结构化 JSON。
 3. 把 JSON 粘贴进 FitLog Local，预览、修正，并保存到本地 SQLite。
 4. 在本地记录训练，包括有氧时长和力量训练组。
 5. 查看选中日期的摄入、运动、目标、剩余宏量和策略上下文。
@@ -48,7 +48,7 @@ FitLog Local 当前不提供：
 
 - `Paste AI Result` 把外部模型 JSON 解析为本地 `FoodRecord` 和 `FoodItem` 数据。
 - `Manual Entry` 记录餐名、日期、重量、kcal、蛋白质、碳水、脂肪和备注。
-- 内置 Prompt 可按中文或英文复制，并用于任意外部模型。
+- 内置 Prompt 按当前 App 语言复制，可在外部模型的新对话中作为一次性长期初始化规则；后续图片、描述和修改要求都返回同一固定 schema 的完整 JSON。
 - 已有饮食记录可以打开、编辑、复制到指定日期或删除。
 
 训练记录：
@@ -187,7 +187,7 @@ The practical problem is threefold:
 The intended workflow is:
 
 1. Use any external multimodal model, or the provided GPT links, to estimate a meal from a photo or description.
-2. Copy FitLog's prompt when useful and ask the external model for structured JSON.
+2. Copy FitLog's prompt once when starting a new external-AI conversation; then keep sending food images, descriptions, or add/remove/replace requests and receive the complete updated structured JSON each time.
 3. Paste the JSON into FitLog Local, preview it, correct it, and save it to local SQLite.
 4. Log workouts locally, including cardio duration and strength sets.
 5. Review the selected day's intake, exercise, targets, remaining macros, and strategy context.
@@ -220,7 +220,7 @@ Food Log:
 
 - `Paste AI Result` parses external-model JSON into local `FoodRecord` and `FoodItem` data.
 - `Manual Entry` records meal name, date, weight, kcal, protein, carbs, fat, and notes.
-- Built-in prompts can be copied in Chinese or English and used with any external model.
+- The built-in prompt follows the current app language and initializes persistent rules once in a new external-model conversation; later images, descriptions, and change requests return complete JSON in the same fixed schema.
 - Existing food records can be opened, edited, copied to a chosen date, or deleted.
 
 Workout Record:

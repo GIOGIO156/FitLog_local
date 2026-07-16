@@ -20,7 +20,7 @@ FitLog Local 当前没有 App 内 AI、LLM 或 Agent 执行能力。
 
 | 功能 | 发生了什么 | 是否 App 内 AI | 主要代码 |
 | --- | --- | --- | --- |
-| Prompt 复制 | App 提供中英 Prompt，用户可复制给外部模型。 | 否 | `PromptTemplates`, `AddFoodPage._copyPrompt` |
+| Prompt 复制 | App 按当前语言复制一次性对话初始化 Prompt；在外部对话中，新食物图片通常开始新餐，后续修改更新最近一餐，并始终使用不变 schema 返回完整 JSON。 | 否 | `PromptTemplates`, `AddFoodPage._copyPrompt` |
 | 外部 AI JSON 粘贴 | 用户手动粘贴 App 外部产生的 JSON，FitLog 在本地解析。 | 否 | `PasteAiResultPage`, `NutritionCalculator.parseAiFoodJson` |
 | `source = ai_paste` | 保存记录可以标记来源为 AI paste 工作流。 | 否 | `AppConstants.sourceAiPaste`, `FoodRecord.source` |
 | Photo AI Analysis | 可见的占位入口。 | 否，未实现 | `AddFoodPage` |
@@ -49,6 +49,7 @@ App 中有一些看起来像自动化的流程，但它们都是确定性的 Dar
 ## Agent 边界规则
 
 - 外部 AI 可以在数据进入 FitLog Local 前帮助估算食物。
+- 复制 Prompt 建立的连续性只存在于外部对话中；FitLog Local 不保存该对话，也不提供 AI 记忆。
 - FitLog Local 只负责本地数据的存储、解析、汇总、计算、复盘和导出。
 - Prompt 模板不是 App 内 AI。
 - JSON 解析不是 App 内 AI。

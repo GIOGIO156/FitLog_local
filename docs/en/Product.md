@@ -38,7 +38,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 1. The user opens Food Log and selects a date.
 2. The user chooses Add Food.
-3. For external AI-assisted entry, the user copies FitLog's prompt, uses any external model, and pastes returned JSON into the app.
+3. For external AI-assisted entry, the user copies FitLog's language-matched prompt once into a new external-model conversation. A later new food image normally starts a new meal, while add/remove/replace/recalculate follow-ups update the most recent meal; every response remains one complete strict JSON object in the existing schema.
 4. FitLog parses JSON locally with `NutritionCalculator.parseAiFoodJson`.
 5. The user previews, corrects, and saves the `FoodRecord` and optional `FoodItem` rows.
 6. Manual entry skips JSON parsing and saves a record with `source = manual`.

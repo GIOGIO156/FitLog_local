@@ -100,11 +100,12 @@ Entry options:
 - `Paste AI Result`: paste JSON produced outside the app.
 - `Manual Entry`: type food data directly.
 - `Photo AI Analysis`: visible placeholder only; app-internal image recognition is not implemented.
-- Prompt copy: copy a Chinese or English prompt for use with an external model.
+- Prompt copy: copy a prompt in the current app language once to initialize a new external-model conversation.
 
 How it works:
 
-- Prompt copy is static text, not an AI call.
+- Prompt copy is static text, not an AI call. Its persistent conversation rules let a new food image normally start a new meal and let add/remove/replace/recalculate follow-ups update the most recent meal without copying the prompt again.
+- Every external-model response is required to contain one complete strict JSON object. Top-level weight, calories, protein, carbs, and fat must be recomputed from the final item values; the existing schema and final `estimation_notes` field remain unchanged and do not include or request a `comment` field.
 - Pasted JSON is parsed locally by `NutritionCalculator`.
 - The preview page lets users correct parsed values before saving.
 - Food Detail, AI preview, and Manual Entry all show user-facing field labels instead of raw snake_case keys, and numeric units stay in the field suffix so JSON keys and storage fields can remain unchanged.
