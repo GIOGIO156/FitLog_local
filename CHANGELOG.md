@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-27 Workout Editor Process-Rebuild Resume
+
+### Added
+
+- Added `WorkoutEditorResumeStore` for a lightweight SharedPreferences editor-active marker and a fixed 30-minute cold-start eligibility window based on the SQLite draft's existing `updatedAt`.
+- Added store and widget regression coverage for 29/30/31-minute restore windows, missing active markers, explicit exit, save/discard/clear cleanup, foreground return without a second Add Workout route, and full draft field restoration.
+
+### Changed
+
+- New Add Workout drafts now mark the editor active only after the SQLite draft save succeeds, and lifecycle transitions to `inactive`, `paused`, or `hidden` still immediately persist the draft.
+- Root now checks once after first build for an active, recent new-record draft, switches to Workout, and opens Add Workout once without adding timers, alarms, workers, foreground services, wake locks, or keep-alive behavior.
+- Normal editor exit saves and keeps the SQLite draft but clears the auto-resume marker, so the existing Workout Log draft bar remains the manual recovery path after user-initiated exit or after the 30-minute window expires.
+- Updated bilingual Product and AppGuide docs for the cold-start restore boundary; no SQLite schema/version change was made.
+
+### Fixed
+
+- Prevented a recent new workout draft from staying hidden after the OS kills the process while the user was still on the Add Workout editor.
+- Prevented actively exited, saved, discarded, deleted, or emptied drafts from reopening Add Workout automatically on the next start.
+
+### Validation
+
+- `dart format` on modified Dart files and new workout resume tests: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 95 tests passed.
+- Documentation tree, legacy-root-doc, stable-heading, stale-path, and replacement-character checks: success.
+- Document RAG local corpus/seed regeneration: not run because this workspace has no local Document RAG source or generation script; no cloud upload or activation was performed.
+- `flutter build apk --debug --split-per-abi --build-number 61`: success; generated ABI-specific debug APKs with version codes `1061`, `2061`, and `4061`.
+
 ## 2026-07-16 Persistent External Food Estimation Prompt
 
 ### Added

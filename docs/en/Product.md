@@ -28,7 +28,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`; manual entry uses the same compact food-form grid as saved-record editing. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | Editable saved food record and item rows with localized field labels and suffix units while storage/JSON keys stay unchanged. | `food_detail_page.dart` |
 | Workout Log | Date-filtered saved workout records grouped by internal `plan_id`. | `workout_log_page.dart`, `WorkoutRepository` |
-| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, Android workout-in-progress notification mirroring, notes, and summary calculation. | `add_workout_page.dart` |
+| Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, 30-minute cold-start resume for active new drafts, Android workout-in-progress notification mirroring, notes, and summary calculation. | `add_workout_page.dart` |
 | Workout Record Detail | Saved record detail, summary metrics, exercise cards, and edit re-entry. | `workout_plan_page.dart` |
 | Workout Session Detail | Single-exercise detail view; saved strength detail is read-only for completion state in the current record flow. | `workout_session_page.dart` |
 | Profile | Local nickname, a `User Settings` summary header, current-plan summary hero, display-first body-profile grid for age/height/weight/sex/body fat/waist with one shared current-profile save, a date-picker-backed inline body-card state for past body metric records, clean read-only weight/body-fat/waist trend switching with range-scaled point spacing, metric-scaled reference lines, and tap-only point tooltip, direct phase/mode/strategy matrix, local theme and language preferences, a consistently named training-frequency/self-check setup card, card-local save actions for text/number inputs, export, and clear-local-data actions. | `profile_page.dart`, `ProfileRepository`, `ThemeController` |
@@ -61,17 +61,21 @@ The app is designed for users who may use external multimodal AI to estimate com
 12. Strength exercises use set rows with weight, reps or single-set duration, and completed state.
 13. Built-in and custom strength exercises store the input mode used for the session: total load, per-side load, bodyweight plus added load, assistance load, total reps, per-side reps, or duration-based sets.
 14. While the user is editing, FitLog persists one local workout draft instead of immediately creating or mutating a saved workout record.
-15. Leaving the editor through the app back button or system back gesture keeps the draft instead of forcing a save/discard modal.
-16. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
-17. On Android, an active strength draft can also show a persistent workout notification. The notification title is only the current exercise name, the body shows the next set such as `Set 2 of 9 - 50 kg x 8 reps`, the notification large icon uses the current exercise image, and the status-bar small icon comes from the saved transparent FitLog SVG source converted into an Android drawable.
-18. The workout notification follows the most recently checked completed set: it stays on that exercise for the next unfinished set, then falls back to the first unfinished exercise in workout order when that exercise is complete. If every strength set is checked, the notification moves to a completion prompt that returns to the editor for review/save.
-19. Tapping the Android notification body opens the active draft in Add/Edit Workout Record through the same resume path as the Workout Log draft bar. The platform expand arrow remains controlled by Android and is not an app-defined action.
-20. Save validation completes before any saved-record persistence happens.
-21. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
-22. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
-23. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
-24. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
-25. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them.
+15. Leaving the editor through the app back button or system back gesture saves and keeps the draft instead of forcing a save/discard modal, then clears the lightweight auto-resume marker.
+16. If the app enters `inactive`, `paused`, or `hidden` while the user is still on a new Add Workout draft editor, FitLog immediately persists the SQLite draft and keeps a lightweight editor-active marker in SharedPreferences. The marker is only navigation eligibility state; the SQLite draft remains the source of truth.
+17. On cold start, Root checks this once: if the marker exists, the SQLite active draft is a new-record draft, and `updatedAt` is no more than 30 minutes old, FitLog switches to Workout and opens Add Workout once, restoring date, exercises, set rows, weights, reps or durations, completed state, record name, and notes.
+18. The 30-minute window is only a cold-start eligibility check. FitLog does not run a background countdown, alarm, worker, foreground service, wake lock, keep-alive mechanism, or any background calculation for this recovery path.
+19. Explicit editor exit, discard, formal save, and draft clearing/deletion clear the marker. The SQLite draft remains available for manual Workout Log recovery after normal exit or after the 30-minute auto-resume window expires.
+20. Workout Log shows a compact two-line draft-resume bar above `Add Workout`; its title prefers the record name and otherwise falls back to `Workout draft`, while the subtitle uses short body-part labels, shows up to three body parts before switching to `+n`, and then appends exercise count or `Tap to continue editing`.
+21. On Android, an active strength draft can also show a persistent workout notification. The notification title is only the current exercise name, the body shows the next set such as `Set 2 of 9 - 50 kg x 8 reps`, the notification large icon uses the current exercise image, and the status-bar small icon comes from the saved transparent FitLog SVG source converted into an Android drawable.
+22. The workout notification follows the most recently checked completed set: it stays on that exercise for the next unfinished set, then falls back to the first unfinished exercise in workout order when that exercise is complete. If every strength set is checked, the notification moves to a completion prompt that returns to the editor for review/save.
+23. Tapping the Android notification body opens the active draft in Add/Edit Workout Record through the same resume path as the Workout Log draft bar. The platform expand arrow remains controlled by Android and is not an app-defined action.
+24. Save validation completes before any saved-record persistence happens.
+25. Strength saves persist completed sets only; unchecked sets are removed and saved sets are renumbered from `1..n`.
+26. A multi-exercise record is stored as multiple `workout_sessions` sharing one `plan_id`; every session also stores the same `record_name`.
+27. Saved records keep an exercise snapshot so later edits to a reusable custom exercise do not reinterpret historical records.
+28. Saved records show duration, calculation-volume, total sets, estimated calories, and exercise cards.
+29. Editing a saved record re-enters the same page used for creation and replaces the full `plan_id` group transactionally, while abandoned changes stay only in the draft layer until the user discards or saves them. Edit drafts do not qualify for the new-workout cold-start auto-resume path.
 
 ## Daily Dashboard Behavior
 
@@ -132,6 +136,7 @@ Implemented:
 - language switching
 - local theme switching
 - local data clearing with confirmation
+- 30-minute cold-start auto-resume for active new workout drafts, driven by SQLite draft data plus a lightweight local marker
 - Android workout-in-progress notification for active local strength drafts
 
 Not implemented:

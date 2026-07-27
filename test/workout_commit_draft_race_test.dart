@@ -25,21 +25,29 @@ import 'package:fitlog_local/export/csv_export_service.dart';
 import 'package:fitlog_local/export/export_share_service.dart';
 import 'package:fitlog_local/export/xlsx_export_service.dart';
 import 'package:fitlog_local/features/workout/add_workout_page.dart';
+import 'package:fitlog_local/features/workout/workout_editor_resume_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _notificationChannel = MethodChannel('fitlog.local/workout_notification');
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await const WorkoutEditorResumeStore().clear();
+  });
+
   testWidgets(
     'formal save drains an older draft write and blocks lifecycle autosave',
     (tester) async {
       final harness = _WorkoutCommitHarness();
       final notificationCalls = <String>[];
+      await const WorkoutEditorResumeStore().markActive();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(_notificationChannel, (call) async {
             notificationCalls.add(call.method);
@@ -79,6 +87,7 @@ void main() {
       expect(harness.draftRepository.activeDraft, isNull);
       expect(harness.draftRepository.operations.last, 'delete');
       expect(notificationCalls.last, 'cancelWorkoutNotification');
+      expect(await _resumeMarkerActive(), isFalse);
 
       await harness.workoutRepository.deleteWorkoutPlan('plan-1');
       expect(harness.draftRepository.activeDraft, isNull);
@@ -120,6 +129,11 @@ void main() {
     );
     expect(_saveButton(), findsOneWidget);
   });
+}
+
+Future<bool> _resumeMarkerActive() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(WorkoutEditorResumeStore.activeKey) ?? false;
 }
 
 Finder _recordNameField() {

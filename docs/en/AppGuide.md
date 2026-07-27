@@ -16,6 +16,7 @@ This guide explains what each FitLog Local app area does, how it works at a high
 - Guide-style modal sheets dim and disable the bottom navigation through the route scrim, but their visible content is positioned above the nav footprint so the nav pill never covers the sheet body. They reserve a top focus gap and keep long copy scrollable inside the panel.
 - App-wide system notices go through `FitLogNotifications`: success/info notices are compact lightweight top overlays without a manual close control, while error/action notices float above the keyboard or bottom navigation footprint. Business pages keep their save/delete/export order and pass the original message text, including error details, into the shared layer.
 - Android workout-in-progress notifications are platform notifications for active local workout drafts. They mirror draft state only, do not run cloud/background calculation, and return to the editor when the notification body is tapped.
+- New Add Workout drafts can auto-open once after process rebuild only when the user left the app while still on the draft editor, the lightweight editor-active marker is present, and the SQLite draft was updated within 30 minutes. The app does not use background timers, alarms, workers, foreground services, wake locks, or keep-alive behavior for this.
 - Android APK installs display the launcher label `FitLog local` from `android/app/src/main/AndroidManifest.xml`; the package id remains `com.fitlog.local.fitlog_local` so app updates keep the same local data sandbox. Launcher icons are generated from `assets/icons/app/fitlog.png` into the `android/app/src/main/res/mipmap-*/ic_launcher.png` density assets.
 
 Read more:
@@ -130,6 +131,7 @@ What users can do:
 - open a saved record
 - delete a saved record
 - start Add/Edit Workout Record
+- automatically return to a recent active new Add Workout draft after a process rebuild when the 30-minute startup conditions are met
 - resume one unsaved workout draft from the two-line floating draft bar above `Add Workout`
 - resume the active workout draft from the Android workout notification body
 - discard that draft from the floating bar after confirmation
@@ -140,6 +142,7 @@ How it works:
 - Internally, one multi-exercise record is multiple `workout_sessions` sharing the same `plan_id`.
 - Each session in the same record also stores the same `record_name`.
 - One active unsaved workout draft can also exist outside the saved-record list; it is persisted separately, does not count as a saved workout record, and appears as a title/subtitle draft bar that uses short body-part labels and caps direct body-part display at three names before `+n`.
+- Cold-start auto-resume is only an automatic navigation decision. The SQLite active draft remains authoritative, and drafts that are expired or no longer marked editor-active remain manually recoverable from the Workout Log draft bar.
 - The Android workout notification uses the same active draft. Tapping the notification body opens the draft editor; the system expand arrow stays an Android-controlled expand/collapse affordance.
 - Record-level summaries are derived from persisted sessions and sets.
 - Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
@@ -165,6 +168,7 @@ What users can do:
 - choose cardio session intensity from a maintainable-duration basis
 - enter strength sets with weight, reps or single-set duration, and completed state
 - add notes
+- return automatically after a process rebuild within 30 minutes when the user was still on the new draft editor before leaving the app
 - leave the editor and come back later through the Workout Log draft bar
 - leave the editor and come back later through the Android workout notification when a strength draft is active
 - discard a new draft or discard edits from inside the editor with the red danger action
@@ -184,7 +188,10 @@ How it works:
 - Built-in and custom strength exercises can use total load, per-side load, added bodyweight load, assistance load, total reps, per-side reps, or single-set duration.
 - Assisted bodyweight exercises store assistance load in the weight field, and calorie estimation treats actual load as `bodyweight - assistance`.
 - Draft persistence happens while editing; saved-record persistence only happens after explicit save and successful validation.
-- Back/gesture exit keeps the draft instead of opening a save/discard modal.
+- When the app enters `inactive`, `paused`, or `hidden` while the user is still on a new Add Workout draft editor, the editor immediately persists the draft and marks the editor active in lightweight local preferences.
+- On Root's first post-frame startup check, a marked active new draft whose `updatedAt` is no more than 30 minutes old opens Add Workout once and restores the original date, exercises, set rows, weight/reps or duration inputs, completed state, record name, and notes.
+- Back/gesture exit keeps the draft instead of opening a save/discard modal, but clears the auto-resume marker so a later restart does not reopen the editor automatically.
+- Discard, formal save, and draft clearing/deletion also clear the auto-resume marker. SharedPreferences marker failures do not change draft persistence, and edit drafts for existing saved records do not qualify for new-workout cold-start auto-resume.
 - Active Android strength-draft notifications show only the current exercise name as the title and the next set as the body, for example `Set 2 of 9 - 50 kg x 8 reps`.
 - Notification focus follows the most recently checked completed set. If that exercise has another unfinished set, the notification stays on that exercise; if it is fully complete, the notification falls back to the first unfinished exercise in the record order.
 - The notification large icon uses the current exercise image. The status-bar small icon uses an Android drawable converted from the saved transparent FitLog SVG source at `assets/icons/app/fitlog_notification_small.svg`, but Android can render that slot as a system-controlled monochrome icon.

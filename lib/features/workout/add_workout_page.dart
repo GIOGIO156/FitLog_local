@@ -25,6 +25,7 @@ import '../../domain/models/workout_set.dart';
 import '../../domain/services/workout_calorie_calculator.dart';
 import '../../domain/services/workout_notification_snapshot_builder.dart';
 import 'active_workout_draft_route_state.dart';
+import 'workout_editor_resume_store.dart';
 
 const String _customExerciseGroupKey = 'Custom';
 
@@ -80,6 +81,8 @@ enum _WorkoutEditorCommitState { editing, committing, completed, failed }
 
 class _AddWorkoutPageState extends State<AddWorkoutPage>
     with WidgetsBindingObserver {
+  static const _resumeStore = WorkoutEditorResumeStore();
+
   final _formKey = GlobalKey<FormState>();
   final _recordNameController = TextEditingController();
   final _notesController = TextEditingController();
@@ -407,6 +410,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       _draftCreatedAt = null;
       await _enqueueDraftOperation(() async {
         await services.workoutDraftRepository.deleteActiveDraft();
+        await _resumeStore.clear();
         await WorkoutNotificationBridge.cancel();
       });
       if (notifyRefresh && mounted) {
@@ -435,6 +439,11 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     final notificationSnapshot = _buildWorkoutNotificationSnapshot();
     await _enqueueDraftOperation(() async {
       await services.workoutDraftRepository.saveActiveDraft(draft);
+      if (draft.kind == WorkoutRecordDraft.kindNewRecord) {
+        await _resumeStore.markActive();
+      } else {
+        await _resumeStore.clear();
+      }
       await _applyWorkoutNotificationSnapshot(notificationSnapshot);
     });
     if (notifyRefresh && mounted) {
@@ -472,6 +481,7 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
     _draftCreatedAt = null;
     await _enqueueDraftOperation(() async {
       await services.workoutDraftRepository.deleteActiveDraft();
+      await _resumeStore.clear();
       await WorkoutNotificationBridge.cancel();
     });
   }
@@ -512,6 +522,10 @@ class _AddWorkoutPageState extends State<AddWorkoutPage>
       return;
     }
     await _persistDraftNow();
+    if (!mounted) {
+      return;
+    }
+    await _resumeStore.clear();
     if (!mounted) {
       return;
     }

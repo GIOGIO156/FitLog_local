@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +19,36 @@ import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
 import 'active_workout_draft_route_state.dart';
 import 'add_workout_page.dart';
+import 'workout_editor_resume_store.dart';
 import 'workout_plan_page.dart';
+
+const _workoutEditorResumeStore = WorkoutEditorResumeStore();
+
+Future<bool> maybeAutoResumeActiveWorkoutDraftOnColdStart(
+  BuildContext context,
+) async {
+  if (ActiveWorkoutDraftRouteState.isEditorVisible) {
+    return false;
+  }
+  final services = context.read<AppServices>();
+  final draft = await services.workoutDraftRepository.getActiveDraft();
+  final shouldAutoResume = await _workoutEditorResumeStore.shouldAutoResume(
+    draft,
+    DateTime.now(),
+  );
+  if (!context.mounted || !shouldAutoResume || draft == null) {
+    return false;
+  }
+  context.read<RootTabController>().setIndex(2);
+  unawaited(
+    Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => AddWorkoutPage(initialDate: draft.date),
+      ),
+    ),
+  );
+  return true;
+}
 
 Future<void> openActiveWorkoutDraftFromNotification(
   BuildContext context,
@@ -32,7 +63,12 @@ Future<void> openActiveWorkoutDraftFromNotification(
   }
   context.read<RootTabController>().setIndex(2);
   if (draft == null) {
-    context.read<RefreshNotifier>().markDataChanged();
+    final refreshNotifier = context.read<RefreshNotifier>();
+    await _workoutEditorResumeStore.clear();
+    if (!context.mounted) {
+      return;
+    }
+    refreshNotifier.markDataChanged();
     return;
   }
   await Navigator.of(context).push<bool>(
@@ -165,6 +201,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
       return;
     }
     await services.workoutDraftRepository.deleteActiveDraft();
+    await _workoutEditorResumeStore.clear();
     await WorkoutNotificationBridge.cancel();
     if (!context.mounted) {
       return;
@@ -328,6 +365,7 @@ class _WorkoutLogPageState extends State<WorkoutLogPage> {
           .read<AppServices>()
           .workoutDraftRepository
           .deleteActiveDraft();
+      await _workoutEditorResumeStore.clear();
       await WorkoutNotificationBridge.cancel();
       if (!context.mounted) {
         return;

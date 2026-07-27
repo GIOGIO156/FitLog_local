@@ -286,6 +286,7 @@ Widget buildRootShellForTest({required List<Widget> pages}) {
 
 class _RootShellState extends State<_RootShell> {
   late final List<Widget> _pages;
+  bool _checkedWorkoutEditorAutoResume = false;
 
   @override
   void initState() {
@@ -302,11 +303,27 @@ class _RootShellState extends State<_RootShell> {
       () => openActiveWorkoutDraftFromNotification(context),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      unawaited(WorkoutNotificationBridge.consumeInitialOpenRequest());
+      unawaited(_handleInitialWorkoutOpenRequests());
     });
+  }
+
+  Future<void> _handleInitialWorkoutOpenRequests() async {
+    if (!mounted) {
+      return;
+    }
+    final didAutoResume = await _autoResumeWorkoutEditorOnce();
+    if (!mounted || didAutoResume) {
+      return;
+    }
+    await WorkoutNotificationBridge.consumeInitialOpenRequest();
+  }
+
+  Future<bool> _autoResumeWorkoutEditorOnce() async {
+    if (_checkedWorkoutEditorAutoResume) {
+      return false;
+    }
+    _checkedWorkoutEditorAutoResume = true;
+    return maybeAutoResumeActiveWorkoutDraftOnColdStart(context);
   }
 
   @override
