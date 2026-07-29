@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-29 Home Workout Exercise Count Label
+
+### Added
+
+- Added Home localization coverage for the English `exercise` / `exercises` singular-plural forms and a Chinese widget regression that verifies two saved exercise entries render as `已记录 2 个动作`.
+
+### Changed
+
+- Changed the Home workout summary count from session wording to exercise wording because `DailySummary.workoutSessions.length` counts saved exercise entries rather than grouped workout records.
+- Updated bilingual Product and AppGuide docs to define the selected-day workout count as one item per saved exercise row, independent of `plan_id` grouping.
+
+### Validation
+
+- `dart format lib/core/localization/app_strings.dart test/home_page_test.dart`: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 97 tests passed.
+- Documentation tree, legacy-root-doc, stable-heading, UTF-8 replacement-character, and diff-whitespace checks: success.
+- `flutter build apk --debug --split-per-abi --build-number 62`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
+
 ## 2026-07-27 Workout Editor Process-Rebuild Resume
 
 ### Added

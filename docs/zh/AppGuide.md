@@ -45,6 +45,7 @@ Home 是选中日期的每日入口页。
 - `DailySummaryService` 读取 Profile、Food、Workout、校准、自检和策略数据。
 - 食物总量来自已保存的 `food_records`。
 - 训练总量来自已保存的 `workout_sessions.estimated_calories`。
+- 训练摘要旁的数量按选中日期的 `workout_sessions` 条目数统计，每个已保存动作计一个，不按 `plan_id` 分组后的训练记录数统计，因此 Home 使用“个动作”作为单位。
 - `energy_ratio` 以 kcal 目标/摄入/剩余为主，因此 Home 顶部保留热量圆环和 kcal 摘要指标。
 - `gram_per_kg` 以宏量克数为主，kcal 只是辅助信息，因此 Home 顶部改为专属宏量 dashboard：左侧裁切大圆环负责进度，右侧提示当前完成度最低的宏量和剩余克数。
 - 在 `gram_per_kg` 下，饮食摄入和训练消耗 kcal 会收进 macro dashboard 内，作为可点击的紧凑摘要，而不是继续占用独立的今日记录卡片。

@@ -1,6 +1,8 @@
 import 'package:fitlog_local/app.dart';
 import 'package:fitlog_local/core/constants/app_constants.dart';
 import 'package:fitlog_local/core/fitlog_theme.dart';
+import 'package:fitlog_local/core/localization/app_language.dart';
+import 'package:fitlog_local/core/localization/app_strings.dart';
 import 'package:fitlog_local/core/localization/language_controller.dart';
 import 'package:fitlog_local/data/db/app_database.dart';
 import 'package:fitlog_local/data/repositories/custom_exercise_repository.dart';
@@ -26,9 +28,17 @@ import 'package:fitlog_local/features/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('English workout summary counts exercises with singular and plural', () {
+    final strings = AppStrings(AppLanguage.english);
+
+    expect(strings.workoutRecordsSummary(1), '1 exercise');
+    expect(strings.workoutRecordsSummary(3), '3 exercises');
+  });
 
   testWidgets('g/kg home keeps the first screen macro-first without overflow', (
     tester,
@@ -223,6 +233,58 @@ void main() {
     expect(tester.getTopLeft(strategyLabelFinder).dy, lessThan(932));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Chinese home labels workout entries as exercises', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final languageController = LanguageController();
+    await languageController.setLanguage(AppLanguage.chinese);
+
+    await tester.pumpWidget(
+      _buildHomeTestApp(
+        profile: UserProfile.defaults.copyWith(
+          dietCalculationMode: AppConstants.dietCalculationModeEnergyRatio,
+        ),
+        foodRecords: const <FoodRecord>[],
+        workoutSessions: const <WorkoutSession>[
+          WorkoutSession(
+            date: _referenceDay,
+            bodyPart: 'Chest',
+            exerciseName: 'Bench Press',
+            exerciseType: 'strength',
+            durationMinutes: 30,
+            intensity: 'medium',
+            estimatedCalories: 150,
+            notes: '',
+          ),
+          WorkoutSession(
+            date: _referenceDay,
+            bodyPart: 'Back',
+            exerciseName: 'Row',
+            exerciseType: 'strength',
+            durationMinutes: 25,
+            intensity: 'medium',
+            estimatedCalories: 120,
+            notes: '',
+          ),
+        ],
+        languageController: languageController,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    expect(find.text('已记录 2 个动作'), findsOneWidget);
+    expect(find.text('已记录 2 次'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 const _navPillKey = ValueKey<String>('fitlog_bottom_nav_pill');
@@ -233,6 +295,7 @@ Widget _buildHomeTestApp({
   required UserProfile profile,
   required List<FoodRecord> foodRecords,
   required List<WorkoutSession> workoutSessions,
+  LanguageController? languageController,
 }) {
   final database = AppDatabase.instance;
   final foodRepository = _FakeFoodRepository(database)
@@ -261,7 +324,7 @@ Widget _buildHomeTestApp({
     dietPlanStrategyService: dietPlanStrategyService,
   );
   final selectedDateNotifier = SelectedDateNotifier()..setDate(_referenceDay);
-  final languageController = LanguageController();
+  final resolvedLanguageController = languageController ?? LanguageController();
   final rootTabController = RootTabController()..setIndex(0);
   final palette = FitLogPalettes.green;
 
@@ -302,7 +365,7 @@ Widget _buildHomeTestApp({
         value: selectedDateNotifier,
       ),
       ChangeNotifierProvider<LanguageController>.value(
-        value: languageController,
+        value: resolvedLanguageController,
       ),
     ],
     child: MaterialApp(

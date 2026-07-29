@@ -82,6 +82,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 - The selected date is shared by Home, Food Log, and Workout Log.
 - Home is intentionally lower density than the detail pages.
 - Home shows a local-time greeting with a local nickname fallback, selected date, current diet context, and compact food/workout summaries, but the first-screen structure changes by calculation mode.
+- Home's selected-day workout summary count is `DailySummary.workoutSessions.length`: each saved exercise entry counts once, independent of grouped workout records sharing a `plan_id`. The count uses `exercise` / `exercises` in English and `个动作` in Chinese.
 - In `energy_ratio`, kcal target/intake/remaining is primary and Home keeps the calorie-ring hero plus compact macro cards.
 - In `energy_ratio`, the first viewport is defined as a two-card kcal-first box: the calorie hero and macro cards live inside one dedicated first-screen container, their internal gap stays controlled, and only a short protective tail separates the strategy card from the macro card.
 - In `gram_per_kg`, macro grams are primary and kcal is auxiliary intake information; Home replaces the calorie-ring hero with a dedicated macro dashboard that absorbs kcal intake/workout summaries, expands to fill the opening viewport, and keeps strategy below that first-screen macro area.

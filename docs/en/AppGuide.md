@@ -44,6 +44,7 @@ How it works:
 - `DailySummaryService` reads Profile, Food, Workout, calibration, self-check, and strategy data.
 - Food totals come from saved `food_records`.
 - Exercise totals come from saved `workout_sessions.estimated_calories`.
+- The adjacent workout count is the number of selected-day `workout_sessions` entries, with one item per saved exercise. It does not count `plan_id` groups, so Home labels the value as `exercise` / `exercises`.
 - `energy_ratio` uses kcal target/intake/remaining as primary, so Home keeps the calorie ring and kcal summary metrics at the top.
 - In `energy_ratio`, the opening viewport is treated as a dedicated two-card box: only the calorie hero and macro cards live inside it, their gap stays controlled, and a short protective tail below the macro card separates the strategy card without creating a large empty band.
 - `gram_per_kg` uses macro grams as primary and treats kcal as auxiliary, so Home replaces the calorie-ring hero with a dedicated macro dashboard built around the clipped arc, a lowest-completion macro focus hint, and the remaining grams.

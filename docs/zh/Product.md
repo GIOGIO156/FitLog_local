@@ -82,6 +82,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 - Home、Food Log 和 Workout Log 共享选中日期。
 - Home 的信息密度刻意低于其他副页。
 - Home 展示本地时间问候语、本地昵称 fallback、选中日期、当前饮食上下文，以及简洁的饮食/训练摘要，但首屏结构会随计算模式切换。
+- Home 的选中日期训练摘要数量使用 `DailySummary.workoutSessions.length`：每个已保存动作条目计一个，不受多条 session 共享同一 `plan_id` 的训练记录分组影响。英文使用 `exercise` / `exercises`，中文使用“个动作”。
 - 在 `energy_ratio` 中，kcal 目标/摄入/剩余是主计数器，Home 保留热量圆环 hero 和紧随其后的宏量小卡片。
 - 在 `gram_per_kg` 中，宏量克数是主计数器，kcal 只是辅助信息；Home 用专属宏量 dashboard 取代热量圆环，并把饮食/训练 kcal 摘要收进 dashboard，让 dashboard 尽量占满首页首屏，把策略卡片放到首屏宏量区域之后。
 - 在 `energy_ratio` 中，首屏被定义为一个只包含热量卡和宏量卡的 kcal-first 大盒子：这两张卡片一起待在首屏容器里，二者之间的距离保持受控，宏量卡片下方只保留较短的保护间距，让策略卡片以正常列表节奏接在大盒子之后。
