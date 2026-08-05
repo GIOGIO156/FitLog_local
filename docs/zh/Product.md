@@ -25,7 +25,7 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 | --- | --- | --- |
 | Home | 低信息密度的每日入口页，展示问候语、主 calorie/macro 概览、当前饮食上下文和简洁的饮食/训练摘要。 | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | 按日期查看饮食记录，支持打开/编辑、复制到指定日期、删除和新增入口。 | `lib/features/food/food_log_page.dart`, `FoodRepository` |
-| Add Food | 手动录入、外部 AI JSON 粘贴、Prompt 复制和占位的 `Photo AI Analysis`；手动录入复用与已保存饮食详情一致的紧凑表单网格。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
+| Add Food | 两个主要录入路径：高亮的 AI 辅助录入工作台负责 Prompt 复制和外部 JSON 粘贴；手动录入复用与已保存饮食详情一致的紧凑表单网格。 | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | 编辑已保存的饮食记录和 item 行；显示使用本地化字段标签与后缀单位，底层存储/JSON key 不变。 | `food_detail_page.dart` |
 | Workout Log | 按日期展示已保存的训练记录，内部通过 `plan_id` 分组。 | `workout_log_page.dart`, `WorkoutRepository` |
 | Add/Edit Workout Record | 命名的多动作训练记录创建/编辑、动作选择器、临时或可复用自定义动作、有氧时长/强度、力量输入口径、已完成组持久化、活动中新建草稿的 30 分钟冷启动恢复、Android 训练进行中通知同步、备注和摘要计算。 | `add_workout_page.dart` |
@@ -38,12 +38,16 @@ FitLog Local 是一款 local-first 的个人饮食与训练记录 App。它的�
 
 1. 用户打开 Food Log 并选择日期。
 2. 用户选择 Add Food。
-3. 如果使用外部 AI 辅助录入，用户只需在外部模型的新对话中发送一次与当前 App 语言一致的 Prompt；后续新的食物图片通常开始一份新餐食，增加/删除/替换/重新计算等追问则更新最近一餐，每次回复仍是使用现有 schema 的单个完整严格 JSON 对象。
-4. FitLog 用 `NutritionCalculator.parseAiFoodJson` 在本地解析 JSON。
-5. 用户预览、修正并保存 `FoodRecord` 和可选 `FoodItem` 行。
-6. 手动录入会跳过 JSON 解析，并以 `source = manual` 保存记录。
-7. 保存后的记录可以编辑、删除或复制到用户选择的目标日期。
-8. Home 和 Food Log 通过本地 Repository 与刷新状态重新加载。
+3. 如果使用外部 AI 辅助录入，用户选择高亮的 `AI 辅助录入` 卡片；卡片副标题刻意拆成两行：复制 Prompt 给外部 AI，粘贴返回的完整 JSON。
+4. `AI 辅助录入` 页面包含嵌套长期对话说明卡、带已复制状态的 Prompt 复制操作、固定 JSON 编辑器、全屏编辑和解析操作。
+5. 说明卡把使用方式压缩成带圆圈标记的三个一行动作：发送一次 Prompt、上传食物图片或补充描述、把完整 JSON 粘贴到下方；第二部分保留面向 ChatGPT 用户的推荐 GPT 信息。
+6. 复制的 Prompt 与当前 App 语言一致，可粘贴一次到任意支持食物图片或文字的外部 AI。后续新的食物图片通常开始一份新餐食，增加/删除/替换/重新计算等追问则更新最近一餐，每次回复仍是使用现有 schema 的单个完整严格 JSON 对象。
+7. `AI 辅助录入` 页面把复制 Prompt、粘贴完整 JSON 和本地解析放在同一个工作台中完成。
+8. FitLog 用 `NutritionCalculator.parseAiFoodJson` 在本地解析 JSON。
+9. 用户预览、修正并保存 `FoodRecord` 和可选 `FoodItem` 行。
+10. 手动录入会跳过 JSON 解析，并以 `source = manual` 保存记录。
+11. 保存后的记录可以编辑、删除或复制到用户选择的目标日期。
+12. Home 和 Food Log 通过本地 Repository 与刷新状态重新加载。
 
 ## 训练流程
 

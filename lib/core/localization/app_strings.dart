@@ -1,4 +1,3 @@
-import '../constants/prompt_templates.dart';
 import 'app_language.dart';
 
 class AppStrings {
@@ -28,18 +27,13 @@ class AppStrings {
   String get localFirstIdentityHint =>
       _t('Saved only on this device for your local UI.', '仅保存在本机，用于本地 UI 展示。');
   String get localFirstTipTitle => _t('Local-first', 'Local-first');
-  String get localFirstAiBoundaryHint => _t(
-    'Prompt copy and JSON paste stay manual. There is still no in-app AI or photo recognition in this local build.',
-    'Prompt 复制和 JSON 粘贴仍然是手动流程。这个本地版本依然没有 App 内 AI 或图片识别。',
+  String get aiAssistedFoodEntry => _t('AI-assisted Entry', 'AI 辅助录入');
+  String get aiAssistedFoodEntrySubtitle => _t(
+    'Copy the prompt to external AI\nPaste the complete JSON response',
+    '复制 Prompt 给外部 AI\n粘贴返回的完整 JSON',
   );
-  String get photoAiPlaceholderHint => _t(
-    'Reserved entry only. No in-app image analysis is implemented yet.',
-    '当前只是预留入口，尚未实现 App 内图片分析。',
-  );
-  String get copyPromptSubtitle => _t(
-    'Copy the static prompt for external AI tools',
-    '复制静态 prompt 给外部 AI 工具使用',
-  );
+  String get copyPromptSubtitle =>
+      _t('Paste into an external AI chat once', '粘贴到外部 AI 新对话中');
   String foodRecordsSummary(int mealCount) =>
       _t('$mealCount meals', '已记录 $mealCount 餐');
   String workoutRecordsSummary(int exerciseCount) => _t(
@@ -67,8 +61,8 @@ class AppStrings {
 
   String get copyAiFoodPrompt => _t('Copy AI Food Prompt', '复制 AI 食物提示词');
   String get promptCopied => _t(
-    'AI food prompt copied. Paste it into ChatGPT or Gemini after uploading your food photo.',
-    'AI 食物提示词已复制。上传食物照片后，请粘贴到 ChatGPT 或 Gemini。',
+    'Prompt copied. Paste it into an external AI chat.',
+    'Prompt 已复制，可粘贴到外部 AI。',
   );
 
   String get estimateNotice => _t(
@@ -87,6 +81,7 @@ class AppStrings {
   String get deleteRecord => _t('Delete Record', '删除记录');
   String get delete => _t('Delete', '删除');
   String get copy => _t('Copy', '复制');
+  String get copied => _t('Copied', '已复制');
   String get cancel => _t('Cancel', '取消');
   String get date => _t('Date', '日期');
   String get change => _t('Change', '修改');
@@ -113,26 +108,29 @@ class AppStrings {
     }
   }
 
-  String get recommendedFlow => _t('Recommended Flow', '推荐流程');
-  String get step1 => _t('1. Open ChatGPT or Gemini', '1. 打开 ChatGPT 或 Gemini');
-  String get step2 => _t('2. Upload or take a food photo', '2. 上传或拍摄食物照片');
-  String get step3 => _t('3. Paste the copied prompt', '3. 粘贴已复制的提示词');
-  String get step4 => _t('4. Copy the JSON result', '4. 复制 JSON 结果');
-  String get step5 =>
-      _t('5. Return here and tap Paste AI Result', '5. 返回这里并点击“粘贴 AI 结果”');
-
-  String get recommendedGpt => _t('Recommended GPT', '推荐 GPT');
-
-  String get recommendedGptHint {
-    if (isChinese) {
-      return '中文：打开 ${PromptTemplates.chineseGptName}\nEnglish: Open ${PromptTemplates.englishGptName}';
-    }
-    return 'Chinese: Open ${PromptTemplates.chineseGptName}\nEnglish: Open ${PromptTemplates.englishGptName}';
-  }
+  String get reusableFoodChatTitle =>
+      _t('Set up a reusable food-estimation chat', '建立长期食物估算对话');
+  String get reusableFoodChatUsageTitle => _t('How to use', '使用方式');
+  String get reusableFoodChatSendPromptTitle =>
+      _t('Send the Prompt once in a new external AI chat', '新对话发送一次 Prompt');
+  String get reusableFoodChatUploadFoodTitle =>
+      _t('Upload food photos or add descriptions', '上传食物图片或补充描述');
+  String get reusableFoodChatPasteJsonTitle =>
+      _t('Paste the complete JSON below for parsing', '粘贴完整 JSON 到下方解析');
+  String get reusableFoodChatRecommendationTitle =>
+      _t('Recommended GPTs', '推荐 GPT');
+  String get reusableFoodChatRecommendationBody => _t(
+    'For ChatGPT, we recommend “FitLog 中文助手” or “FitLog Estimator”.',
+    '推荐在 ChatGPT 中使用「FitLog 中文助手」或「FitLog Estimator」。',
+  );
+  String get expandJsonEditor => _t('Expand JSON editor', '放大 JSON 编辑器');
+  String get collapseJsonEditor =>
+      _t('Close expanded JSON editor', '关闭放大的 JSON 编辑器');
+  String get jsonEditorTitle => _t('JSON editor', 'JSON 编辑器');
 
   String get pasteAiResult => _t('Paste AI Result', '粘贴 AI 结果');
   String get pasteAiSubtitle =>
-      _t('Paste ChatGPT/Gemini JSON and parse', '粘贴 ChatGPT/Gemini JSON 并解析');
+      _t('Paste external AI JSON and parse', '粘贴外部 AI JSON 并解析');
   String get manualEntry => _t('Manual Entry', '手动录入');
   String get manualEntrySubtitle =>
       _t('Manually input a food record', '手动填写一条食物记录');
@@ -163,14 +161,6 @@ class AppStrings {
       _t('No item rows for this record.', '这条记录暂无 item 明细。');
   String get noFoodItemListDetected =>
       _t('No item list detected in JSON.', 'JSON 中未检测到 item 列表。');
-  String get photoAiAnalysis => _t('Photo AI Analysis', '图片 AI 分析');
-  String get comingSoon => _t('Coming soon', '即将上线');
-
-  String get pasteInstruction => _t(
-    'Paste the JSON output from ChatGPT or Gemini:',
-    '粘贴来自 ChatGPT 或 Gemini 的 JSON 输出：',
-  );
-
   String get parse => _t('Parse', '解析');
   String get parsing => _t('Parsing...', '解析中...');
 

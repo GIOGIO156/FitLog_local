@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-05 External Food JSON Paste Page Refresh
+
+### Added
+
+- Added widget coverage for the highlighted AI-assisted food entry path, two-line entry subtitle, localized clipboard payloads, nested reusable-chat guidance, target-based keyboard geometry, fullscreen JSON editing, and empty/invalid/valid parse flows.
+
+### Changed
+
+- Updated the built-in food-estimation prompt to the latest persistent external-chat rules, including text/photo evidence handling, item-first totals, unchanged schema, and continued `estimation_notes` usage without adding `comment`.
+- Removed the Local `Photo AI Analysis` entry from Add Food and replaced the separate prompt-copy / paste-result entries with one highlighted AI-assisted entry workspace.
+- Reworked the former Paste AI Result page into an AI-assisted entry workspace with an Agent-style nested prompt-copy setup card, fixed JSON editor, keyboard-covered bottom parse action, and a root fullscreen JSON editor that waits for the keyboard to close before opening.
+- Compressed the setup card's usage instructions into three one-line actions beside circled markers and restored the recommended GPT section instead of repeating generic external-AI availability.
+- Changed copy-success feedback from a long provider-specific instruction into a short, model-agnostic notice plus inline copied state.
+- Changed JSON editor keyboard motion to match the Agent page: a fixed `CustomMultiChildLayout`, setup-card opacity driven only by the real keyboard inset, and JSON-card `Transform.translate` using the 40/64 handoff formula without changing AppBar or page background.
+- Removed the experimental solid-black JSON focus backdrop and editor-only render painting so keyboard open and close restore along the same inset-driven path instead of snapping on focus changes.
+- Changed the highlighted Add Food AI-assisted entry foreground and right chevron pill to white in the black-orange theme for stronger contrast on the orange card.
+- Updated bilingual README, Product, AppGuide, and AgentDesign docs to reflect the current Local boundary: external AI remains user-mediated, copied prompts and pasted JSON share one workspace, and there is no app-internal photo recognition or LLM loop.
+
+### Fixed
+
+- Removed the oversized first-use flow card from Add Food and kept the short disclaimer plus two clear entry paths.
+
+### Validation
+
+- `dart format lib test`: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 108 tests passed.
+- Documentation tree, stale Photo AI design references, stable-heading, replacement-character, and current AI-boundary checks: success; historical CHANGELOG entries were left unchanged.
+- Document corpus generation: not run by request.
+- `flutter build apk --debug --split-per-abi --build-number 68`: success; generated `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk`, and `app-x86_64-debug.apk`.
+- `flutter build apk --release --split-per-abi --build-number 68 --no-pub`: success; generated `app-armeabi-v7a-release.apk`, `app-arm64-v8a-release.apk`, and `app-x86_64-release.apk`. Gradle/Kotlin still printed cross-drive incremental-cache daemon warnings after the APKs were written, so future clean release logs may require disabling Kotlin incremental compilation or moving the Pub cache/project onto the same drive.
+
 ## 2026-07-29 Home Workout Exercise Count Label
 
 ### Added

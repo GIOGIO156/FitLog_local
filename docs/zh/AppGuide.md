@@ -100,15 +100,17 @@ Add Food 是饮食录入入口页。
 
 入口选项：
 
-- `Paste AI Result`：粘贴 App 外部生成的 JSON。
+- `AI 辅助录入`：高亮入口，用于复制 Prompt、粘贴外部 AI JSON、全屏 JSON 编辑和本地解析。
 - `Manual Entry`：手动输入食物数据。
-- `Photo AI Analysis`：可见占位入口，尚未实现 App 内图片识别。
-- Prompt copy：按当前 App 语言复制 Prompt，并在外部模型的新对话中只发送一次以完成初始化。
 
 工作方式：
 
-- Prompt copy 是静态文本复制，不是 AI 调用。它通过长期对话规则让新的食物图片通常开始一份新餐食，并让增加/删除/替换/重新计算等追问更新最近一餐，无需重复复制 Prompt。
+- Add Food 的高亮卡片会打开一个完整的 AI 辅助录入工作台，避免用户需要从两个分离入口自行理解 Prompt 复制和 JSON 粘贴之间的关系。
+- 该卡片副标题刻意写成两行：复制 Prompt 给外部 AI，粘贴返回的完整 JSON。
+- 工作台内的 Prompt copy 是静态文本复制，不是 AI 调用。它通过长期对话规则让新的食物图片通常开始一份新餐食，并让增加/删除/替换/重新计算等追问更新最近一餐，无需重复复制 Prompt。
 - 外部模型每次回复都必须是单个完整严格 JSON 对象；顶层重量、热量、蛋白质、碳水和脂肪由最终 item 数值重新加总。现有 schema 和最后一个 `estimation_notes` 字段保持不变，不包含也不要求 `comment` 字段。
+- 设置卡采用 Agent 版的嵌套视觉样式：第一部分把使用方式压缩成带圆圈标记的三个一行动作，第二部分保留面向 ChatGPT 用户的推荐 GPT 信息。复制成功使用简短、不绑定具体模型的顶部提示和按钮内已复制状态。
+- 粘贴页使用固定 `CustomMultiChildLayout`：设置卡保留原始占位，只根据真实键盘 inset 渐隐并持续挂载；JSON 编辑卡保持原始尺寸，只通过直接 `Transform.translate` 公式移动；解析按钮停留在原始底部位置并可被系统键盘自然覆盖。AppBar 和页面背景不随键盘改变，也不在系统键盘动画之上叠加额外 Flutter tween、渐变、模糊、聚焦遮罩或布局尺寸动画。Widget 测试会验证透明度、位移连续性、键盘打开时禁用交互，以及 inset 归零后完整恢复。
 - 粘贴的 JSON 由 `NutritionCalculator` 在本地解析。
 - 预览页允许用户修正解析结果后再保存。
 - Food Detail、AI 预览页和 Manual Entry 都使用面向用户的字段标签，不再直接显示 snake_case；数字单位放在输入框后缀，底层 JSON key 和存储字段保持不变。
@@ -336,7 +338,6 @@ Language 负责切换中英文 UI。
 
 - 业务数据保存在本地 SQLite。
 - 导出生成本地文件，不做云上传。
-- `Photo AI Analysis` 仍是占位入口，不代表 App 内部具备识图能力。
 - Prompt 复制和 JSON 粘贴是用户驱动的外部 AI 辅助流程，不是 App 内 AI。
 
 延伸阅读：

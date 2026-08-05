@@ -25,7 +25,7 @@ The app is designed for users who may use external multimodal AI to estimate com
 | --- | --- | --- |
 | Home | Low-density selected-day entry screen for greeting, primary calorie/macro overview, current diet context, and compact food/workout summaries. | `lib/features/home/home_page.dart`, `DailySummaryService` |
 | Food Log | Date-filtered food records with open/edit, copy-to-date, delete, and add entry points. | `lib/features/food/food_log_page.dart`, `FoodRepository` |
-| Add Food | Manual entry, external AI JSON paste, prompt copy, and placeholder `Photo AI Analysis`; manual entry uses the same compact food-form grid as saved-record editing. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
+| Add Food | Two primary entry paths: a highlighted AI-assisted entry workspace for prompt copy plus external JSON paste, and manual entry with the same compact food-form grid as saved-record editing. | `add_food_page.dart`, `paste_ai_result_page.dart`, `manual_food_entry_page.dart` |
 | Food Detail | Editable saved food record and item rows with localized field labels and suffix units while storage/JSON keys stay unchanged. | `food_detail_page.dart` |
 | Workout Log | Date-filtered saved workout records grouped by internal `plan_id`. | `workout_log_page.dart`, `WorkoutRepository` |
 | Add/Edit Workout Record | Named multi-exercise workout record creation/editing, exercise picker, temporary or reusable custom exercises, cardio duration/intensity, strength input modes, completed-set persistence, 30-minute cold-start resume for active new drafts, Android workout-in-progress notification mirroring, notes, and summary calculation. | `add_workout_page.dart` |
@@ -38,12 +38,16 @@ The app is designed for users who may use external multimodal AI to estimate com
 
 1. The user opens Food Log and selects a date.
 2. The user chooses Add Food.
-3. For external AI-assisted entry, the user copies FitLog's language-matched prompt once into a new external-model conversation. A later new food image normally starts a new meal, while add/remove/replace/recalculate follow-ups update the most recent meal; every response remains one complete strict JSON object in the existing schema.
-4. FitLog parses JSON locally with `NutritionCalculator.parseAiFoodJson`.
-5. The user previews, corrects, and saves the `FoodRecord` and optional `FoodItem` rows.
-6. Manual entry skips JSON parsing and saves a record with `source = manual`.
-7. Saved records can be edited, deleted, or copied to a user-selected target date.
-8. Home and Food Log refresh through local repositories and app refresh state.
+3. For external AI-assisted entry, the user chooses the highlighted `AI-assisted Entry` card. Its subtitle is deliberately split into two lines: copy the prompt to external AI, then paste the complete JSON response.
+4. The AI-assisted entry page contains a nested reusable-chat setup card, prompt-copy action with copied state, fixed JSON editor, fullscreen editing, and parse action.
+5. The setup card presents usage as three one-line actions beside circled markers: send the prompt once, upload food photos or descriptions, and paste the complete JSON below. Its second section keeps the recommended GPT note for ChatGPT users.
+6. The copied prompt is language-matched and can be pasted once into any external AI that supports food images or text. A later new food image normally starts a new meal, while add/remove/replace/recalculate follow-ups update the most recent meal; every response remains one complete strict JSON object in the existing schema.
+7. The `AI-assisted Entry` page keeps the user in one workspace for copying the prompt, pasting complete JSON, and parsing it locally.
+8. FitLog parses JSON locally with `NutritionCalculator.parseAiFoodJson`.
+9. The user previews, corrects, and saves the `FoodRecord` and optional `FoodItem` rows.
+10. Manual entry skips JSON parsing and saves a record with `source = manual`.
+11. Saved records can be edited, deleted, or copied to a user-selected target date.
+12. Home and Food Log refresh through local repositories and app refresh state.
 
 ## Workout Workflow
 

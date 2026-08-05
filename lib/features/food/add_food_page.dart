@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../../core/constants/prompt_templates.dart';
 import '../../core/fitlog_theme.dart';
 import '../../core/localization/localization_extensions.dart';
-import '../../core/widgets/fitlog_notifications.dart';
 import '../../core/widgets/fitlog_ui.dart';
 import '../../core/widgets/glass_panel.dart';
 import 'manual_food_entry_page.dart';
@@ -14,19 +11,6 @@ class AddFoodPage extends StatelessWidget {
   const AddFoodPage({super.key, this.initialDate});
 
   final String? initialDate;
-
-  Future<void> _copyPrompt(BuildContext context) async {
-    final language = context.languageController.language;
-    await Clipboard.setData(
-      ClipboardData(text: PromptTemplates.promptForLanguage(language)),
-    );
-
-    if (!context.mounted) {
-      return;
-    }
-
-    FitLogNotifications.success(context, context.strings.promptCopied);
-  }
 
   Future<void> _openPasteAi(BuildContext context) async {
     final saved = await Navigator.of(context).push<bool>(
@@ -55,7 +39,6 @@ class AddFoodPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
-    final palette = context.fitLogColors;
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.addFood)),
@@ -65,19 +48,12 @@ class AddFoodPage extends StatelessWidget {
           children: <Widget>[
             FitLogPageHeader(
               title: strings.addFood,
-              subtitle: strings.localFirstAiBoundaryHint,
+              subtitle: strings.estimateNotice,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
             ),
-            _PromptShortcutButton(
-              title: strings.copyAiFoodPrompt,
-              subtitle: strings.copyPromptSubtitle,
-              onTap: () => _copyPrompt(context),
-            ),
-            _AddFoodActionCard(
-              icon: Icons.paste_outlined,
-              color: palette.primaryBright,
-              title: strings.pasteAiResult,
-              subtitle: strings.pasteAiSubtitle,
+            _AiAssistedEntryButton(
+              title: strings.aiAssistedFoodEntry,
+              subtitle: strings.aiAssistedFoodEntrySubtitle,
               onTap: () => _openPasteAi(context),
             ),
             _AddFoodActionCard(
@@ -87,12 +63,6 @@ class AddFoodPage extends StatelessWidget {
               subtitle: strings.manualEntrySubtitle,
               onTap: () => _openManualEntry(context),
             ),
-            _AddFoodActionCard(
-              icon: Icons.photo_camera_outlined,
-              color: const Color(0xFF6EA4DF),
-              title: strings.photoAiAnalysis,
-              subtitle: strings.photoAiPlaceholderHint,
-            ),
           ],
         ),
       ),
@@ -100,8 +70,8 @@ class AddFoodPage extends StatelessWidget {
   }
 }
 
-class _PromptShortcutButton extends StatelessWidget {
-  const _PromptShortcutButton({
+class _AiAssistedEntryButton extends StatelessWidget {
+  const _AiAssistedEntryButton({
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -114,6 +84,9 @@ class _PromptShortcutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.fitLogColors;
+    final foregroundColor = palette.key == FitLogThemeKey.blackOrange
+        ? Colors.white
+        : palette.onPrimary;
     final gradientColors = palette.key == FitLogThemeKey.blue
         ? <Color>[palette.primaryBright, palette.primarySoftPressed]
         : <Color>[palette.primaryBright, palette.primary];
@@ -151,8 +124,8 @@ class _PromptShortcutButton extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    Icons.content_copy_rounded,
-                    color: palette.onPrimary,
+                    Icons.auto_fix_high_outlined,
+                    color: foregroundColor,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -165,14 +138,14 @@ class _PromptShortcutButton extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: palette.onPrimary,
+                              color: foregroundColor,
                             ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: palette.onPrimary.withValues(alpha: 0.88),
+                          color: foregroundColor.withValues(alpha: 0.88),
                         ),
                       ),
                     ],
@@ -180,20 +153,18 @@ class _PromptShortcutButton extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Container(
+                  key: const ValueKey<String>('ai_assisted_entry_chevron_pill'),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: palette.surface,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(
-                    context.strings.copy,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: palette.primaryStrong,
-                    ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: palette.primaryStrong,
                   ),
                 ),
               ],
@@ -211,14 +182,14 @@ class _AddFoodActionCard extends StatelessWidget {
     required this.color,
     required this.title,
     required this.subtitle,
-    this.onTap,
+    required this.onTap,
   });
 
   final IconData icon;
   final Color color;
   final String title;
   final String subtitle;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -239,15 +210,7 @@ class _AddFoodActionCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4),
           child: Text(subtitle),
         ),
-        trailing: onTap == null
-            ? Text(
-                context.strings.comingSoon,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: palette.textMuted,
-                ),
-              )
-            : Icon(Icons.chevron_right_rounded, color: palette.textMuted),
+        trailing: Icon(Icons.chevron_right_rounded, color: palette.textMuted),
         onTap: onTap,
       ),
     );

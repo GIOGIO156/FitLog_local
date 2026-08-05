@@ -14,7 +14,7 @@ FitLog Local 是一款 local-first 的 Flutter 个人饮食与训练记录 App�
 
 推荐使用流程是：
 
-1. 用任意外部多模态模型，或项目提供的 GPT 链接，根据照片或描述估算一餐。
+1. 在 `Add Food` 选择高亮的 `AI 辅助录入` 入口；进入后先复制 Prompt 到任意支持图片或文字的外部 AI，再把外部 AI 返回的完整 JSON 粘贴回同一页面解析保存。
 2. 新建外部 AI 对话时复制一次 FitLog 内置 Prompt；之后可持续发送食物图片、描述或增删替换要求，并让外部模型每次返回更新后的完整结构化 JSON。
 3. 把 JSON 粘贴进 FitLog Local，预览、修正，并保存到本地 SQLite。
 4. 在本地记录训练，包括有氧时长和力量训练组。
@@ -40,13 +40,15 @@ FitLog Local 当前不提供：
 - 向量数据库、RAG、tool calling、语义记忆或 Agent loop
 - 自动配餐、自动修改目标或 AI Coach
 - 医疗建议或儿童青少年治疗指导
-- App 内图片识别；`Photo AI Analysis` 仍只是占位入口
+- App 内图片识别
 
 ### 核心功能
 
 饮食记录：
 
-- `Paste AI Result` 把外部模型 JSON 解析为本地 `FoodRecord` 和 `FoodItem` 数据。
+- `AI 辅助录入` 把复制 Prompt、外部 AI JSON 粘贴、全屏 JSON 编辑和本地解析收束到一个高亮入口后的工作台页面。
+- `Add Food` 只保留 AI 辅助录入和手动录入两个主要路径；复制成功提示保持简短且不绑定某个具体 AI 服务。
+- `AI 辅助录入` 页面使用图三式嵌套说明卡，把使用方式压平成三个一行动作，并保留推荐 GPT 信息；粘贴的外部模型 JSON 会解析为本地 `FoodRecord` 和 `FoodItem` 数据。
 - `Manual Entry` 记录餐名、日期、重量、kcal、蛋白质、碳水、脂肪和备注。
 - 内置 Prompt 按当前 App 语言复制，可在外部模型的新对话中作为一次性长期初始化规则；后续图片、描述和修改要求都返回同一固定 schema 的完整 JSON。
 - 已有饮食记录可以打开、编辑、复制到指定日期或删除。
@@ -186,7 +188,7 @@ The practical problem is threefold:
 
 The intended workflow is:
 
-1. Use any external multimodal model, or the provided GPT links, to estimate a meal from a photo or description.
+1. On `Add Food`, choose the highlighted `AI-assisted Entry` path. In that workspace, copy the prompt to any external AI that supports images or text, then paste the complete JSON response back into the same page for parsing and saving.
 2. Copy FitLog's prompt once when starting a new external-AI conversation; then keep sending food images, descriptions, or add/remove/replace requests and receive the complete updated structured JSON each time.
 3. Paste the JSON into FitLog Local, preview it, correct it, and save it to local SQLite.
 4. Log workouts locally, including cardio duration and strength sets.
@@ -212,13 +214,15 @@ FitLog Local currently does not provide:
 - vector database, RAG, tool calling, semantic memory, or Agent loop
 - automatic meal planning, automatic target changes, or an AI coach
 - medical advice or pediatric treatment guidance
-- app-internal photo recognition; `Photo AI Analysis` is still a placeholder entry point
+- app-internal photo recognition
 
 ### Core Features
 
 Food Log:
 
-- `Paste AI Result` parses external-model JSON into local `FoodRecord` and `FoodItem` data.
+- `AI-assisted Entry` combines prompt copy, external AI JSON paste, fullscreen JSON editing, and local parsing in one highlighted entry workspace.
+- `Add Food` keeps two primary paths: AI-assisted entry and manual entry; the copy-success notice is short and model-agnostic.
+- The `AI-assisted Entry` page uses a nested reusable-chat setup card with three one-line actions for sending the prompt, uploading food, and pasting JSON, plus the recommended GPT note. Pasted external-model JSON is parsed into local `FoodRecord` and `FoodItem` data.
 - `Manual Entry` records meal name, date, weight, kcal, protein, carbs, fat, and notes.
 - The built-in prompt follows the current app language and initializes persistent rules once in a new external-model conversation; later images, descriptions, and change requests return complete JSON in the same fixed schema.
 - Existing food records can be opened, edited, copied to a chosen date, or deleted.

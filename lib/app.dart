@@ -228,7 +228,7 @@ class _FitLogAppState extends State<FitLogApp> {
           horizontal: 16,
           vertical: 14,
         ),
-        labelStyle: _withFontFallback(TextStyle(color: palette.textSecondary)),
+        labelStyle: _withFontFallback(TextStyle(color: palette.textMuted)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: palette.outline),
@@ -242,7 +242,7 @@ class _FitLogAppState extends State<FitLogApp> {
           borderSide: BorderSide(color: palette.primaryBright, width: 1.4),
         ),
         filled: true,
-        fillColor: palette.input,
+        fillColor: palette.surfaceVariant,
         isDense: true,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(

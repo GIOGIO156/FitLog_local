@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:fitlog_local/core/constants/prompt_templates.dart';
 import 'package:fitlog_local/core/fitlog_theme.dart';
 import 'package:fitlog_local/core/localization/app_language.dart';
@@ -15,6 +13,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  });
+
   for (final testCase in <({AppLanguage language, String buttonLabel})>[
     (language: AppLanguage.chinese, buttonLabel: '复制 AI 食物提示词'),
     (language: AppLanguage.english, buttonLabel: 'Copy AI Food Prompt'),
@@ -22,20 +24,18 @@ void main() {
     testWidgets('${testCase.language.code} mode copies its localized prompt', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
       final controller = LanguageController();
       await controller.setLanguage(testCase.language);
-      String? copiedText;
-      final pendingClipboardWrite = Completer<Object?>();
+      addTearDown(controller.dispose);
 
+      String? copiedText;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, (call) {
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
             if (call.method == 'Clipboard.setData') {
               copiedText =
                   (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
-              return pendingClipboardWrite.future;
             }
-            return Future<Object?>.value();
+            return null;
           });
       addTearDown(
         () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -43,18 +43,31 @@ void main() {
       );
 
       await tester.pumpWidget(_buildTestApp(controller));
+      await tester.tap(
+        find.text(
+          testCase.language == AppLanguage.chinese
+              ? 'AI 辅助录入'
+              : 'AI-assisted Entry',
+        ),
+      );
+      await tester.pumpAndSettle();
+
       expect(find.text(testCase.buttonLabel), findsOneWidget);
 
+      await tester.ensureVisible(find.byIcon(Icons.content_copy_rounded));
+      await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.content_copy_rounded));
       await tester.pump();
 
       expect(copiedText, PromptTemplates.promptForLanguage(testCase.language));
       if (testCase.language == AppLanguage.chinese) {
-        expect(copiedText, contains('一、长期对话规则'));
-        expect(copiedText, contains('自然语言值必须使用中文'));
+        expect(copiedText, contains('本次对话后续所有消息的长期规则'));
+        expect(copiedText, contains('文字和图片是并列、互补的证据'));
+        expect(copiedText, contains('自然语言值使用用户当前消息的主要语言'));
       } else {
-        expect(copiedText, contains('Persistent conversation rules'));
-        expect(copiedText, contains('Natural-language values'));
+        expect(copiedText, contains('persistent rules for all later messages'));
+        expect(copiedText, contains('Text and photos are parallel'));
+        expect(copiedText, contains('main language of the user'));
       }
     });
   }
@@ -72,15 +85,18 @@ void main() {
       expect(prompt, contains('"total_calories_kcal"'));
     }
 
-    expect(PromptTemplates.aiFoodPromptZh, contains('当前对话后续消息的长期规则'));
-    expect(PromptTemplates.aiFoodPromptZh, contains('完整 JSON 对象'));
+    expect(PromptTemplates.aiFoodPromptZh, contains('长期规则'));
+    expect(PromptTemplates.aiFoodPromptZh, contains('完整 JSON'));
     expect(PromptTemplates.aiFoodPromptZh, contains('五组加总'));
-    expect(PromptTemplates.aiFoodPromptZh, contains('以 items 为依据'));
+    expect(PromptTemplates.aiFoodPromptZh, contains('items 是重量和营养总计的唯一计算来源'));
 
     expect(PromptTemplates.aiFoodPromptEn, contains('persistent rules'));
-    expect(PromptTemplates.aiFoodPromptEn, contains('complete JSON object'));
-    expect(PromptTemplates.aiFoodPromptEn, contains('all five sums'));
-    expect(PromptTemplates.aiFoodPromptEn, contains('source of truth'));
+    expect(PromptTemplates.aiFoodPromptEn, contains('complete JSON'));
+    expect(PromptTemplates.aiFoodPromptEn, contains('the five sums'));
+    expect(
+      PromptTemplates.aiFoodPromptEn,
+      contains('items are the only source'),
+    );
   });
 
   test('existing AI food JSON schema still parses with estimation_notes', () {

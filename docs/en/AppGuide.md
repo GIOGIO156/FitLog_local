@@ -99,15 +99,17 @@ Add Food is the food entry gateway.
 
 Entry options:
 
-- `Paste AI Result`: paste JSON produced outside the app.
+- `AI-assisted Entry`: highlighted path for prompt copy, external AI JSON paste, fullscreen JSON editing, and local parsing.
 - `Manual Entry`: type food data directly.
-- `Photo AI Analysis`: visible placeholder only; app-internal image recognition is not implemented.
-- Prompt copy: copy a prompt in the current app language once to initialize a new external-model conversation.
 
 How it works:
 
-- Prompt copy is static text, not an AI call. Its persistent conversation rules let a new food image normally start a new meal and let add/remove/replace/recalculate follow-ups update the most recent meal without copying the prompt again.
+- The highlighted Add Food card opens one AI-assisted entry workspace, so the user does not have to infer the relationship between prompt copy and JSON paste from two separate entries.
+- Its subtitle is written as two deliberate lines: copy the prompt to external AI, then paste the complete JSON response.
+- Prompt copy inside that workspace is static text, not an AI call. Its persistent conversation rules let a new food image normally start a new meal and let add/remove/replace/recalculate follow-ups update the most recent meal without copying the prompt again.
 - Every external-model response is required to contain one complete strict JSON object. Top-level weight, calories, protein, carbs, and fat must be recomputed from the final item values; the existing schema and final `estimation_notes` field remain unchanged and do not include or request a `comment` field.
+- The setup card uses the nested visual style from the Agent version: section 1 compresses usage into three one-line actions beside circled markers, and section 2 keeps the recommended GPT note for ChatGPT users. Copy success uses a short, model-agnostic notice and an inline copied button state.
+- The paste page uses a fixed `CustomMultiChildLayout`: the setup card keeps its original slot, fades only from the real keyboard inset, and stays mounted; the JSON editor keeps its original size and moves with a direct `Transform.translate` formula; the parse button remains at the original bottom position where the system keyboard may cover it. The AppBar and page background do not change, and there is no extra Flutter tween, gradient, blur, focus backdrop, or layout-size animation layered on top of the system keyboard animation. Widget tests verify opacity, translation continuity, disabled interactions while the keyboard is open, and full restoration when the inset returns to zero.
 - Pasted JSON is parsed locally by `NutritionCalculator`.
 - The preview page lets users correct parsed values before saving.
 - Food Detail, AI preview, and Manual Entry all show user-facing field labels instead of raw snake_case keys, and numeric units stay in the field suffix so JSON keys and storage fields can remain unchanged.

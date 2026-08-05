@@ -20,10 +20,9 @@ Current AI-adjacent features are static or user-mediated:
 
 | Feature | What happens | App-internal AI? | Main code |
 | --- | --- | --- | --- |
-| Prompt copy | The app copies a language-matched, one-time conversation initializer. In the external conversation, a new food image normally starts a new meal and follow-up edits update the latest meal, always as complete JSON in the unchanged schema. | No | `PromptTemplates`, `AddFoodPage._copyPrompt` |
-| External AI JSON paste | The user manually pastes JSON produced outside the app. FitLog parses it locally. | No | `PasteAiResultPage`, `NutritionCalculator.parseAiFoodJson` |
+| Prompt copy | The app copies a language-matched, one-time conversation initializer from the `AI-assisted Entry` workspace. The copied prompt can be pasted into any external AI that supports food images or text. In the external conversation, a new food image normally starts a new meal and follow-up edits update the latest meal, always as complete JSON in the unchanged schema. | No | `PromptTemplates`, `PasteAiResultPage._copyPrompt` |
+| External AI JSON paste | The user manually pastes JSON produced outside the app into the same `AI-assisted Entry` workspace. The page shows nested reusable-chat instructions with three one-line usage actions and a recommended GPT note, a fixed JSON editor with paint-only target keyboard lift, fullscreen editing, and local parsing only. | No | `PasteAiResultPage`, `NutritionCalculator.parseAiFoodJson` |
 | `source = ai_paste` | Saved records can mark that their source was an AI paste workflow. | No | `AppConstants.sourceAiPaste`, `FoodRecord.source` |
-| Photo AI Analysis | A visible placeholder entry point. | No, not implemented | `AddFoodPage` |
 
 ## Deterministic Local Workflows
 
@@ -48,7 +47,7 @@ The app has local workflows that may feel automated, but they are deterministic 
 
 ## Agent Boundary Rules
 
-- External AI may help estimate food before data enters FitLog Local.
+- Any image/text-capable external AI may help estimate food before data enters FitLog Local; provider-specific suggestions are optional, not required by the app workflow.
 - Any continuity created by the copied prompt exists only in the external conversation. FitLog Local does not store that conversation or provide AI memory.
 - FitLog Local only stores, parses, summarizes, calculates, reviews, and exports local data.
 - Prompt templates are not app-internal AI.
