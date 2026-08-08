@@ -11,16 +11,20 @@
 
 - Replaced the existing `Lat Pulldown` asset with the approved redesigned high-pulley machine icon.
 - Changed exercise thumbnail routing to resolve built-in exercises through `ExerciseCatalog` and derive the PNG path from the canonical exercise key, while preserving legacy alias routing.
+- Aligned Black-theme workout-library controls with the Agent-style treatment: rounded dark filter chips, orange selected labels, normal orange filled buttons, and low-glare exercise-thumbnail fills with subtle body-part rings so artwork stays readable on dark cards.
+- Updated the Black-theme workout-library thumbnail fill/ring palette to the finalized muted body-part colors while keeping the badge geometry and notification icons unchanged.
+- Kept Android workout notification large icons on the direct transparent exercise asset, so the notification artwork is not reduced by the workout-library badge treatment.
 - Updated the workout app guide docs to state that built-in exercises have dedicated PNG thumbnails and only custom or unmatched exercises fall back to body-part icons.
 
 ### Validation
 
 - Exercise asset verification: 57 built-in PNG assets, 256 x 256, alpha channel present, no missing or extra catalog mappings.
-- `dart format lib test`: success.
-- `flutter test test\exercise_icon_assets_test.dart test\legacy_bench_press_migration_test.dart`: success.
+- `dart format lib\core\widgets\exercise_thumbnail.dart lib\domain\services\workout_notification_snapshot_builder.dart lib\features\workout\add_workout_page.dart lib\core\utils\workout_notification_bridge.dart test\exercise_thumbnail_theme_test.dart test\workout_notification_snapshot_builder_test.dart`: success.
+- `flutter test test\exercise_thumbnail_theme_test.dart test\workout_notification_snapshot_builder_test.dart`: success.
 - `flutter analyze`: success.
-- `flutter test`: success, 111 tests passed.
-- `flutter build apk --release --split-per-abi --build-number 69 --no-pub`: success; generated `app-armeabi-v7a-release.apk`, `app-arm64-v8a-release.apk`, and `app-x86_64-release.apk`. No `flutter clean` was run.
+- `flutter test`: success, 113 tests passed.
+- Documentation tree, stale dark-badge wording, stable-heading, and replacement-character checks: success.
+- `flutter build apk --release --split-per-abi --build-number 76 --no-pub`: success; generated `app-armeabi-v7a-release.apk`, `app-arm64-v8a-release.apk`, and `app-x86_64-release.apk`. No `flutter clean` was run.
 
 ## 2026-08-07 Canonical Barbell Flat Bench Press
 

@@ -149,6 +149,7 @@ How it works:
 - The Android workout notification uses the same active draft. Tapping the notification body opens the draft editor; the system expand arrow stays an Android-controlled expand/collapse affordance.
 - Record-level summaries are derived from persisted sessions and sets.
 - Every built-in exercise has a dedicated transparent PNG thumbnail. Custom or otherwise unmatched exercises still fall back to the shared body-part SVG set.
+- In the Black theme, the exercise library uses dark rounded body-part filter chips and gives exercise thumbnails body-part-specific low-glare circular fills plus subtle body-part rings so each body part remains visually distinct while the artwork stays readable on dark cards; the exact palette lives in Product.
 - The `Add Workout` CTA and optional draft bar are drawn as bottom overlays instead of a full-width footer row; `FitLogBottomNavLayout` keeps their bottom edge anchored above the nav pill and gives the workout list enough bottom padding for records to scroll clear of the controls.
 
 Read more:
@@ -197,7 +198,7 @@ How it works:
 - Discard, formal save, and draft clearing/deletion also clear the auto-resume marker. SharedPreferences marker failures do not change draft persistence, and edit drafts for existing saved records do not qualify for new-workout cold-start auto-resume.
 - Active Android strength-draft notifications show only the current exercise name as the title and the next set as the body, for example `Set 2 of 9 - 50 kg x 8 reps`.
 - Notification focus follows the most recently checked completed set. If that exercise has another unfinished set, the notification stays on that exercise; if it is fully complete, the notification falls back to the first unfinished exercise in the record order.
-- The notification large icon uses the current exercise image. The status-bar small icon uses an Android drawable converted from the saved transparent FitLog SVG source at `assets/icons/app/fitlog_notification_small.svg`, but Android can render that slot as a system-controlled monochrome icon.
+- The notification large icon uses the current transparent exercise image directly. The status-bar small icon uses an Android drawable converted from the saved transparent FitLog SVG source at `assets/icons/app/fitlog_notification_small.svg`, but Android can render that slot as a system-controlled monochrome icon.
 - Only completed strength sets are saved; unchecked sets are discarded.
 - Editing a saved record replaces the full `plan_id` group transactionally.
 
@@ -266,7 +267,7 @@ How it works:
 - `nickname` is local-only profile data and is not an account identifier.
 - Theme is a local UI preference stored outside SQLite; it only remaps app color tokens and does not change food, workout, profile, or calculation behavior.
 - The Blue theme uses a full aqua-derived palette rather than a single replacement color: `#55DCE2` is reserved for bright, soft solid buttons and strong fills, white supports page, ordinary card, input, Profile inner-tile, and information-area surfaces, the bottom navigation pill stays a distinct surface while the area outside it reveals the page background, pale aqua supports selected pills and small emphasis badges, and deeper teal/indigo supports readable text, icons, and borders.
-- The Black theme keeps orange as the accent while separating dark background, card, selected-surface, input, outline, and text roles for clearer hierarchy.
+- The Black theme keeps orange as the accent while separating dark background, card, selected-surface, input, outline, and text roles for clearer hierarchy. Workout-library filter chips use rounded dark surfaces with orange selected labels, and exercise thumbnails use body-part-specific low-glare circular fills plus subtle body-part rings so body-part identity remains distinct without burying the artwork on dark cards. The transparent PNG assets stay unchanged; the fill/ring treatment is applied at render time, and Product records the exact palette.
 - Saving Profile also upserts the current day's weight log; saving the current Body Profile additionally records today's weight, body-fat, and waist values in local body metric history.
 - The opening viewport is intentionally not a dense edit form; current plan, body profile, plan matrix, and training-frequency setup appear before the lower reference/export cards.
 - Inline text and numeric cards default to display mode and use card-local save actions only after edits; unchanged inline editors can collapse when the user taps elsewhere. Direct chips and switches save immediately.

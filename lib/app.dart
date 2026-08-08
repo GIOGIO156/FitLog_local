@@ -258,6 +258,58 @@ class _FitLogAppState extends State<FitLogApp> {
         ),
         backgroundColor: Colors.transparent,
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.primary,
+          foregroundColor: palette.onPrimary,
+          disabledBackgroundColor: palette.primarySoftPressed,
+          disabledForegroundColor: palette.textDisabled,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: palette.primaryDeep,
+          side: BorderSide(color: palette.outline),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: palette.primaryDeep),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return palette.primaryDeep;
+            }
+            return palette.textPrimary;
+          }),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return palette.primarySoftSelected;
+            }
+            return palette.surface;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return BorderSide(color: palette.primaryBright);
+            }
+            return BorderSide(color: palette.outline);
+          }),
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: palette.surfaceVariant,
+        selectedColor: palette.primarySoftSelected,
+        disabledColor: palette.primarySoftPressed,
+        labelStyle: _withFontFallback(
+          TextStyle(color: palette.textPrimary, fontWeight: FontWeight.w700),
+        ),
+        secondaryLabelStyle: _withFontFallback(
+          TextStyle(color: palette.primaryDeep, fontWeight: FontWeight.w800),
+        ),
+        side: BorderSide(color: palette.outline),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      ),
       textTheme: textTheme,
     );
   }
