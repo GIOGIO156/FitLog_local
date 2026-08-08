@@ -2,13 +2,15 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'legacy_exercise_migrations.dart';
+
 class AppDatabase {
   AppDatabase._();
 
   static final AppDatabase instance = AppDatabase._();
 
   static const String _dbName = 'fitlog_local.db';
-  static const int dbVersion = 12;
+  static const int dbVersion = 13;
 
   Database? _database;
 
@@ -139,6 +141,9 @@ class AppDatabase {
           );
           await _createBodyMetricLogTable(db);
           await _backfillBodyMetricLogsFromWeightLogs(db);
+        }
+        if (oldVersion < 13) {
+          await migrateLegacyBenchPressRecords(db);
         }
       },
     );

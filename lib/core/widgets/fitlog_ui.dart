@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/app_constants.dart';
+import '../constants/exercise_catalog.dart';
 import '../constants/fitlog_icon_assets.dart';
 import '../fitlog_theme.dart';
 import '../localization/localization_extensions.dart';
@@ -375,40 +376,11 @@ String fitLogWorkoutAssetForBodyPart(String bodyPart) {
 }
 
 String? fitLogWorkoutAssetForExercise(String exerciseName) {
-  switch (exerciseName) {
-    case 'Bench Press':
-      return FitLogIconAssets.exerciseBenchPress;
-    case 'Cable Fly':
-      return FitLogIconAssets.exerciseCableFly;
-    case 'Deadlift':
-      return FitLogIconAssets.exerciseDeadlift;
-    case 'Dumbbell Biceps Curl':
-      return FitLogIconAssets.exerciseDumbbellBicepsCurl;
-    case 'Dumbbell Fly':
-      return FitLogIconAssets.exerciseDumbbellFly;
-    case 'Barbell Biceps Curl':
-      return FitLogIconAssets.exerciseBarbellBicepsCurl;
-    case 'Bent-over Barbell Row':
-      return FitLogIconAssets.exerciseBentOverBarbellRow;
-    case 'Lateral Raise':
-      return FitLogIconAssets.exerciseLateralRaise;
-    case 'Lat Pulldown':
-      return FitLogIconAssets.exerciseLatPulldown;
-    case 'Barbell Overhead Press':
-    case 'Overhead Press':
-      return FitLogIconAssets.exerciseOverheadPress;
-    case 'Pull-up':
-      return FitLogIconAssets.exercisePullUp;
-    case 'Running':
-      return FitLogIconAssets.exerciseRunning;
-    case 'Seated Cable Row':
-    case 'Seated Row':
-      return FitLogIconAssets.exerciseSeatedRow;
-    case 'Squat':
-      return FitLogIconAssets.exerciseSquat;
-    default:
-      return null;
+  final definition = ExerciseCatalog.byName(exerciseName);
+  if (definition == null || !definition.isBuiltin) {
+    return null;
   }
+  return FitLogIconAssets.exerciseAssetForKey(definition.key);
 }
 
 class FitLogActionIconButton extends StatelessWidget {

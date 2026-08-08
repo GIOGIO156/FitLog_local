@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../../core/constants/exercise_catalog.dart';
 import '../../core/utils/date_utils.dart';
 import '../../domain/models/workout_record_draft.dart';
 import '../../domain/models/workout_session.dart';
@@ -232,10 +233,20 @@ class WorkoutRepository {
     String exerciseName,
   ) async {
     final db = await _database.database;
+    final definition = ExerciseCatalog.byName(exerciseName);
+    final candidateNames = <String>{
+      exerciseName,
+      if (definition != null) definition.name,
+      if (definition != null) ...definition.legacyNames,
+    }.where((name) => name.trim().isNotEmpty).toList();
+    final placeholders = List<String>.filled(
+      candidateNames.length,
+      '?',
+    ).join(', ');
     final rows = await db.query(
       'workout_sessions',
-      where: 'exercise_name = ?',
-      whereArgs: <Object?>[exerciseName],
+      where: 'exercise_name IN ($placeholders)',
+      whereArgs: <Object?>[...candidateNames],
       orderBy: 'created_at DESC, id DESC',
       limit: 1,
     );

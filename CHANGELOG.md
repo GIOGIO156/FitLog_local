@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-08-09 Built-in Exercise Icon Coverage
+
+### Added
+
+- Added dedicated transparent PNG exercise thumbnails for every built-in exercise that previously fell back to a shared body-part icon.
+- Added regression coverage that verifies every built-in exercise and legacy built-in alias resolves to an existing PNG asset.
+
+### Changed
+
+- Replaced the existing `Lat Pulldown` asset with the approved redesigned high-pulley machine icon.
+- Changed exercise thumbnail routing to resolve built-in exercises through `ExerciseCatalog` and derive the PNG path from the canonical exercise key, while preserving legacy alias routing.
+- Updated the workout app guide docs to state that built-in exercises have dedicated PNG thumbnails and only custom or unmatched exercises fall back to body-part icons.
+
+### Validation
+
+- Exercise asset verification: 57 built-in PNG assets, 256 x 256, alpha channel present, no missing or extra catalog mappings.
+- `dart format lib test`: success.
+- `flutter test test\exercise_icon_assets_test.dart test\legacy_bench_press_migration_test.dart`: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 111 tests passed.
+- `flutter build apk --release --split-per-abi --build-number 69 --no-pub`: success; generated `app-armeabi-v7a-release.apk`, `app-arm64-v8a-release.apk`, and `app-x86_64-release.apk`. No `flutter clean` was run.
+
+## 2026-08-07 Canonical Barbell Flat Bench Press
+
+### Added
+
+- Added regression coverage for canonical catalog lookup, legacy alias and icon routing, keyed and pre-key workout-session migration, malformed snapshots, and custom exercise exclusion.
+
+### Changed
+
+- Removed the duplicate built-in `Bench Press` catalog entry, retained it as a legacy alias of `Barbell Flat Bench Press`, and reassigned the existing dedicated PNG to the canonical `barbell_flat_bench_press` asset name.
+- Changed latest-exercise history lookup to include a built-in definition's legacy names, so the canonical exercise can still seed a new workout from unmigrated legacy history.
+- Increased the SQLite schema version to 13 and canonicalized legacy built-in workout-session names, keys, and valid exercise snapshot JSON without changing workout sets, saved kcal, dates, or record ids.
+- Updated bilingual database design documentation for schema version 13 and its built-in-only migration boundary.
+
+### Fixed
+
+- Prevented old built-in `Bench Press` records from retaining the obsolete display name or losing their dedicated thumbnail after the duplicate action is removed.
+
+### Validation
+
+- `dart format` on modified Dart files and the new migration test: success.
+- `flutter analyze`: success.
+- `flutter test`: success, 110 tests passed.
+- Canonical bench-press PNG verification: 256 x 256, 32-bit ARGB.
+- Documentation tree, stale schema/version and asset identifiers, stable-heading, replacement-character, and diff-whitespace checks: success.
+
 ## 2026-08-05 External Food JSON Paste Page Refresh
 
 ### Added

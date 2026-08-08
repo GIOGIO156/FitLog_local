@@ -13,7 +13,7 @@ FitLog Local stores business data locally.
 
 Database name: `fitlog_local.db`.
 
-Current SQLite schema version: `12`.
+Current SQLite schema version: `13`.
 
 Foreign keys are enabled with `PRAGMA foreign_keys = ON`.
 
@@ -35,6 +35,7 @@ Migrations are additive and must preserve existing local data.
 | 10 | Added `workout_record_drafts` for one active unsaved workout editor state. |
 | 11 | Added reusable `custom_exercises`, workout-session exercise snapshots, cardio-intensity metadata, and raw-vs-calculation workout-set fields. |
 | 12 | Added current body-fat and waist fields to `user_profile`, added `body_metric_logs`, and backfilled existing `user_weight_logs` into body metric history. |
+| 13 | Canonicalized legacy built-in `Bench Press` workout sessions to `barbell_flat_bench_press` / `Barbell Flat Bench Press`, including pre-v11 rows without an exercise key, without changing sets, kcal, dates, or record ids. |
 
 Compatibility rules:
 
@@ -42,6 +43,7 @@ Compatibility rules:
 - Prefer additive columns/tables over destructive rebuilds.
 - Existing users default to safe compatibility values such as `cutting`, `energy_ratio`, and `none`.
 - `daily_energy_goal_type` remains stored for compatibility, but `diet_goal_phase` is the phase source of truth.
+- The version-13 exercise migration matches only built-in or pre-source legacy Chest strength rows; custom and ad-hoc exercises named `Bench Press` are not rewritten.
 
 ## Tables
 

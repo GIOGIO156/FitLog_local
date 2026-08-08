@@ -13,7 +13,7 @@ FitLog Local 将业务数据保存在本地。
 
 数据库名：`fitlog_local.db`。
 
-当前 SQLite schema 版本：`12`。
+当前 SQLite schema 版本：`13`。
 
 通过 `PRAGMA foreign_keys = ON` 启用外键。
 
@@ -35,6 +35,7 @@ FitLog Local 将业务数据保存在本地。
 | 10 | 添加 `workout_record_drafts`，用于保存一条活动中的未保存训练编辑状态。 |
 | 11 | 添加可复用 `custom_exercises`、训练 session 动作快照、有氧强度元数据，以及训练组的原始输入值/计算值字段。 |
 | 12 | 为 `user_profile` 添加当前体脂率和腰围字段，新增 `body_metric_logs`，并将已有 `user_weight_logs` 回填为身体指标历史。 |
+| 13 | 将历史内置 `Bench Press` 训练 session 统一为 `barbell_flat_bench_press` / `Barbell Flat Bench Press`，包括没有动作 Key 的 v11 之前记录；不改变组数、热量、日期或记录 ID。 |
 
 兼容规则：
 
@@ -42,6 +43,7 @@ FitLog Local 将业务数据保存在本地。
 - 优先用加字段、加表，而不是破坏式重建。
 - 现有用户使用安全兼容默认值，例如 `cutting`、`energy_ratio`、`none`。
 - `daily_energy_goal_type` 继续保留用于兼容，但 `diet_goal_phase` 是阶段语义的来源。
+- 版本 13 的动作迁移仅匹配内置动作，或尚无来源字段的旧版胸部力量记录；不会改写名为 `Bench Press` 的自定义或临时动作。
 
 ## 数据表
 

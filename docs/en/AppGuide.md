@@ -148,7 +148,7 @@ How it works:
 - Cold-start auto-resume is only an automatic navigation decision. The SQLite active draft remains authoritative, and drafts that are expired or no longer marked editor-active remain manually recoverable from the Workout Log draft bar.
 - The Android workout notification uses the same active draft. Tapping the notification body opens the draft editor; the system expand arrow stays an Android-controlled expand/collapse affordance.
 - Record-level summaries are derived from persisted sessions and sets.
-- Exercise thumbnails now prefer dedicated transparent PNG assets for matched movements, while unmatched exercises still fall back to the shared body-part SVG set.
+- Every built-in exercise has a dedicated transparent PNG thumbnail. Custom or otherwise unmatched exercises still fall back to the shared body-part SVG set.
 - The `Add Workout` CTA and optional draft bar are drawn as bottom overlays instead of a full-width footer row; `FitLogBottomNavLayout` keeps their bottom edge anchored above the nav pill and gives the workout list enough bottom padding for records to scroll clear of the controls.
 
 Read more:

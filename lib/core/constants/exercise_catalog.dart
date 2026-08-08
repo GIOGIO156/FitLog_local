@@ -19,6 +19,7 @@ class ExerciseCatalog {
       bodyPart: 'Chest',
       exerciseType: ExerciseType.strength,
       strengthProfile: ExerciseStrengthProfile.upperBodyCompound,
+      legacyNames: <String>['Bench Press'],
     ),
     ExerciseDefinition(
       key: 'barbell_incline_bench_press',
@@ -75,13 +76,6 @@ class ExerciseCatalog {
       exerciseType: ExerciseType.strength,
       strengthProfile: ExerciseStrengthProfile.upperBodyCompound,
       loadInputMode: ExerciseLoadInputMode.bodyweightAdded,
-    ),
-    ExerciseDefinition(
-      key: 'bench_press',
-      name: 'Bench Press',
-      bodyPart: 'Chest',
-      exerciseType: ExerciseType.strength,
-      strengthProfile: ExerciseStrengthProfile.upperBodyCompound,
     ),
     ExerciseDefinition(
       key: 'incline_dumbbell_press',

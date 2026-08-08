@@ -12,8 +12,8 @@ class FitLogIconAssets {
   static const String workout = 'assets/icons/common/workout.png';
   static const String flame = 'assets/icons/common/flame.svg';
 
-  static const String exerciseBenchPress =
-      'assets/icons/exercises/bench_press.png';
+  static const String exerciseBarbellFlatBenchPress =
+      'assets/icons/exercises/barbell_flat_bench_press.png';
   static const String exerciseCableFly = 'assets/icons/exercises/cable_fly.png';
   static const String exerciseDeadlift = 'assets/icons/exercises/deadlift.png';
   static const String exerciseDumbbellBicepsCurl =
@@ -35,6 +35,13 @@ class FitLogIconAssets {
   static const String exerciseSeatedRow =
       'assets/icons/exercises/seated_row.png';
   static const String exerciseSquat = 'assets/icons/exercises/squat.png';
+
+  static String exerciseAssetForKey(String exerciseKey) {
+    if (exerciseKey == 'barbell_overhead_press') {
+      return exerciseOverheadPress;
+    }
+    return 'assets/icons/exercises/$exerciseKey.png';
+  }
 
   static const String workoutChest = 'assets/icons/workouts/chest.png';
   static const String workoutBack = 'assets/icons/workouts/back.png';
